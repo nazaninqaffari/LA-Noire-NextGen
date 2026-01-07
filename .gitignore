@@ -107,3 +107,4 @@ cython_debug/
 # OS files
 Thumbs.db
 .DS_Store
+commit_helper.txt
