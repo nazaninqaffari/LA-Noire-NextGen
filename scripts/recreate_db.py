@@ -106,19 +106,17 @@ def create_initial_roles():
         {'name': 'Criminal', 'description': 'Convicted criminal', 'is_police_rank': False, 'hierarchy_level': 0},
         
         # Police hierarchy (higher level = more authority)
-        {'name': 'Cadet', 'description': 'Entry level - reviews initial complaints', 'is_police_rank': True, 'hierarchy_level': 1},
-        {'name': 'Patrol Officer', 'description': 'Field patrol officer', 'is_police_rank': True, 'hierarchy_level': 2},
-        {'name': 'Police Officer', 'description': 'Regular police officer - reports crime scenes', 'is_police_rank': True, 'hierarchy_level': 3},
+        {'name': 'Cadet', 'description': 'Entry level - validates and reviews initial complaints', 'is_police_rank': True, 'hierarchy_level': 1},
+        {'name': 'Patrol Officer', 'description': 'Field patrol - can report crime scenes', 'is_police_rank': True, 'hierarchy_level': 2},
+        {'name': 'Police Officer', 'description': 'Regular officer - can report crime scenes and approve them', 'is_police_rank': True, 'hierarchy_level': 3},
         {'name': 'Detective', 'description': 'Investigates cases and identifies suspects', 'is_police_rank': True, 'hierarchy_level': 4},
         {'name': 'Sergeant', 'description': 'Oversees investigations and interrogations', 'is_police_rank': True, 'hierarchy_level': 5},
-        {'name': 'Lieutenant', 'description': 'Supervises detectives and sergeants', 'is_police_rank': True, 'hierarchy_level': 6},
-        {'name': 'Captain', 'description': 'Approves cases for trial', 'is_police_rank': True, 'hierarchy_level': 7},
-        {'name': 'Deputy Chief', 'description': 'Second in command of police department', 'is_police_rank': True, 'hierarchy_level': 8},
-        {'name': 'Chief', 'description': 'Handles critical cases', 'is_police_rank': True, 'hierarchy_level': 9},
+        {'name': 'Captain', 'description': 'Approves cases for trial', 'is_police_rank': True, 'hierarchy_level': 6},
+        {'name': 'Police Chief', 'description': 'Chief of police - handles critical cases', 'is_police_rank': True, 'hierarchy_level': 7},
         
-        # Judicial
+        # Judicial/Forensic
+        {'name': 'Forensic Doctor', 'description': 'Reviews biological and medical evidence', 'is_police_rank': False, 'hierarchy_level': 0},
         {'name': 'Judge', 'description': 'Presides over trials', 'is_police_rank': False, 'hierarchy_level': 0},
-        {'name': 'Coroner', 'description': 'Forensic medical examiner', 'is_police_rank': False, 'hierarchy_level': 0},
         
         # Administrative
         {'name': 'Administrator', 'description': 'System administrator', 'is_police_rank': False, 'hierarchy_level': 10},
@@ -180,15 +178,14 @@ def create_sample_users():
     # Create sample police personnel
     police_users = [
         {'username': 'cadet1', 'role': 'Cadet', 'first_name': 'John', 'last_name': 'Doe'},
+        {'username': 'patrol1', 'role': 'Patrol Officer', 'first_name': 'Mike', 'last_name': 'Johnson'},
         {'username': 'officer1', 'role': 'Police Officer', 'first_name': 'Jane', 'last_name': 'Smith'},
         {'username': 'detective1', 'role': 'Detective', 'first_name': 'Cole', 'last_name': 'Phelps'},
         {'username': 'sergeant1', 'role': 'Sergeant', 'first_name': 'Hank', 'last_name': 'Merrill'},
-        {'username': 'lieutenant1', 'role': 'Lieutenant', 'first_name': 'Roy', 'last_name': 'Earle'},
         {'username': 'captain1', 'role': 'Captain', 'first_name': 'James', 'last_name': 'Donnelly'},
-        {'username': 'deputychief1', 'role': 'Deputy Chief', 'first_name': 'Michael', 'last_name': 'Anderson'},
-        {'username': 'chief1', 'role': 'Chief', 'first_name': 'William', 'last_name': 'Worrell'},
+        {'username': 'chief1', 'role': 'Police Chief', 'first_name': 'William', 'last_name': 'Worrell'},
+        {'username': 'forensic1', 'role': 'Forensic Doctor', 'first_name': 'Malcolm', 'last_name': 'Carruthers'},
         {'username': 'judge1', 'role': 'Judge', 'first_name': 'Margaret', 'last_name': 'Johnson'},
-        {'username': 'coroner1', 'role': 'Coroner', 'first_name': 'Malcolm', 'last_name': 'Carruthers'},
     ]
     
     for i, user_data in enumerate(police_users, start=2):
