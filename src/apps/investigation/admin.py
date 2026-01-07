@@ -1,7 +1,8 @@
 from django.contrib import admin
 from .models import (
     DetectiveBoard, BoardItem, EvidenceConnection,
-    Suspect, Interrogation, TipOff, SuspectSubmission, Notification
+    Suspect, Interrogation, TipOff, SuspectSubmission, Notification,
+    CaptainDecision, PoliceChiefDecision
 )
 
 
@@ -40,9 +41,27 @@ class SuspectAdmin(admin.ModelAdmin):
 @admin.register(Interrogation)
 class InterrogationAdmin(admin.ModelAdmin):
     """Admin interface for Interrogations."""
-    list_display = ['suspect', 'detective', 'sergeant', 'detective_guilt_rating', 'sergeant_guilt_rating']
-    list_filter = ['interrogated_at']
+    list_display = ['suspect', 'detective', 'sergeant', 'status', 'detective_guilt_rating', 'sergeant_guilt_rating']
+    list_filter = ['status', 'interrogated_at']
     ordering = ['-interrogated_at']
+
+
+@admin.register(CaptainDecision)
+class CaptainDecisionAdmin(admin.ModelAdmin):
+    """Admin interface for Captain Decisions."""
+    list_display = ['interrogation', 'captain', 'decision', 'status', 'decided_at']
+    list_filter = ['decision', 'status', 'decided_at']
+    search_fields = ['captain__username', 'interrogation__suspect__person__username']
+    ordering = ['-decided_at']
+
+
+@admin.register(PoliceChiefDecision)
+class PoliceChiefDecisionAdmin(admin.ModelAdmin):
+    """Admin interface for Police Chief Decisions."""
+    list_display = ['captain_decision', 'police_chief', 'decision', 'decided_at']
+    list_filter = ['decision', 'decided_at']
+    search_fields = ['police_chief__username']
+    ordering = ['-decided_at']
 
 
 @admin.register(TipOff)
