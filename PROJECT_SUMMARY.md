@@ -72,6 +72,23 @@ LA Noire NextGen is a comprehensive police case management system inspired by th
   - Sergeant approval workflow
   - Payment processing and suspect release
 
+### ✅ Reward System (پاداش ۸.۴)
+- **Anonymous Tip Submission**: Citizens submit information about any active case
+- **Three-Stage Review Workflow**:
+  1. **Officer Initial Review**: Validates tip credibility (approve/reject)
+  2. **Detective Confirmation**: Evaluates usefulness (only assigned detective)
+  3. **Reward Issuance**: Generates unique REWARD-XXXXXXXXXX redemption code
+- **Secure Redemption Process**:
+  - National ID + redemption code verification
+  - One-time redemption at police stations
+  - Default reward: 5,000,000 Rials per approved tip
+  - Any police rank can verify and process payment
+- **Role-Based Visibility**:
+  - Citizens: See only their own tips
+  - Officers: See only pending tips (review queue)
+  - Detectives: See only officer-approved tips
+  - Higher ranks: See all tips (verification)
+
 ### ✅ RESTful API
 - Complete CRUD operations for all entities
 - Advanced filtering, searching, and ordering
@@ -301,7 +318,7 @@ hierarchy_levels = {
 ## Testing
 
 ### Automated Testing
-**Total: 141 tests (100% passing)**
+**Total: 191 tests (100% passing)**
 
 Test coverage by module:
 - **Accounts**: 21 tests - User authentication, roles, permissions
@@ -309,7 +326,9 @@ Test coverage by module:
 - **Case Resolution**: 26 tests - Detective board, connections, searches
 - **Evidence**: 32 tests - All 5 evidence types, images, coroner verification
 - **Interrogation System**: 20 tests - Ratings, captain decisions, chief approval
+- **Suspect Status**: 20 tests - Status transitions, public wanted list, danger scores
 - **Trial System**: 13 tests - Trials, verdicts, punishments, bail payments
+- **Reward System**: 30 tests - Tip submission, review workflow, redemption
 
 **Coverage**: 88% overall
 
