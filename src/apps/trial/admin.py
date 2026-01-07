@@ -5,10 +5,11 @@ from .models import Trial, Verdict, Punishment, BailPayment
 @admin.register(Trial)
 class TrialAdmin(admin.ModelAdmin):
     """Admin interface for Trials."""
-    list_display = ['case', 'suspect', 'judge', 'trial_started_at', 'trial_ended_at']
-    list_filter = ['trial_started_at']
+    list_display = ['case', 'suspect', 'judge', 'status', 'trial_date', 'trial_started_at', 'trial_ended_at']
+    list_filter = ['status', 'trial_started_at']
     search_fields = ['case__case_number', 'suspect__person__username', 'judge__username']
     ordering = ['-trial_started_at']
+    readonly_fields = ['trial_started_at', 'trial_ended_at']
 
 
 @admin.register(Verdict)
