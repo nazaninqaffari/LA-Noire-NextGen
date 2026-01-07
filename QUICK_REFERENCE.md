@@ -536,4 +536,79 @@ cases.update(status='cadet_review')
 
 - [README.md](README.md) - Project overview
 - [CONTRIBUTING.md](CONTRIBUTING.md) - Contribution guidelines
-- [doc/](doc/) - Detailed documentation
+- [doc/](doc/) - Detailed documentation  - [11-Interrogation-System.md](doc/11-Interrogation-System.md) - Interrogation workflow
+  - [12-Trial-System.md](doc/12-Trial-System.md) - Trial and court proceedings
+
+---
+
+## Trial System Quick Reference
+
+### Submit Case to Trial (Captain/Chief)
+```bash
+# Captain submits guilty suspect
+POST /api/v1/trial/trials/
+{
+  "case": 1,
+  "suspect": 2,
+  "judge": 3,
+  "submitted_by_captain": 4,
+  "captain_notes": "پرونده کامل ارسال می‌شود"
+}
+```
+
+### Judge Reviews Complete Case File
+```bash
+# Get comprehensive case summary
+GET /api/v1/trial/trials/{id}/case_summary/
+
+# Returns: case, suspect, all police members, 
+# all interrogations, all evidence, captain/chief notes
+```
+
+### Judge Delivers Verdict
+```bash
+# Guilty verdict with punishment
+POST /api/v1/trial/trials/{id}/deliver_verdict/
+{
+  "decision": "guilty",
+  "reasoning": "شواهد کافی برای اثبات جرم وجود دارد و متهم مجرم است",
+  "punishment_title": "پنج سال حبس",
+  "punishment_description": "محکومیت به پنج سال حبس در زندان"
+}
+
+# Innocent verdict
+POST /api/v1/trial/trials/{id}/deliver_verdict/
+{
+  "decision": "innocent",
+  "reasoning": "شواهد کافی برای اثبات جرم وجود ندارد"
+}
+```
+
+### Bail Payment (Level 2-3 Crimes Only)
+```bash
+# 1. Suspect requests bail
+POST /api/v1/trial/bail-payments/
+{
+  "suspect": 2,
+  "amount": 50000000
+}
+
+# 2. Sergeant approves
+POST /api/v1/trial/bail-payments/{id}/approve/
+
+# 3. Suspect pays
+POST /api/v1/trial/bail-payments/{id}/pay/
+```
+
+### Trial Status Flow
+```
+pending → in_progress → completed
+```
+
+### Key Validations
+- Reasoning: Min 30 characters
+- Punishment title: Min 5 characters
+- Punishment description: Min 20 characters
+- Bail amount: 1M - 10B Rials
+- Bail only for crime levels 2-3
+- Cannot deliver verdict twice
