@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from django.contrib.auth import authenticate
 from .models import User, Role
 
 
@@ -44,9 +45,10 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = [
-            'username', 'email', 'phone_number', 'national_id',
+            'id', 'username', 'email', 'phone_number', 'national_id',
             'first_name', 'last_name', 'password', 'password_confirm'
         ]
+        read_only_fields = ['id']
     
     def validate(self, data):
         """Validate that passwords match."""
@@ -68,3 +70,26 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         user.roles.add(base_role)
         
         return user
+
+
+class LoginSerializer(serializers.Serializer):
+    """Serializer for user login."""
+    username = serializers.CharField()
+    password = serializers.CharField(write_only=True, style={'input_type': 'password'})
+    
+    def validate(self, data):
+        """Authenticate user credentials."""
+        username = data.get('username')
+        password = data.get('password')
+        
+        if username and password:
+            user = authenticate(username=username, password=password)
+            if not user:
+                raise serializers.ValidationError('Unable to log in with provided credentials.')
+            if not user.is_active:
+                raise serializers.ValidationError('User account is disabled.')
+            data['user'] = user
+        else:
+            raise serializers.ValidationError('Must include "username" and "password".')
+        
+        return data

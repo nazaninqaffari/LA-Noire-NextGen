@@ -1,0 +1,22 @@
+# Bandit security linting configuration
+
+[bandit]
+# Exclude specific directories
+exclude_dirs = [
+    '/tests/',
+    '/venv/',
+    '/.venv/',
+    '/migrations/',
+]
+
+# Test IDs to skip
+skips = [
+    'B101',  # Use of assert detected (used in tests)
+    'B601',  # Paramiko usage is okay
+]
+
+# Confidence level (LOW, MEDIUM, HIGH)
+confidence = MEDIUM
+
+# Severity level (LOW, MEDIUM, HIGH)
+level = LOW
