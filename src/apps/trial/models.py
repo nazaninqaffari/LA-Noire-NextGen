@@ -11,7 +11,18 @@ class Trial(models.Model):
     """
     Trial record for a suspect.
     Judge reviews complete case file, evidence, and all involved personnel.
+    Persian: دادگاه و محاکمه
     """
+    STATUS_PENDING = 'pending'
+    STATUS_IN_PROGRESS = 'in_progress'
+    STATUS_COMPLETED = 'completed'
+    
+    STATUS_CHOICES = [
+        (STATUS_PENDING, 'در انتظار'),
+        (STATUS_IN_PROGRESS, 'در حال بررسی'),
+        (STATUS_COMPLETED, 'تکمیل شده'),
+    ]
+    
     case = models.ForeignKey(
         Case,
         on_delete=models.CASCADE,
@@ -29,6 +40,12 @@ class Trial(models.Model):
         on_delete=models.PROTECT,
         related_name='presided_trials',
         help_text="Judge presiding over trial"
+    )
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default=STATUS_PENDING,
+        help_text="Trial status"
     )
     # Captain/Chief decision leading to trial
     submitted_by_captain = models.ForeignKey(
@@ -55,6 +72,11 @@ class Trial(models.Model):
         blank=True,
         help_text="Chief's notes and reasoning (if critical case)"
     )
+    trial_date = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="Scheduled trial date"
+    )
     trial_started_at = models.DateTimeField(auto_now_add=True)
     trial_ended_at = models.DateTimeField(null=True, blank=True)
 
@@ -65,6 +87,33 @@ class Trial(models.Model):
 
     def __str__(self):
         return f"Trial: {self.suspect.person.get_full_name()} - {self.case.case_number}"
+    
+    def get_involved_police_members(self):
+        """Get all police members involved in the case."""
+        members = set()
+        
+        # Add case creator
+        if self.case.created_by:
+            members.add(self.case.created_by)
+        
+        # Add detective and sergeant from suspect identification
+        if self.suspect.identified_by_detective:
+            members.add(self.suspect.identified_by_detective)
+        if self.suspect.approved_by_sergeant:
+            members.add(self.suspect.approved_by_sergeant)
+        
+        # Add interrogation participants
+        for interrogation in self.suspect.interrogations.all():
+            members.add(interrogation.detective)
+            members.add(interrogation.sergeant)
+        
+        # Add captain and chief if present
+        if self.submitted_by_captain:
+            members.add(self.submitted_by_captain)
+        if self.submitted_by_chief:
+            members.add(self.submitted_by_chief)
+        
+        return list(members)
 
 
 class Verdict(models.Model):
