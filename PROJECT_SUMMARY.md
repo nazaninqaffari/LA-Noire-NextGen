@@ -36,8 +36,19 @@ LA Noire NextGen is a comprehensive police case management system inspired by th
 - **Evidence Connections**: Red lines between related evidence with notes
 - **Suspect Tracking**: 
   - Status progression (under_pursuit → intensive_pursuit → arrested/cleared)
-  - Danger score calculation: `days_at_large × crime_level`
+  - Danger score calculation: `days_at_large × (4 - crime_level)`
   - Reward amount: `danger_score × 20,000,000` Rials
+- **Suspect Status System** (وضعیت مظنونین):
+  - **Automatic Status Updates**: Suspects automatically transition to intensive_pursuit after 30 days
+  - **Public Wanted List**: Publicly accessible endpoint showing intensive pursuit suspects
+  - **Danger Score Formula**: Days at Large × (4 - Crime Level)
+    - Critical (level 0): ×4 weight
+    - Major (level 1): ×3 weight
+    - Medium (level 2): ×2 weight
+    - Minor (level 3): ×1 weight
+  - **Reward Calculation**: Danger Score × 20,000,000 Rials
+  - **Priority Ranking**: Ordered by danger score (highest first)
+  - **No Authentication**: Public access for community awareness
 - **Interrogation System**: 
   - Dual guilt ratings (detective + sergeant, 1-10 scale)
   - Captain decision workflow (guilty/innocent/needs_investigation)
@@ -133,7 +144,12 @@ LA-Noire-NextGen/
 │   ├── 02-User-Roles.md              # Role system details
 │   ├── 03-Case-Workflows.md          # Case formation workflows
 │   ├── 04-Evidence-Management.md     # Evidence types and handling
-│   └── 07-API-Reference.md           # Complete API documentation
+│   ├── 05-Investigation-Process.md   # Investigation workflow
+│   ├── 06-Trial-System.md            # Trial and court system
+│   ├── 07-API-Reference.md           # Complete API documentation
+│   ├── 11-Interrogation-System.md    # Interrogation workflow
+│   ├── 12-Trial-System.md            # Trial proceedings (محاکمه)
+│   └── 13-Suspect-Status-System.md   # Suspect status tracking and intensive pursuit (وضعیت مظنونین)
 ├── README.md                         # Project documentation (260 lines)
 ├── CONTRIBUTING.md                   # Contribution guidelines (380 lines)
 ├── QUICK_REFERENCE.md                # Quick command reference (420 lines)
@@ -157,10 +173,10 @@ LA-Noire-NextGen/
 - **Ordering**: Multiple ordering options per endpoint
 
 ### Documentation
-- **Total Lines**: ~6,500+ lines of documentation
-- **Markdown Files**: 10 comprehensive documents (README, CONTRIBUTING, QUICK_REFERENCE, PROJECT_SUMMARY, 7 doc/ files)
+- **Total Lines**: ~9,000+ lines of documentation
+- **Markdown Files**: 13 comprehensive documents (README, CONTRIBUTING, QUICK_REFERENCE, PROJECT_SUMMARY, 9 doc/ files)
 - **Code Comments**: All classes, methods, and complex logic commented
-- **API Examples**: 80+ request/response examples
+- **API Examples**: 100+ request/response examples
 
 ## Sample Data
 
