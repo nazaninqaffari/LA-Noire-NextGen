@@ -4,6 +4,8 @@ Investigation models - Detective boards, suspects, interrogations, and rewards.
 from django.db import models
 from django.conf import settings
 from django.utils import timezone
+from django.contrib.contenttypes.models import ContentType
+from django.contrib.contenttypes.fields import GenericForeignKey
 from datetime import timedelta
 from apps.cases.models import Case
 
@@ -369,3 +371,253 @@ class TipOff(models.Model):
         import uuid
         self.redemption_code = f"REWARD-{uuid.uuid4().hex[:10].upper()}"
         return self.redemption_code
+
+
+class SuspectSubmission(models.Model):
+    """
+    Detective's formal submission of identified suspects to sergeant for approval.
+    Represents the case resolution workflow where detective proposes main suspects
+    and sergeant reviews evidence before approving arrests.
+    
+    Persian: ارسال مظنونین برای تایید گروهبان
+    """
+    # Submission status
+    STATUS_PENDING = 'pending'  # Awaiting sergeant review
+    STATUS_APPROVED = 'approved'  # Sergeant approved arrests
+    STATUS_REJECTED = 'rejected'  # Sergeant rejected reasoning
+    
+    STATUS_CHOICES = [
+        (STATUS_PENDING, 'Pending Review'),
+        (STATUS_APPROVED, 'Approved'),
+        (STATUS_REJECTED, 'Rejected'),
+    ]
+    
+    case = models.ForeignKey(
+        Case,
+        on_delete=models.CASCADE,
+        related_name='suspect_submissions',
+        help_text="Case being resolved"
+    )
+    detective = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='suspect_submissions',
+        help_text="Detective submitting suspects"
+    )
+    suspects = models.ManyToManyField(
+        Suspect,
+        related_name='submissions',
+        help_text="Main suspects identified by detective"
+    )
+    reasoning = models.TextField(
+        help_text="Detective's reasoning for identifying these suspects"
+    )
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default=STATUS_PENDING,
+        help_text="Current submission status"
+    )
+    # Sergeant review
+    reviewed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='reviewed_submissions',
+        help_text="Sergeant who reviewed this submission"
+    )
+    review_notes = models.TextField(
+        blank=True,
+        help_text="Sergeant's review notes (approval or objection)"
+    )
+    # Timestamps
+    submitted_at = models.DateTimeField(auto_now_add=True)
+    reviewed_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        verbose_name = 'Suspect Submission'
+        verbose_name_plural = 'Suspect Submissions'
+        ordering = ['-submitted_at']
+
+    def __str__(self):
+        return f"Submission: {self.case.case_number} by {self.detective.get_full_name()}"
+
+
+class Notification(models.Model):
+    """
+    System notification for users about case updates, approvals, new evidence, etc.
+    Supports generic foreign keys to reference any related object.
+    
+    Persian: اعلان‌های سیستم
+    """
+    # Notification types
+    TYPE_NEW_EVIDENCE = 'new_evidence'  # New evidence added to case
+    TYPE_SUSPECT_SUBMISSION = 'suspect_submission'  # Detective submitted suspects
+    TYPE_SUBMISSION_APPROVED = 'submission_approved'  # Sergeant approved submission
+    TYPE_SUBMISSION_REJECTED = 'submission_rejected'  # Sergeant rejected submission
+    TYPE_CASE_ASSIGNED = 'case_assigned'  # Case assigned to detective
+    TYPE_CASE_STATUS_CHANGED = 'case_status_changed'  # Case status updated
+    TYPE_TIPOFF_SUBMITTED = 'tipoff_submitted'  # New tip received
+    TYPE_REWARD_AVAILABLE = 'reward_available'  # Reward ready for redemption
+    TYPE_GENERAL = 'general'  # General notification
+    
+    TYPE_CHOICES = [
+        (TYPE_NEW_EVIDENCE, 'New Evidence'),
+        (TYPE_SUSPECT_SUBMISSION, 'Suspect Submission'),
+        (TYPE_SUBMISSION_APPROVED, 'Submission Approved'),
+        (TYPE_SUBMISSION_REJECTED, 'Submission Rejected'),
+        (TYPE_CASE_ASSIGNED, 'Case Assigned'),
+        (TYPE_CASE_STATUS_CHANGED, 'Case Status Changed'),
+        (TYPE_TIPOFF_SUBMITTED, 'Tip-Off Submitted'),
+        (TYPE_REWARD_AVAILABLE, 'Reward Available'),
+        (TYPE_GENERAL, 'General'),
+    ]
+    
+    recipient = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='notifications',
+        help_text="User receiving this notification"
+    )
+    notification_type = models.CharField(
+        max_length=30,
+        choices=TYPE_CHOICES,
+        help_text="Type of notification"
+    )
+    title = models.CharField(
+        max_length=200,
+        help_text="Notification title"
+    )
+    message = models.TextField(
+        help_text="Notification message body"
+    )
+    # Related case (most notifications are case-related)
+    related_case = models.ForeignKey(
+        Case,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name='notifications',
+        help_text="Case this notification relates to"
+    )
+    # Generic foreign key for any other related object
+    content_type = models.ForeignKey(
+        ContentType,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        help_text="Type of related object"
+    )
+    object_id = models.PositiveIntegerField(
+        null=True,
+        blank=True,
+        help_text="ID of related object"
+    )
+    related_object = GenericForeignKey('content_type', 'object_id')
+    # Read status
+    is_read = models.BooleanField(
+        default=False,
+        help_text="Whether notification has been read"
+    )
+    read_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="When notification was read"
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'Notification'
+        verbose_name_plural = 'Notifications'
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['recipient', '-created_at']),
+            models.Index(fields=['recipient', 'is_read']),
+        ]
+
+    def __str__(self):
+        return f"{self.notification_type} for {self.recipient.username}"
+
+    def mark_as_read(self):
+        """Mark notification as read."""
+        if not self.is_read:
+            self.is_read = True
+            self.read_at = timezone.now()
+            self.save(update_fields=['is_read', 'read_at'])
+
+    @classmethod
+    def create_new_evidence_notification(cls, evidence, case, detective):
+        """
+        Helper to create notification when new evidence is added during investigation.
+        
+        Args:
+            evidence: Evidence object (any evidence model)
+            case: Case object
+            detective: Detective user to notify
+        """
+        evidence_type = evidence.__class__.__name__
+        return cls.objects.create(
+            recipient=detective,
+            notification_type=cls.TYPE_NEW_EVIDENCE,
+            title=f"شواهد جدید در پرونده {case.case_number}",
+            message=f"شواهد جدید از نوع {evidence_type} به پرونده اضافه شد.",
+            related_case=case,
+            content_type=ContentType.objects.get_for_model(evidence),
+            object_id=evidence.id
+        )
+
+    @classmethod
+    def create_submission_notification(cls, submission, sergeant):
+        """
+        Notify sergeant about new suspect submission from detective.
+        
+        Args:
+            submission: SuspectSubmission object
+            sergeant: Sergeant user to notify
+        """
+        return cls.objects.create(
+            recipient=sergeant,
+            notification_type=cls.TYPE_SUSPECT_SUBMISSION,
+            title=f"ارسال مظنونین در پرونده {submission.case.case_number}",
+            message=f"کارآگاه {submission.detective.get_full_name()} مظنونین اصلی را شناسایی کرده است.",
+            related_case=submission.case,
+            content_type=ContentType.objects.get_for_model(submission),
+            object_id=submission.id
+        )
+
+    @classmethod
+    def create_approval_notification(cls, submission):
+        """
+        Notify detective about sergeant's approval of suspect submission.
+        
+        Args:
+            submission: Approved SuspectSubmission object
+        """
+        return cls.objects.create(
+            recipient=submission.detective,
+            notification_type=cls.TYPE_SUBMISSION_APPROVED,
+            title=f"تایید دستگیری در پرونده {submission.case.case_number}",
+            message=f"گروهبان تایید کرد. دستگیری مظنونین شروع شده است.",
+            related_case=submission.case,
+            content_type=ContentType.objects.get_for_model(submission),
+            object_id=submission.id
+        )
+
+    @classmethod
+    def create_rejection_notification(cls, submission):
+        """
+        Notify detective about sergeant's rejection of suspect submission.
+        
+        Args:
+            submission: Rejected SuspectSubmission object
+        """
+        return cls.objects.create(
+            recipient=submission.detective,
+            notification_type=cls.TYPE_SUBMISSION_REJECTED,
+            title=f"عدم تایید در پرونده {submission.case.case_number}",
+            message=f"گروهبان با استدلال شما مخالفت کرد. پرونده همچنان باز است.",
+            related_case=submission.case,
+            content_type=ContentType.objects.get_for_model(submission),
+            object_id=submission.id
+        )

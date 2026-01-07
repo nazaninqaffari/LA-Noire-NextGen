@@ -1,7 +1,7 @@
 from django.contrib import admin
 from .models import (
     DetectiveBoard, BoardItem, EvidenceConnection,
-    Suspect, Interrogation, TipOff
+    Suspect, Interrogation, TipOff, SuspectSubmission, Notification
 )
 
 
@@ -52,3 +52,23 @@ class TipOffAdmin(admin.ModelAdmin):
     list_filter = ['status']
     search_fields = ['case__case_number', 'submitted_by__username', 'redemption_code']
     ordering = ['-submitted_at']
+
+
+@admin.register(SuspectSubmission)
+class SuspectSubmissionAdmin(admin.ModelAdmin):
+    """Admin interface for Suspect Submissions."""
+    list_display = ['case', 'detective', 'status', 'reviewed_by', 'submitted_at']
+    list_filter = ['status']
+    search_fields = ['case__case_number', 'detective__username']
+    ordering = ['-submitted_at']
+    filter_horizontal = ['suspects']
+
+
+@admin.register(Notification)
+class NotificationAdmin(admin.ModelAdmin):
+    """Admin interface for Notifications."""
+    list_display = ['recipient', 'notification_type', 'title', 'is_read', 'created_at']
+    list_filter = ['notification_type', 'is_read', 'created_at']
+    search_fields = ['recipient__username', 'title', 'message']
+    ordering = ['-created_at']
+    readonly_fields = ['created_at', 'read_at']
