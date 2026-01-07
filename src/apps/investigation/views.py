@@ -23,7 +23,8 @@ from .serializers import (
     SuspectSerializer, IntensivePursuitSuspectSerializer, InterrogationSerializer, TipOffSerializer,
     SuspectSubmissionSerializer, SuspectSubmissionReviewSerializer,
     NotificationSerializer, NotificationMarkReadSerializer,
-    InterrogationSubmitSerializer, CaptainDecisionSerializer, PoliceChiefDecisionSerializer
+    InterrogationSubmitSerializer, CaptainDecisionSerializer, PoliceChiefDecisionSerializer,
+    RewardVerificationSerializer
 )
 
 
@@ -533,18 +534,453 @@ class PoliceChiefDecisionViewSet(viewsets.ModelViewSet):
 
 class TipOffViewSet(viewsets.ModelViewSet):
     """
-    ViewSet for Public Tip-Offs about cases.
-    Goes through officer and detective review process.
+    ViewSet for Public Tip-Offs about cases with complete review workflow.
     
-    Persian: اخبار عمومی درباره پرونده‌ها
+    Workflow:
+    1. Regular user submits tip (pending status)
+    2. Officer reviews tip (/officer_review/):
+       - Approve → forwards to detective (officer_approved)
+       - Reject → tip rejected (officer_rejected)
+    3. Detective reviews approved tips (/detective_review/):
+       - Approve → issues reward code (approved)
+       - Reject → tip not useful (detective_rejected)
+    4. User receives reward code and can redeem at police station
+    5. Any police officer can verify and process redemption (/verify_reward/, /redeem_reward/)
+    
+    Persian: سیستم پاداش برای اطلاعات عمومی درباره پرونده‌ها
     """
-    queryset = TipOff.objects.select_related('case', 'suspect', 'submitted_by').all()
+    queryset = TipOff.objects.select_related(
+        'case', 'suspect', 'submitted_by',
+        'reviewed_by_officer', 'reviewed_by_detective', 'redeemed_by_officer'
+    ).all()
     serializer_class = TipOffSerializer
     permission_classes = [IsAuthenticated]
-    filter_backends = [DjangoFilterBackend, SearchFilter]
+    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
     filterset_fields = ['case', 'suspect', 'status', 'submitted_by']
     search_fields = ['redemption_code', 'information']
     ordering = ['-submitted_at']
+    
+    def get_queryset(self):
+        """
+        Filter tips based on user role:
+        - Regular users see their own tips
+        - Officers see pending tips for review (list only)
+        - Detectives see officer-approved tips (list only)
+        - Police ranks can see all for verification
+        - For detail views/actions, don't filter (permissions checked in action)
+        """
+        user = self.request.user
+        queryset = self.queryset
+        
+        # Don't filter for detail views/actions - let action check permissions
+        if self.action in ['retrieve', 'update', 'partial_update', 'destroy', 
+                          'officer_review', 'detective_review']:
+            # For regular users, still only show their own tips
+            if not any(user_has_role(user, rank) for rank in 
+                      ['Police Officer', 'Detective', 'Sergeant', 'Lieutenant', 'Captain', 'Chief']):
+                return queryset.filter(submitted_by=user)
+            return queryset
+        
+        # For list views, filter by role
+        # Police Officers see pending tips
+        if user_has_role(user, 'Police Officer') and not user_has_role(user, 'Detective'):
+            return queryset.filter(status=TipOff.STATUS_PENDING)
+        
+        # Detectives see officer-approved tips
+        elif user_has_role(user, 'Detective'):
+            return queryset.filter(
+                Q(status=TipOff.STATUS_OFFICER_APPROVED) |
+                Q(reviewed_by_detective=user)
+            )
+        
+        # Police ranks (for verification) see all
+        elif any(user_has_role(user, rank) for rank in ['Sergeant', 'Lieutenant', 'Captain', 'Chief']):
+            return queryset
+        
+        # Regular users see only their own tips
+        else:
+            return queryset.filter(submitted_by=user)
+    
+    def perform_create(self, serializer):
+        """Set submitted_by to current user when creating a tip."""
+        serializer.save(submitted_by=self.request.user)
+    
+    @extend_schema(
+        summary="Officer reviews tip (initial review)",
+        description="""
+        Officer performs initial review of citizen-submitted tip.
+        
+        **Persian**: افسر اطلاعات را بررسی اولیه می‌کند
+        
+        **Workflow**:
+        - If information is completely invalid → reject with reason
+        - Otherwise → approve and forward to detective
+        
+        **Permission**: Only Officers (not detectives) can review
+        
+        **Status Transitions**:
+        - pending → officer_rejected (if rejected)
+        - pending → officer_approved (if approved, forwards to detective)
+        """,
+        request={
+            'application/json': {
+                'type': 'object',
+                'properties': {
+                    'approved': {'type': 'boolean', 'description': 'True to approve, False to reject'},
+                    'rejection_reason': {'type': 'string', 'description': 'Required if approved=False'}
+                },
+                'required': ['approved']
+            }
+        },
+        responses={200: TipOffSerializer},
+        examples=[
+            OpenApiExample(
+                'Approve tip',
+                value={'approved': True},
+                request_only=True
+            ),
+            OpenApiExample(
+                'Reject tip',
+                value={'approved': False, 'rejection_reason': 'اطلاعات کاملا نامعتبر و غیرقابل تایید است'},
+                request_only=True
+            )
+        ]
+    )
+    @action(detail=True, methods=['post'])
+    def officer_review(self, request, pk=None):
+        """Officer reviews and approves/rejects tip."""
+        tip = self.get_object()
+        
+        # Only police officers (not higher ranks) can review
+        if not user_has_role(request.user, 'Police Officer'):
+            return Response(
+                {'error': 'Only police officers can perform initial review'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        # Can only review pending tips
+        if tip.status != TipOff.STATUS_PENDING:
+            return Response(
+                {'error': f'Cannot review tip with status: {tip.status}'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        approved = request.data.get('approved')
+        if approved is None:
+            return Response(
+                {'error': 'approved field is required'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Convert to boolean explicitly (handle string 'false', 'true')
+        if isinstance(approved, str):
+            approved = approved.lower() not in ['false', '0', 'no', '']
+        
+        if approved:
+            # Approve and forward to detective
+            tip.approve_by_officer(request.user)
+            message = 'Tip approved and forwarded to detective'
+        else:
+            # Reject with reason
+            rejection_reason = request.data.get('rejection_reason', '')
+            if not rejection_reason:
+                return Response(
+                    {'error': 'rejection_reason is required when rejecting'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            tip.reject_by_officer(request.user, rejection_reason)
+            message = 'Tip rejected as invalid'
+        
+        serializer = self.get_serializer(tip)
+        return Response({
+            'message': message,
+            'tip': serializer.data
+        })
+    
+    @extend_schema(
+        summary="Detective reviews officer-approved tip",
+        description="""
+        Detective evaluates if officer-approved tip is actually useful for the case.
+        
+        **Persian**: کارآگاه مفید بودن اطلاعات را تایید می‌کند
+        
+        **Workflow**:
+        - If information is useful → approve and issue reward code
+        - If not useful → reject with reason
+        
+        **Permission**: Only Detectives assigned to the case
+        
+        **Status Transitions**:
+        - officer_approved → approved (if useful, generates reward code)
+        - officer_approved → detective_rejected (if not useful)
+        
+        **Reward Code**: Unique code generated for approved tips, user receives notification
+        """,
+        request={
+            'application/json': {
+                'type': 'object',
+                'properties': {
+                    'approved': {'type': 'boolean', 'description': 'True if tip is useful'},
+                    'rejection_reason': {'type': 'string', 'description': 'Required if approved=False'}
+                },
+                'required': ['approved']
+            }
+        },
+        responses={200: TipOffSerializer},
+        examples=[
+            OpenApiExample(
+                'Approve tip and issue reward',
+                value={'approved': True},
+                request_only=True
+            ),
+            OpenApiExample(
+                'Reject tip as not useful',
+                value={'approved': False, 'rejection_reason': 'این اطلاعات برای پرونده مفید نیست'},
+                request_only=True
+            )
+        ]
+    )
+    @action(detail=True, methods=['post'])
+    def detective_review(self, request, pk=None):
+        """Detective confirms if tip is useful."""
+        tip = self.get_object()
+        
+        # Only detectives can review
+        if not user_has_role(request.user, 'Detective'):
+            return Response(
+                {'error': 'Only detectives can perform this review'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        # Can only review officer-approved tips
+        if tip.status != TipOff.STATUS_OFFICER_APPROVED:
+            return Response(
+                {'error': f'Can only review officer-approved tips, current status: {tip.status}'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Check if detective is assigned to this case
+        if tip.case.assigned_detective != request.user:
+            return Response(
+                {'error': 'Only the assigned detective can review this tip'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        approved = request.data.get('approved')
+        if approved is None:
+            return Response(
+                {'error': 'approved field is required'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Convert to boolean explicitly (handle string 'false', 'true')
+        if isinstance(approved, str):
+            approved = approved.lower() not in ['false', '0', 'no', '']
+        
+        if approved:
+            # Approve and issue reward code
+            tip.approve_by_detective(request.user)
+            message = f'Tip approved. Reward code issued: {tip.redemption_code}'
+        else:
+            # Reject as not useful
+            rejection_reason = request.data.get('rejection_reason', '')
+            if not rejection_reason:
+                return Response(
+                    {'error': 'rejection_reason is required when rejecting'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            tip.reject_by_detective(request.user, rejection_reason)
+            message = 'Tip rejected as not useful'
+        
+        serializer = self.get_serializer(tip)
+        return Response({
+            'message': message,
+            'tip': serializer.data
+        })
+    
+    @extend_schema(
+        summary="Verify reward code and national ID",
+        description="""
+        Police officer verifies reward code and national ID before payment.
+        
+        **Persian**: بررسی کد پاداش و کد ملی قبل از پرداخت
+        
+        **Purpose**: Allows any police officer to verify reward eligibility at police station
+        
+        **Permission**: Any police rank (Officer to Chief)
+        
+        **Returns**: User information and reward amount if valid
+        """,
+        request=RewardVerificationSerializer,
+        responses={
+            200: {
+                'type': 'object',
+                'properties': {
+                    'valid': {'type': 'boolean'},
+                    'tip_id': {'type': 'integer'},
+                    'user_name': {'type': 'string'},
+                    'user_national_id': {'type': 'string'},
+                    'case_number': {'type': 'string'},
+                    'reward_amount': {'type': 'number'},
+                    'status': {'type': 'string'},
+                    'approved_at': {'type': 'string', 'format': 'date-time'}
+                }
+            }
+        },
+        examples=[
+            OpenApiExample(
+                'Verify reward code',
+                value={
+                    'national_id': '1234567890',
+                    'redemption_code': 'REWARD-ABC123XYZ'
+                },
+                request_only=True
+            ),
+            OpenApiExample(
+                'Valid reward response',
+                value={
+                    'valid': True,
+                    'tip_id': 42,
+                    'user_name': 'علی رضایی',
+                    'user_national_id': '1234567890',
+                    'case_number': 'CR-2024-001',
+                    'reward_amount': 5000000,
+                    'status': 'approved',
+                    'approved_at': '2024-01-01T10:00:00Z'
+                },
+                response_only=True
+            )
+        ]
+    )
+    @action(detail=False, methods=['post'])
+    def verify_reward(self, request):
+        """Verify reward code and national ID match."""
+        # Only police can verify
+        if not any(user_has_role(request.user, rank) for rank in 
+                   ['Police Officer', 'Detective', 'Sergeant', 'Lieutenant', 'Captain', 'Chief']):
+            return Response(
+                {'error': 'Only police personnel can verify rewards'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        serializer = RewardVerificationSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        
+        national_id = serializer.validated_data['national_id']
+        redemption_code = serializer.validated_data['redemption_code']
+        
+        try:
+            tip = TipOff.objects.select_related('submitted_by', 'case').get(
+                redemption_code=redemption_code,
+                submitted_by__national_id=national_id
+            )
+            
+            # Check if already redeemed
+            if tip.status == TipOff.STATUS_REDEEMED:
+                return Response({
+                    'valid': False,
+                    'error': 'Reward already redeemed',
+                    'redeemed_at': tip.redeemed_at
+                })
+            
+            # Check if approved
+            if tip.status != TipOff.STATUS_APPROVED:
+                return Response({
+                    'valid': False,
+                    'error': f'Tip not approved for reward, status: {tip.status}'
+                })
+            
+            # Valid reward
+            return Response({
+                'valid': True,
+                'tip_id': tip.id,
+                'user_name': tip.submitted_by.get_full_name(),
+                'user_national_id': tip.submitted_by.national_id,
+                'case_number': tip.case.case_number,
+                'reward_amount': float(tip.reward_amount),
+                'status': tip.status,
+                'approved_at': tip.approved_at
+            })
+            
+        except TipOff.DoesNotExist:
+            return Response({
+                'valid': False,
+                'error': 'Invalid redemption code or national ID does not match'
+            })
+    
+    @extend_schema(
+        summary="Process reward redemption",
+        description="""
+        Police officer processes reward payment at police station.
+        
+        **Persian**: پرداخت پاداش به شهروند
+        
+        **Workflow**:
+        1. Officer verifies code and national ID (/verify_reward/)
+        2. Officer processes payment (/redeem_reward/)
+        3. Status changes to redeemed
+        
+        **Permission**: Any police rank
+        
+        **Status Transition**: approved → redeemed (one-time only)
+        """,
+        request=RewardVerificationSerializer,
+        responses={200: TipOffSerializer},
+        examples=[
+            OpenApiExample(
+                'Redeem reward',
+                value={
+                    'national_id': '1234567890',
+                    'redemption_code': 'REWARD-ABC123XYZ'
+                },
+                request_only=True
+            )
+        ]
+    )
+    @action(detail=False, methods=['post'])
+    def redeem_reward(self, request):
+        """Process reward redemption."""
+        # Only police can redeem
+        if not any(user_has_role(request.user, rank) for rank in 
+                   ['Police Officer', 'Detective', 'Sergeant', 'Lieutenant', 'Captain', 'Chief']):
+            return Response(
+                {'error': 'Only police personnel can process rewards'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        serializer = RewardVerificationSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        
+        national_id = serializer.validated_data['national_id']
+        redemption_code = serializer.validated_data['redemption_code']
+        
+        try:
+            tip = TipOff.objects.get(
+                redemption_code=redemption_code,
+                submitted_by__national_id=national_id
+            )
+            
+            # Process redemption
+            tip.redeem_reward(request.user)
+            
+            serializer = self.get_serializer(tip)
+            return Response({
+                'message': f'Reward of {tip.reward_amount} Rials successfully redeemed',
+                'tip': serializer.data
+            })
+            
+        except TipOff.DoesNotExist:
+            return Response(
+                {'error': 'Invalid redemption code or national ID does not match'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        except ValueError as e:
+            return Response(
+                {'error': str(e)},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
 
 class SuspectSubmissionViewSet(viewsets.ModelViewSet):

@@ -481,6 +481,16 @@ class TipOff(models.Model):
         related_name='reviewed_tipoffs_detective',
         help_text="Detective who reviewed tip"
     )
+    officer_rejection_reason = models.TextField(
+        null=True,
+        blank=True,
+        help_text="Reason for officer rejection"
+    )
+    detective_rejection_reason = models.TextField(
+        null=True,
+        blank=True,
+        help_text="Reason for detective rejection"
+    )
     # Reward information
     redemption_code = models.CharField(
         max_length=20,
@@ -492,12 +502,21 @@ class TipOff(models.Model):
     reward_amount = models.DecimalField(
         max_digits=15,
         decimal_places=0,
+        default=5000000,
+        help_text="Reward amount in Rials (default 5M)"
+    )
+    redeemed_by_officer = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        help_text="Reward amount in Rials"
+        related_name='redeemed_tipoffs',
+        help_text="Officer who processed reward redemption"
     )
     # Timestamps
     submitted_at = models.DateTimeField(auto_now_add=True)
+    officer_reviewed_at = models.DateTimeField(null=True, blank=True)
+    detective_reviewed_at = models.DateTimeField(null=True, blank=True)
     approved_at = models.DateTimeField(null=True, blank=True)
     redeemed_at = models.DateTimeField(null=True, blank=True)
 
@@ -514,6 +533,57 @@ class TipOff(models.Model):
         import uuid
         self.redemption_code = f"REWARD-{uuid.uuid4().hex[:10].upper()}"
         return self.redemption_code
+    
+    def approve_by_officer(self, officer):
+        """Officer approves tip and forwards to detective."""
+        self.status = self.STATUS_OFFICER_APPROVED
+        self.reviewed_by_officer = officer
+        self.officer_reviewed_at = timezone.now()
+        self.save(update_fields=['status', 'reviewed_by_officer', 'officer_reviewed_at'])
+    
+    def reject_by_officer(self, officer, reason):
+        """Officer rejects tip as invalid."""
+        self.status = self.STATUS_OFFICER_REJECTED
+        self.reviewed_by_officer = officer
+        self.officer_rejection_reason = reason
+        self.officer_reviewed_at = timezone.now()
+        self.save(update_fields=['status', 'reviewed_by_officer', 'officer_rejection_reason', 'officer_reviewed_at'])
+    
+    def approve_by_detective(self, detective):
+        """Detective confirms tip is useful and issues reward."""
+        self.status = self.STATUS_APPROVED
+        self.reviewed_by_detective = detective
+        self.detective_reviewed_at = timezone.now()
+        self.approved_at = timezone.now()
+        self.generate_redemption_code()
+        self.save(update_fields=[
+            'status', 'reviewed_by_detective', 'detective_reviewed_at',
+            'approved_at', 'redemption_code'
+        ])
+    
+    def reject_by_detective(self, detective, reason):
+        """Detective determines tip is not useful."""
+        self.status = self.STATUS_DETECTIVE_REJECTED
+        self.reviewed_by_detective = detective
+        self.detective_rejection_reason = reason
+        self.detective_reviewed_at = timezone.now()
+        self.save(update_fields=[
+            'status', 'reviewed_by_detective', 'detective_rejection_reason',
+            'detective_reviewed_at'
+        ])
+    
+    def redeem_reward(self, officer):
+        """Process reward redemption at police station."""
+        # Check if already redeemed first
+        if self.redeemed_at:
+            raise ValueError("Reward already redeemed")
+        if self.status != self.STATUS_APPROVED:
+            raise ValueError("Only approved tips can be redeemed")
+        
+        self.status = self.STATUS_REDEEMED
+        self.redeemed_by_officer = officer
+        self.redeemed_at = timezone.now()
+        self.save(update_fields=['status', 'redeemed_by_officer', 'redeemed_at'])
 
 
 class SuspectSubmission(models.Model):

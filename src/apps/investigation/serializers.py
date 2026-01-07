@@ -236,16 +236,43 @@ class PoliceChiefDecisionSerializer(serializers.ModelSerializer):
 
 
 class TipOffSerializer(serializers.ModelSerializer):
-    """Serializer for Tip-Offs."""
+    """
+    Serializer for Tip-Offs with complete review workflow.
+    Tracks officer review → detective confirmation → reward redemption.
+    """
+    submitted_by_name = serializers.CharField(source='submitted_by.get_full_name', read_only=True)
+    submitted_by_national_id = serializers.CharField(source='submitted_by.national_id', read_only=True)
+    case_number = serializers.CharField(source='case.case_number', read_only=True)
+    case_title = serializers.CharField(source='case.title', read_only=True)
+    suspect_name = serializers.CharField(source='suspect.person.get_full_name', read_only=True, allow_null=True)
+    reviewed_by_officer_name = serializers.CharField(source='reviewed_by_officer.get_full_name', read_only=True, allow_null=True)
+    reviewed_by_detective_name = serializers.CharField(source='reviewed_by_detective.get_full_name', read_only=True, allow_null=True)
+    redeemed_by_officer_name = serializers.CharField(source='redeemed_by_officer.get_full_name', read_only=True, allow_null=True)
+    
     class Meta:
         model = TipOff
         fields = [
-            'id', 'case', 'suspect', 'submitted_by', 'information',
-            'status', 'reviewed_by_officer', 'reviewed_by_detective',
+            'id', 'case', 'case_number', 'case_title', 'suspect', 'suspect_name',
+            'submitted_by', 'submitted_by_name', 'submitted_by_national_id',
+            'information', 'status',
+            'reviewed_by_officer', 'reviewed_by_officer_name', 'officer_rejection_reason', 'officer_reviewed_at',
+            'reviewed_by_detective', 'reviewed_by_detective_name', 'detective_rejection_reason', 'detective_reviewed_at',
             'redemption_code', 'reward_amount',
+            'redeemed_by_officer', 'redeemed_by_officer_name',
             'submitted_at', 'approved_at', 'redeemed_at'
         ]
-        read_only_fields = ['id', 'status', 'redemption_code', 'reward_amount', 'submitted_at', 'approved_at', 'redeemed_at']
+        read_only_fields = [
+            'id', 'status', 'redemption_code', 'submitted_at', 'approved_at', 'redeemed_at',
+            'officer_reviewed_at', 'detective_reviewed_at',
+            'reviewed_by_officer', 'reviewed_by_detective', 'redeemed_by_officer',
+            'submitted_by'  # Automatically set to current user
+        ]
+
+
+class RewardVerificationSerializer(serializers.Serializer):
+    """Serializer for verifying reward code and national ID."""
+    national_id = serializers.CharField(max_length=10, help_text="National ID of reward recipient")
+    redemption_code = serializers.CharField(max_length=20, help_text="Unique reward redemption code")
 
 
 class SuspectSubmissionSerializer(serializers.ModelSerializer):
