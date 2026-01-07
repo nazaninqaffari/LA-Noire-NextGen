@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
+from django.utils import timezone
 from apps.cases.models import Case
 from .models import (
     DetectiveBoard, BoardItem, EvidenceConnection, Suspect, 
@@ -51,6 +52,37 @@ class SuspectSerializer(serializers.ModelSerializer):
             'identified_at', 'arrested_at'
         ]
         read_only_fields = ['id', 'identified_at', 'arrested_at']
+
+
+class IntensivePursuitSuspectSerializer(serializers.ModelSerializer):
+    """
+    Public serializer for suspects in intensive pursuit (wanted list).
+    Displays photo, details, danger score, and reward.
+    
+    Persian: لیست تحت تعقیب شدید - صفحه عمومی
+    """
+    person_full_name = serializers.CharField(source='person.get_full_name', read_only=True)
+    person_username = serializers.CharField(source='person.username', read_only=True)
+    case_number = serializers.CharField(source='case.case_number', read_only=True)
+    case_title = serializers.CharField(source='case.title', read_only=True)
+    crime_level = serializers.IntegerField(source='case.crime_level.level', read_only=True)
+    crime_level_name = serializers.CharField(source='case.crime_level.name', read_only=True)
+    days_at_large = serializers.SerializerMethodField()
+    danger_score = serializers.IntegerField(source='get_danger_score', read_only=True)
+    reward_amount = serializers.IntegerField(source='get_reward_amount', read_only=True)
+    
+    class Meta:
+        model = Suspect
+        fields = [
+            'id', 'person_full_name', 'person_username', 'photo',
+            'case_number', 'case_title', 'crime_level', 'crime_level_name',
+            'reason', 'days_at_large', 'danger_score', 'reward_amount',
+            'identified_at', 'status'
+        ]
+    
+    def get_days_at_large(self, obj):
+        """Calculate days suspect has been pursued."""
+        return (timezone.now() - obj.identified_at).days
 
 
 class InterrogationSerializer(serializers.ModelSerializer):
