@@ -6,7 +6,7 @@ from .views import (
 )
 
 router = DefaultRouter()
-router.register(r'testimony', TestimonyViewSet, basename='testimony')
+router.register(r'testimonies', TestimonyViewSet, basename='testimony')
 router.register(r'biological', BiologicalEvidenceViewSet, basename='biological')
 router.register(r'images', EvidenceImageViewSet, basename='evidence-image')
 router.register(r'vehicles', VehicleEvidenceViewSet, basename='vehicle')
