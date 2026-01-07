@@ -20,7 +20,7 @@ from .models import (
 )
 from .serializers import (
     DetectiveBoardSerializer, BoardItemSerializer, EvidenceConnectionSerializer,
-    SuspectSerializer, InterrogationSerializer, TipOffSerializer,
+    SuspectSerializer, IntensivePursuitSuspectSerializer, InterrogationSerializer, TipOffSerializer,
     SuspectSubmissionSerializer, SuspectSubmissionReviewSerializer,
     NotificationSerializer, NotificationMarkReadSerializer,
     InterrogationSubmitSerializer, CaptainDecisionSerializer, PoliceChiefDecisionSerializer
@@ -179,6 +179,92 @@ class SuspectViewSet(viewsets.ModelViewSet):
     )
     def create(self, request, *args, **kwargs):
         return super().create(request, *args, **kwargs)
+    
+    @extend_schema(
+        summary="Intensive Pursuit List - Public Wanted List",
+        description="""
+        لیست عمومی مظنونین تحت تعقیب شدید
+        
+        این صفحه عمومی است و برای همه کاربران قابل مشاهده است.
+        مظنونینی که بیش از یک ماه تحت تعقیب هستند در این لیست نمایش داده می‌شوند.
+        
+        رتبه‌بندی براساس:
+        - امتیاز خطر = تعداد روزهای فرار × سطح جرم (0=بحرانی/4، 1=3، 2=2، 3=1)
+        - پاداش = امتیاز خطر × ۲۰,۰۰۰,۰۰۰ ریال
+        
+        Features:
+        - Public access (no authentication required for viewing)
+        - Shows photo, name, case details
+        - Ordered by danger score (highest first)
+        - Only suspects in intensive pursuit (> 30 days)
+        """,
+        responses={
+            200: IntensivePursuitSuspectSerializer(many=True)
+        },
+        examples=[
+            OpenApiExample(
+                'Response',
+                value=[
+                    {
+                        "id": 5,
+                        "person_full_name": "علی احمدی",
+                        "person_username": "ali_ahmad",
+                        "photo": "/media/suspects/photos/ali.jpg",
+                        "case_number": "CASE-2024-001",
+                        "case_title": "قتل عمد",
+                        "crime_level": 0,
+                        "crime_level_name": "بحرانی",
+                        "reason": "شواهد DNA مطابقت کامل دارد",
+                        "days_at_large": 45,
+                        "danger_score": 180,
+                        "reward_amount": 3600000000,
+                        "identified_at": "2023-11-23T10:00:00Z",
+                        "status": "intensive_pursuit"
+                    }
+                ],
+                response_only=True
+            ),
+        ]
+    )
+    @action(detail=False, methods=['get'], permission_classes=[])
+    def intensive_pursuit(self, request):
+        """
+        Public endpoint for intensive pursuit wanted list.
+        Shows suspects who have been at large for > 30 days.
+        Ordered by danger score (days × crime_level).
+        
+        Persian: لیست عمومی تحت تعقیب شدید
+        """
+        from datetime import timedelta
+        
+        # Get suspects in intensive pursuit
+        thirty_days_ago = timezone.now() - timedelta(days=30)
+        suspects = Suspect.objects.filter(
+            status__in=[Suspect.STATUS_UNDER_PURSUIT, Suspect.STATUS_INTENSIVE_PURSUIT],
+            identified_at__lte=thirty_days_ago
+        ).select_related(
+            'person', 'case', 'case__crime_level'
+        )
+        
+        # Update status to intensive pursuit if needed
+        suspects_to_update = []
+        for suspect in suspects:
+            if suspect.status == Suspect.STATUS_UNDER_PURSUIT:
+                suspect.status = Suspect.STATUS_INTENSIVE_PURSUIT
+                suspects_to_update.append(suspect)
+        
+        if suspects_to_update:
+            Suspect.objects.bulk_update(suspects_to_update, ['status'])
+        
+        # Sort by danger score (descending)
+        suspects_sorted = sorted(
+            suspects, 
+            key=lambda s: s.get_danger_score(), 
+            reverse=True
+        )
+        
+        serializer = IntensivePursuitSuspectSerializer(suspects_sorted, many=True)
+        return Response(serializer.data)
 
 
 class InterrogationViewSet(viewsets.ModelViewSet):
