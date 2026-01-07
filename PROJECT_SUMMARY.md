@@ -38,15 +38,28 @@ LA Noire NextGen is a comprehensive police case management system inspired by th
   - Status progression (under_pursuit → intensive_pursuit → arrested/cleared)
   - Danger score calculation: `days_at_large × crime_level`
   - Reward amount: `danger_score × 20,000,000` Rials
-- **Interrogation System**: Dual guilt ratings (detective + sergeant, 1-10 scale)
+- **Interrogation System**: 
+  - Dual guilt ratings (detective + sergeant, 1-10 scale)
+  - Captain decision workflow (guilty/innocent/needs_investigation)
+  - Police Chief approval for critical crimes (level 0-1)
+  - Comprehensive notes and reasoning tracking
 - **Public Tip-Off System**: Citizen submissions with reward redemption codes
 
-### ✅ Trial System
-- Trial creation by Captain (or Chief for critical crimes)
-- Judge assignment and verdict delivery
-- Punishment assignment for guilty verdicts
-- Bail payment system for eligible suspects (level 2/3 crimes)
-- Sergeant approval required for bail
+### ✅ Trial System (محاکمه)
+- **Trial Creation**: Captain submits guilty suspects to court (Chief required for critical crimes)
+- **Complete Case Review**: Judge accesses comprehensive case file including:
+  - All evidence (testimonies, biological, vehicle)
+  - All police members involved in investigation
+  - All interrogation reports with ratings
+  - Captain and Chief decision notes
+- **Verdict Delivery**: 
+  - Judge decides guilty or innocent with detailed reasoning (min 30 chars)
+  - Automatic punishment assignment for guilty verdicts
+  - Status tracking (pending → in_progress → completed)
+- **Bail Payment System**: 
+  - Available for level 2-3 crimes only (1M-10B Rials)
+  - Sergeant approval workflow
+  - Payment processing and suspect release
 
 ### ✅ RESTful API
 - Complete CRUD operations for all entities
@@ -271,14 +284,29 @@ hierarchy_levels = {
 
 ## Testing
 
-### Manual Testing
-- Database recreation script with sample data
-- Setup verification script
-- Interactive Swagger UI for API testing
-
 ### Automated Testing
-- Test structure ready in each app
-- Example test cases in documentation
+**Total: 141 tests (100% passing)**
+
+Test coverage by module:
+- **Accounts**: 21 tests - User authentication, roles, permissions
+- **Case Formation**: 29 tests - Complaint and crime scene workflows
+- **Case Resolution**: 26 tests - Detective board, connections, searches
+- **Evidence**: 32 tests - All 5 evidence types, images, coroner verification
+- **Interrogation System**: 20 tests - Ratings, captain decisions, chief approval
+- **Trial System**: 13 tests - Trials, verdicts, punishments, bail payments
+
+**Coverage**: 88% overall
+
+Run tests:
+```bash
+pytest tests/ -v
+```
+
+### Manual Testing
+- Database recreation script with sample data (`scripts/recreate_db.py`)
+- Setup verification script (`scripts/verify_setup.py`)
+- Interactive Swagger UI for API testing at `/api/schema/swagger-ui/`
+- ReDoc documentation at `/api/schema/redoc/`
 
 ## Deployment Considerations
 
