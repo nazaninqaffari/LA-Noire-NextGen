@@ -3,7 +3,8 @@ from rest_framework.routers import DefaultRouter
 from .views import (
     DetectiveBoardViewSet, BoardItemViewSet, EvidenceConnectionViewSet,
     SuspectViewSet, InterrogationViewSet, TipOffViewSet,
-    SuspectSubmissionViewSet, NotificationViewSet
+    SuspectSubmissionViewSet, NotificationViewSet,
+    CaptainDecisionViewSet, PoliceChiefDecisionViewSet
 )
 
 router = DefaultRouter()
@@ -13,6 +14,8 @@ router.register(r'evidence-connections', EvidenceConnectionViewSet, basename='ev
 router.register(r'suspects', SuspectViewSet, basename='suspect')
 router.register(r'suspect-submissions', SuspectSubmissionViewSet, basename='suspect-submission')
 router.register(r'interrogations', InterrogationViewSet, basename='interrogation')
+router.register(r'captain-decisions', CaptainDecisionViewSet, basename='captain-decision')
+router.register(r'chief-decisions', PoliceChiefDecisionViewSet, basename='chief-decision')
 router.register(r'tipoffs', TipOffViewSet, basename='tipoff')
 router.register(r'notifications', NotificationViewSet, basename='notification')
 

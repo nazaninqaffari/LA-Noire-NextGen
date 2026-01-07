@@ -6,6 +6,7 @@ from django.conf import settings
 from django.utils import timezone
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes.fields import GenericForeignKey
+from django.core.validators import MinValueValidator, MaxValueValidator
 from datetime import timedelta
 from apps.cases.models import Case
 
@@ -223,6 +224,16 @@ class Interrogation(models.Model):
     Interrogation session of a suspect by detective and sergeant.
     Both provide guilt ratings (1-10), which go to captain for final decision.
     """
+    STATUS_PENDING = 'pending'
+    STATUS_SUBMITTED = 'submitted'
+    STATUS_REVIEWED = 'reviewed'
+    
+    STATUS_CHOICES = [
+        (STATUS_PENDING, 'در انتظار تکمیل'),
+        (STATUS_SUBMITTED, 'ارسال شده'),
+        (STATUS_REVIEWED, 'بررسی شده'),
+    ]
+    
     suspect = models.ForeignKey(
         Suspect,
         on_delete=models.CASCADE,
@@ -241,14 +252,22 @@ class Interrogation(models.Model):
         related_name='sergeant_interrogations',
         help_text="Sergeant conducting interrogation"
     )
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default=STATUS_PENDING,
+        help_text="Current status of interrogation"
+    )
     detective_guilt_rating = models.IntegerField(
         null=True,
         blank=True,
+        validators=[MinValueValidator(1), MaxValueValidator(10)],
         help_text="Detective's guilt rating (1-10, 10=most guilty)"
     )
     sergeant_guilt_rating = models.IntegerField(
         null=True,
         blank=True,
+        validators=[MinValueValidator(1), MaxValueValidator(10)],
         help_text="Sergeant's guilt rating (1-10, 10=most guilty)"
     )
     detective_notes = models.TextField(
@@ -260,6 +279,7 @@ class Interrogation(models.Model):
         help_text="Sergeant's interrogation notes"
     )
     interrogated_at = models.DateTimeField(auto_now_add=True)
+    submitted_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         verbose_name = 'Interrogation'
@@ -268,6 +288,129 @@ class Interrogation(models.Model):
 
     def __str__(self):
         return f"Interrogation: {self.suspect} at {self.interrogated_at}"
+    
+    def is_complete(self):
+        """Check if both ratings are provided."""
+        return (
+            self.detective_guilt_rating is not None and
+            self.sergeant_guilt_rating is not None
+        )
+    
+    def average_guilt_rating(self):
+        """Calculate average guilt rating from detective and sergeant."""
+        if self.is_complete():
+            return (self.detective_guilt_rating + self.sergeant_guilt_rating) / 2
+        return None
+
+
+class CaptainDecision(models.Model):
+    """
+    Captain's final decision on interrogation based on detective and sergeant ratings.
+    For critical crimes, this decision goes to police chief for additional approval.
+    """
+    DECISION_GUILTY = 'guilty'
+    DECISION_NOT_GUILTY = 'not_guilty'
+    DECISION_NEEDS_MORE_INVESTIGATION = 'needs_more'
+    
+    DECISION_CHOICES = [
+        (DECISION_GUILTY, 'مجرم'),
+        (DECISION_NOT_GUILTY, 'بی‌گناه'),
+        (DECISION_NEEDS_MORE_INVESTIGATION, 'نیاز به تحقیقات بیشتر'),
+    ]
+    
+    STATUS_PENDING = 'pending'
+    STATUS_COMPLETED = 'completed'
+    STATUS_AWAITING_CHIEF = 'awaiting_chief'
+    
+    STATUS_CHOICES = [
+        (STATUS_PENDING, 'در انتظار بررسی'),
+        (STATUS_COMPLETED, 'تکمیل شده'),
+        (STATUS_AWAITING_CHIEF, 'در انتظار رئیس پلیس'),
+    ]
+    
+    interrogation = models.OneToOneField(
+        Interrogation,
+        on_delete=models.CASCADE,
+        related_name='captain_decision',
+        help_text="Related interrogation"
+    )
+    captain = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='captain_decisions',
+        help_text="Captain making the decision"
+    )
+    decision = models.CharField(
+        max_length=20,
+        choices=DECISION_CHOICES,
+        help_text="Captain's final decision"
+    )
+    reasoning = models.TextField(
+        help_text="Captain's reasoning for the decision"
+    )
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default=STATUS_PENDING,
+        help_text="Status of captain's decision"
+    )
+    decided_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'Captain Decision'
+        verbose_name_plural = 'Captain Decisions'
+        ordering = ['-decided_at']
+
+    def __str__(self):
+        return f"Captain Decision: {self.interrogation.suspect} - {self.decision}"
+    
+    def requires_chief_approval(self):
+        """Check if crime level is critical and requires police chief approval."""
+        return self.interrogation.suspect.case.crime_level.level == 0
+
+
+class PoliceChiefDecision(models.Model):
+    """
+    Police Chief's approval/rejection of captain's decision.
+    Only required for critical level crimes.
+    """
+    DECISION_APPROVED = 'approved'
+    DECISION_REJECTED = 'rejected'
+    
+    DECISION_CHOICES = [
+        (DECISION_APPROVED, 'تایید شده'),
+        (DECISION_REJECTED, 'رد شده'),
+    ]
+    
+    captain_decision = models.OneToOneField(
+        CaptainDecision,
+        on_delete=models.CASCADE,
+        related_name='chief_decision',
+        help_text="Related captain decision"
+    )
+    police_chief = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='chief_decisions',
+        help_text="Police chief making the decision"
+    )
+    decision = models.CharField(
+        max_length=20,
+        choices=DECISION_CHOICES,
+        help_text="Police chief's decision"
+    )
+    comments = models.TextField(
+        help_text="Police chief's comments"
+    )
+    decided_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'Police Chief Decision'
+        verbose_name_plural = 'Police Chief Decisions'
+        ordering = ['-decided_at']
+
+    def __str__(self):
+        return f"Chief Decision: {self.captain_decision.interrogation.suspect} - {self.decision}"
 
 
 class TipOff(models.Model):

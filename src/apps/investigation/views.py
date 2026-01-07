@@ -15,13 +15,15 @@ from drf_spectacular.utils import extend_schema, OpenApiExample, OpenApiParamete
 from apps.cases.models import Case
 from .models import (
     DetectiveBoard, BoardItem, EvidenceConnection, Suspect,
-    Interrogation, TipOff, SuspectSubmission, Notification
+    Interrogation, TipOff, SuspectSubmission, Notification,
+    CaptainDecision, PoliceChiefDecision
 )
 from .serializers import (
     DetectiveBoardSerializer, BoardItemSerializer, EvidenceConnectionSerializer,
     SuspectSerializer, InterrogationSerializer, TipOffSerializer,
     SuspectSubmissionSerializer, SuspectSubmissionReviewSerializer,
-    NotificationSerializer, NotificationMarkReadSerializer
+    NotificationSerializer, NotificationMarkReadSerializer,
+    InterrogationSubmitSerializer, CaptainDecisionSerializer, PoliceChiefDecisionSerializer
 )
 
 
@@ -182,16 +184,265 @@ class SuspectViewSet(viewsets.ModelViewSet):
 class InterrogationViewSet(viewsets.ModelViewSet):
     """
     ViewSet for Interrogations of suspects.
-    Detective and sergeant both provide guilt ratings.
+    Detective and sergeant both provide guilt ratings (1-10).
+    When complete, interrogation is submitted to captain for final decision.
+    
+    Workflow:
+    1. Create interrogation with suspect
+    2. Detective and sergeant both add ratings and notes
+    3. Submit to captain for review
     
     Persian: بازجویی از مظنونین
     """
-    queryset = Interrogation.objects.select_related('suspect', 'detective', 'sergeant').all()
+    queryset = Interrogation.objects.select_related(
+        'suspect', 'suspect__person', 'detective', 'sergeant'
+    ).all()
     serializer_class = InterrogationSerializer
     permission_classes = [IsAuthenticated]
     filter_backends = [DjangoFilterBackend]
-    filterset_fields = ['suspect', 'detective', 'sergeant']
+    filterset_fields = ['suspect', 'detective', 'sergeant', 'status']
     ordering = ['-interrogated_at']
+    
+    def get_queryset(self):
+        """Filter based on user role."""
+        user = self.request.user
+        queryset = super().get_queryset()
+        
+        if user.role == 'detective':
+            return queryset.filter(detective=user)
+        elif user.role == 'sergeant':
+            return queryset.filter(sergeant=user)
+        elif user.role == 'captain':
+            # Captain can see submitted interrogations
+            return queryset.filter(status=Interrogation.STATUS_SUBMITTED)
+        
+        return queryset
+    
+    @extend_schema(
+        request=InterrogationSubmitSerializer,
+        responses={200: InterrogationSerializer},
+        description="""
+        Submit interrogation ratings to captain.
+        Both detective and sergeant ratings required (1-10).
+        
+        Persian: ارسال نتایج بازجویی به سرگروه
+        
+        Example:
+        ```json
+        {
+            "detective_guilt_rating": 8,
+            "sergeant_guilt_rating": 7,
+            "detective_notes": "مظنون در حین بازجویی علائم عصبی نشان داد",
+            "sergeant_notes": "شواهد علیه او قوی است ولی ممکن است شریک جرم داشته باشد"
+        }
+        ```
+        """,
+        tags=['Interrogation']
+    )
+    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
+    def submit_ratings(self, request, pk=None):
+        """
+        Submit completed interrogation ratings to captain.
+        Persian: ارسال امتیازات بازجویی به سرگروه
+        """
+        interrogation = self.get_object()
+        serializer = InterrogationSubmitSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        
+        # Check permission - detective or sergeant only
+        if request.user not in [interrogation.detective, interrogation.sergeant]:
+            return Response(
+                {"detail": "فقط کارآگاه یا گروهبان مسئول می‌توانند بازجویی را ارسال کنند."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        # Check if already submitted
+        if interrogation.status != Interrogation.STATUS_PENDING:
+            return Response(
+                {"detail": "این بازجویی قبلاً ارسال شده است."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Update interrogation
+        interrogation.detective_guilt_rating = serializer.validated_data['detective_guilt_rating']
+        interrogation.sergeant_guilt_rating = serializer.validated_data['sergeant_guilt_rating']
+        interrogation.detective_notes = serializer.validated_data['detective_notes']
+        interrogation.sergeant_notes = serializer.validated_data['sergeant_notes']
+        interrogation.status = Interrogation.STATUS_SUBMITTED
+        interrogation.submitted_at = timezone.now()
+        interrogation.save()
+        
+        return Response(
+            InterrogationSerializer(interrogation).data,
+            status=status.HTTP_200_OK
+        )
+
+
+class CaptainDecisionViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet for Captain's decisions on interrogations.
+    Captain reviews interrogation ratings, evidence, and makes final decision.
+    For critical crimes, decision goes to police chief for additional approval.
+    
+    Workflow:
+    1. Captain reviews submitted interrogation
+    2. Makes decision: guilty, not guilty, or needs more investigation
+    3. If critical crime level, decision awaits police chief approval
+    
+    Persian: تصمیم‌گیری سرگروه
+    """
+    queryset = CaptainDecision.objects.select_related(
+        'interrogation', 'interrogation__suspect', 'interrogation__suspect__person',
+        'interrogation__suspect__case', 'interrogation__suspect__case__crime_level',
+        'captain'
+    ).all()
+    serializer_class = CaptainDecisionSerializer
+    permission_classes = [IsAuthenticated]
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ['captain', 'decision', 'status']
+    ordering = ['-decided_at']
+    
+    def get_queryset(self):
+        """Captains see their own decisions, chiefs see critical decisions."""
+        user = self.request.user
+        queryset = super().get_queryset()
+        
+        if user.role == 'captain':
+            return queryset.filter(captain=user)
+        elif user.role == 'police_chief':
+            # Police chief sees decisions awaiting approval
+            return queryset.filter(status=CaptainDecision.STATUS_AWAITING_CHIEF)
+        
+        return queryset
+    
+    @extend_schema(
+        request=CaptainDecisionSerializer,
+        responses={201: CaptainDecisionSerializer},
+        description="""
+        Create captain's decision on interrogation.
+        Reviews detective and sergeant ratings, makes final call.
+        
+        Persian: ایجاد تصمیم سرگروه
+        
+        Example:
+        ```json
+        {
+            "interrogation": 1,
+            "decision": "guilty",
+            "reasoning": "با توجه به امتیازات بالای کارآگاه و گروهبان، شواهد موجود، و اقرار جزئی مظنون، وی مجرم شناخته می‌شود."
+        }
+        ```
+        """,
+        tags=['Captain Decision']
+    )
+    def create(self, request, *args, **kwargs):
+        """Captain creates decision on interrogation."""
+        # Check permission
+        if request.user.role != 'captain':
+            return Response(
+                {"detail": "فقط سرگروه می‌تواند تصمیم بگیرد."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        
+        # Set captain
+        decision = serializer.save(captain=request.user)
+        
+        # Check if requires chief approval
+        if decision.requires_chief_approval():
+            decision.status = CaptainDecision.STATUS_AWAITING_CHIEF
+            decision.save()
+        else:
+            decision.status = CaptainDecision.STATUS_COMPLETED
+            decision.save()
+        
+        # Update interrogation status
+        decision.interrogation.status = Interrogation.STATUS_REVIEWED
+        decision.interrogation.save()
+        
+        return Response(
+            CaptainDecisionSerializer(decision).data,
+            status=status.HTTP_201_CREATED
+        )
+
+
+class PoliceChiefDecisionViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet for Police Chief's decisions (critical crimes only).
+    Final approval layer for critical level crimes.
+    
+    Workflow:
+    1. Police chief reviews captain's decision
+    2. Approves or rejects based on evidence and reasoning
+    
+    Persian: تصمیم رئیس پلیس (جنایات بحرانی)
+    """
+    queryset = PoliceChiefDecision.objects.select_related(
+        'captain_decision', 'captain_decision__interrogation',
+        'captain_decision__interrogation__suspect', 'police_chief'
+    ).all()
+    serializer_class = PoliceChiefDecisionSerializer
+    permission_classes = [IsAuthenticated]
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ['police_chief', 'decision']
+    ordering = ['-decided_at']
+    
+    def get_queryset(self):
+        """Police chiefs see their own decisions."""
+        user = self.request.user
+        queryset = super().get_queryset()
+        
+        if user.role == 'police_chief':
+            return queryset.filter(police_chief=user)
+        
+        return queryset
+    
+    @extend_schema(
+        request=PoliceChiefDecisionSerializer,
+        responses={201: PoliceChiefDecisionSerializer},
+        description="""
+        Create police chief's decision on captain's decision (critical crimes only).
+        Final approval for critical level crimes.
+        
+        Persian: ایجاد تصمیم رئیس پلیس
+        
+        Example:
+        ```json
+        {
+            "captain_decision": 1,
+            "decision": "approved",
+            "comments": "تصمیم سرگروه صحیح است. شواهد کافی برای محکومیت وجود دارد."
+        }
+        ```
+        """,
+        tags=['Police Chief Decision']
+    )
+    def create(self, request, *args, **kwargs):
+        """Police chief creates decision on captain's decision."""
+        # Check permission
+        if request.user.role != 'police_chief':
+            return Response(
+                {"detail": "فقط رئیس پلیس می‌تواند این تصمیم را بگیرد."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        
+        # Save decision
+        chief_decision = serializer.save(police_chief=request.user)
+        
+        # Update captain decision status
+        captain_decision = chief_decision.captain_decision
+        captain_decision.status = CaptainDecision.STATUS_COMPLETED
+        captain_decision.save()
+        
+        return Response(
+            PoliceChiefDecisionSerializer(chief_decision).data,
+            status=status.HTTP_201_CREATED
+        )
 
 
 class TipOffViewSet(viewsets.ModelViewSet):
