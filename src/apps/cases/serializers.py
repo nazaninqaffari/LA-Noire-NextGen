@@ -1,6 +1,11 @@
+"""Serializers for Case formation and management.
+Handles complaint-based and crime scene-based case creation workflows.
+"""
 from rest_framework import serializers
+from django.db import transaction
 from .models import CrimeLevel, Case, Complainant, Witness, CaseReview
 from apps.accounts.serializers import UserSerializer
+from apps.accounts.models import Role
 
 
 class CrimeLevelSerializer(serializers.ModelSerializer):
@@ -80,31 +85,63 @@ class CaseSerializer(serializers.ModelSerializer):
             'complainants', 'witnesses', 'reviews',
             'created_at', 'updated_at', 'opened_at', 'closed_at'
         ]
-        read_only_fields = ['id', 'case_number', 'created_at', 'updated_at', 'opened_at', 'closed_at']
+        read_only_fields = [
+            'id', 'case_number', 'status', 'rejection_count', 'formation_type',
+            'created_by', 'assigned_cadet', 'assigned_officer',
+            'assigned_detective', 'assigned_sergeant',
+            'created_at', 'updated_at', 'opened_at', 'closed_at'
+        ]
 
 
 class CaseCreateSerializer(serializers.ModelSerializer):
-    """Serializer for creating a case via complaint."""
-    complainant_statement = serializers.CharField(write_only=True, required=True)
+    """
+    Serializer for creating a case via complaint.
+    Complainant submits case information and initial statement.
+    """
+    complainant_statement = serializers.CharField(
+        write_only=True,
+        required=True,
+        min_length=10,
+        help_text="Primary complainant's statement about the incident"
+    )
     
     class Meta:
         model = Case
         fields = [
             'title', 'description', 'crime_level',
-            'formation_type', 'complainant_statement'
+            'complainant_statement'
         ]
     
+    def validate(self, data):
+        """Validate case creation data."""
+        # Ensure user is not a police officer (except cadet)
+        user = self.context['request'].user
+        police_roles = user.roles.filter(is_police_rank=True).exclude(name='Cadet')
+        
+        if police_roles.exists():
+            raise serializers.ValidationError(
+                "Police personnel (except Cadets) cannot file complaints. "
+                "Use crime scene report instead."
+            )
+        
+        return data
+    
+    @transaction.atomic
     def create(self, validated_data):
-        """Create case and primary complainant."""
+        """Create case with complainant and set to cadet review."""
         complainant_statement = validated_data.pop('complainant_statement')
         user = self.context['request'].user
         
-        # Generate case number
+        # Generate unique case number
         import uuid
-        validated_data['case_number'] = f"CASE-{uuid.uuid4().hex[:12].upper()}"
+        from datetime import datetime
+        year = datetime.now().year
+        validated_data['case_number'] = f"{year}-CMPL-{uuid.uuid4().hex[:8].upper()}"
         validated_data['created_by'] = user
-        validated_data['status'] = Case.STATUS_DRAFT
+        validated_data['formation_type'] = Case.FORMATION_COMPLAINT
+        validated_data['status'] = Case.STATUS_CADET_REVIEW
         
+        # Create case
         case = Case.objects.create(**validated_data)
         
         # Create primary complainant
@@ -112,19 +149,23 @@ class CaseCreateSerializer(serializers.ModelSerializer):
             case=case,
             user=user,
             statement=complainant_statement,
-            is_primary=True
+            is_primary=True,
+            verified_by_cadet=False
         )
         
         return case
 
 
 class CrimeSceneCaseCreateSerializer(serializers.ModelSerializer):
-    """Serializer for creating a case via crime scene report."""
+    """
+    Serializer for creating a case via crime scene report.
+    Police officer (non-cadet) reports witnessed or reported crime scene.
+    """
     witness_data = serializers.ListField(
         child=serializers.DictField(),
         write_only=True,
         required=False,
-        help_text="List of witnesses with phone_number and national_id"
+        help_text="List of witnesses: [{full_name, phone_number, national_id}, ...]"
     )
     
     class Meta:
@@ -135,28 +176,143 @@ class CrimeSceneCaseCreateSerializer(serializers.ModelSerializer):
             'witness_data'
         ]
     
+    def validate(self, data):
+        """Validate crime scene case creation."""
+        user = self.context['request'].user
+        
+        # Must be police officer (not cadet)
+        police_roles = user.roles.filter(is_police_rank=True).exclude(name='Cadet')
+        
+        if not police_roles.exists():
+            raise serializers.ValidationError(
+                "Only police personnel (except Cadets) can report crime scenes."
+            )
+        
+        # Crime scene location and datetime are required
+        if not data.get('crime_scene_location'):
+            raise serializers.ValidationError({
+                'crime_scene_location': 'Crime scene location is required for crime scene reports'
+            })
+        
+        if not data.get('crime_scene_datetime'):
+            raise serializers.ValidationError({
+                'crime_scene_datetime': 'Crime scene date/time is required for crime scene reports'
+            })
+        
+        return data
+    
+    @transaction.atomic
     def create(self, validated_data):
-        """Create crime scene case."""
+        """Create crime scene case and add witnesses."""
         witness_data = validated_data.pop('witness_data', [])
         user = self.context['request'].user
         
-        # Generate case number
+        # Generate unique case number
         import uuid
-        validated_data['case_number'] = f"CASE-{uuid.uuid4().hex[:12].upper()}"
+        from datetime import datetime
+        year = datetime.now().year
+        validated_data['case_number'] = f"{year}-SCEN-{uuid.uuid4().hex[:8].upper()}"
         validated_data['created_by'] = user
         validated_data['formation_type'] = Case.FORMATION_CRIME_SCENE
-        validated_data['status'] = Case.STATUS_OFFICER_REVIEW  # Needs supervisor approval
         
+        # Determine initial status based on reporter's rank
+        user_role = user.roles.filter(is_police_rank=True).order_by('-hierarchy_level').first()
+        
+        # Police Chief doesn't need approval
+        if user_role and user_role.name == 'Police Chief':
+            validated_data['status'] = Case.STATUS_OPEN
+            validated_data['assigned_officer'] = user
+            from django.utils import timezone
+            validated_data['opened_at'] = timezone.now()
+        else:
+            # Others need superior approval
+            validated_data['status'] = Case.STATUS_OFFICER_REVIEW
+        
+        # Create case
         case = Case.objects.create(**validated_data)
         
         # Add witnesses
         for witness_info in witness_data:
             Witness.objects.create(
                 case=case,
+                full_name=witness_info.get('full_name', ''),
                 phone_number=witness_info.get('phone_number', ''),
                 national_id=witness_info.get('national_id', ''),
-                full_name=witness_info.get('full_name', ''),
                 added_by=user
             )
         
         return case
+
+
+class ComplainantAddSerializer(serializers.Serializer):
+    """
+    Serializer for adding additional complainants to a case.
+    Used by cadets to add more complainants during review.
+    """
+    user_id = serializers.IntegerField(
+        required=True,
+        help_text="ID of user to add as complainant"
+    )
+    statement = serializers.CharField(
+        required=True,
+        min_length=10,
+        help_text="Complainant's statement about the incident"
+    )
+    
+    def validate_user_id(self, value):
+        """Validate user exists."""
+        from apps.accounts.models import User
+        try:
+            User.objects.get(id=value)
+        except User.DoesNotExist:
+            raise serializers.ValidationError("User not found")
+        return value
+
+
+class CaseReviewActionSerializer(serializers.Serializer):
+    """
+    Serializer for cadet/officer case review actions.
+    Handles approval or rejection with reasons.
+    """
+    DECISION_APPROVED = 'approved'
+    DECISION_REJECTED = 'rejected'
+    
+    DECISION_CHOICES = [
+        (DECISION_APPROVED, 'Approved'),
+        (DECISION_REJECTED, 'Rejected'),
+    ]
+    
+    decision = serializers.ChoiceField(
+        choices=DECISION_CHOICES,
+        required=True,
+        help_text="Review decision: 'approved' or 'rejected'"
+    )
+    rejection_reason = serializers.CharField(
+        required=False,
+        allow_blank=True,
+        help_text="Reason for rejection (required if decision is 'rejected')"
+    )
+    
+    def validate(self, data):
+        """Validate that rejection reason is provided for rejections."""
+        if data['decision'] == self.DECISION_REJECTED:
+            if not data.get('rejection_reason'):
+                raise serializers.ValidationError({
+                    'rejection_reason': 'Rejection reason is required when rejecting a case'
+                })
+        return data
+
+
+class ComplainantVerificationSerializer(serializers.Serializer):
+    """
+    Serializer for cadet to verify additional complainants.
+    """
+    verified = serializers.BooleanField(
+        required=True,
+        help_text="Whether complainant information is verified"
+    )
+    notes = serializers.CharField(
+        required=False,
+        allow_blank=True,
+        help_text="Optional verification notes"
+    )
