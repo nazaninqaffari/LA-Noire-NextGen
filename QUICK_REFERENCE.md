@@ -536,8 +536,77 @@ cases.update(status='cadet_review')
 
 - [README.md](README.md) - Project overview
 - [CONTRIBUTING.md](CONTRIBUTING.md) - Contribution guidelines
-- [doc/](doc/) - Detailed documentation  - [11-Interrogation-System.md](doc/11-Interrogation-System.md) - Interrogation workflow
+- [doc/](doc/) - Detailed documentation
+  - [11-Interrogation-System.md](doc/11-Interrogation-System.md) - Interrogation workflow
   - [12-Trial-System.md](doc/12-Trial-System.md) - Trial and court proceedings
+  - [13-Suspect-Status-System.md](doc/13-Suspect-Status-System.md) - Suspect status tracking and intensive pursuit
+
+---
+
+## Suspect Status System Quick Reference
+
+### Get Public Wanted List (No Auth Required)
+```bash
+# Get intensive pursuit suspects (public access)
+GET /api/v1/investigation/suspects/intensive_pursuit/
+
+# Returns suspects over 30 days at large, ordered by danger score
+```
+
+### Response Format
+```json
+{
+  "person_full_name": "علی رضایی",
+  "person_username": "ali_rezaei",
+  "photo": "/media/suspects/photo.jpg",
+  "case_number": "CR-2024-001",
+  "case_title": "پرونده سرقت مسلحانه",
+  "crime_level": 0,
+  "crime_level_name": "بحرانی",
+  "days_at_large": 45,
+  "danger_score": 180,
+  "reward_amount": 3600000000,
+  "status": "intensive_pursuit"
+}
+```
+
+### Danger Score Formula
+```
+Danger Score = Days at Large × (4 - Crime Level)
+
+Crime Level Weights:
+- Level 0 (Critical): ×4
+- Level 1 (Major): ×3
+- Level 2 (Medium): ×2
+- Level 3 (Minor): ×1
+
+Examples:
+- 45 days, Critical: 45 × 4 = 180
+- 50 days, Major: 50 × 3 = 150
+- 100 days, Medium: 100 × 2 = 200
+```
+
+### Reward Formula
+```
+Reward = Danger Score × 20,000,000 Rials
+
+Examples:
+- Score 180: 3,600,000,000 Rials
+- Score 150: 3,000,000,000 Rials
+- Score 200: 4,000,000,000 Rials
+```
+
+### Status Transitions
+```
+Identified → under_pursuit → intensive_pursuit (after 30 days) → arrested/cleared
+```
+
+### Key Features
+- No authentication required (public endpoint)
+- Auto-updates status to intensive_pursuit for suspects > 30 days
+- Excludes arrested and cleared suspects
+- Ordered by danger score (highest first)
+- Includes photo for wanted posters
 
 ---
 
