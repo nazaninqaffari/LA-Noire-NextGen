@@ -681,3 +681,97 @@ pending → in_progress → completed
 - Bail amount: 1M - 10B Rials
 - Bail only for crime levels 2-3
 - Cannot deliver verdict twice
+---
+
+## Reward System Quick Reference
+
+### Submit Tip (Any User)
+```bash
+# Citizen submits anonymous tip
+POST /api/v1/investigation/tipoffs/
+{
+  "case": 1,
+  "information": "من دیدم که مظنون در محل X بود",
+  "suspect": 2  // Optional
+}
+```
+
+### Officer Reviews Tip
+```bash
+# Approve valid tip
+POST /api/v1/investigation/tipoffs/{id}/officer_review/
+{
+  "approved": true
+}
+
+# Reject invalid tip
+POST /api/v1/investigation/tipoffs/{id}/officer_review/
+{
+  "approved": false,
+  "rejection_reason": "اطلاعات بدون منبع معتبر"
+}
+```
+
+### Detective Confirms Usefulness
+```bash
+# Approve and issue reward code
+POST /api/v1/investigation/tipoffs/{id}/detective_review/
+{
+  "approved": true
+}
+# Returns: REWARD-XXXXXXXXXX code
+
+# Reject as not useful
+POST /api/v1/investigation/tipoffs/{id}/detective_review/
+{
+  "approved": false,
+  "rejection_reason": "اطلاعات تکراری و قبلا بررسی شده"
+}
+```
+
+### Verify Reward Before Payment
+```bash
+# Any police rank can verify
+POST /api/v1/investigation/tipoffs/verify_reward/
+{
+  "national_id": "1234567890",
+  "redemption_code": "REWARD-A1B2C3D4E5"
+}
+
+# Response shows if valid, amount, user info
+```
+
+### Redeem Reward (One-Time Only)
+```bash
+# Process payment at police station
+POST /api/v1/investigation/tipoffs/redeem_reward/
+{
+  "national_id": "1234567890",
+  "redemption_code": "REWARD-A1B2C3D4E5"
+}
+```
+
+### Workflow States
+```
+pending → officer_approved → approved → redeemed
+        ↘ officer_rejected
+                         ↘ detective_rejected
+```
+
+### Default Reward
+- **Amount**: 5,000,000 Rials per approved tip
+- **Code Format**: REWARD-XXXXXXXXXX (10 hex chars)
+- **Redemption**: One-time only
+
+### Permissions
+- **Submit**: Anyone
+- **Officer Review**: Police Officers only
+- **Detective Review**: Assigned detective only
+- **Verify/Redeem**: Any police rank
+
+### List Filters by Role
+- **Citizens**: See only their own tips
+- **Officers**: See only pending tips
+- **Detectives**: See only officer-approved tips
+- **Higher Ranks**: See all tips
+
