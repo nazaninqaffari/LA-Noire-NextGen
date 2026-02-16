@@ -1,0 +1,94 @@
+/**
+ * Style Guide page styles
+ */
+.style-guide {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.intro-text {
+  font-size: 1.1rem;
+  color: var(--color-brass);
+  text-align: center;
+  margin-bottom: var(--spacing-xxl);
+  font-style: italic;
+}
+
+.guide-section {
+  margin-bottom: var(--spacing-xxl);
+}
+
+.guide-section > h2 {
+  margin-bottom: var(--spacing-lg);
+}
+
+/* Color Grid */
+.color-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: var(--spacing-lg);
+}
+
+.color-card {
+  background: var(--color-noir-charcoal);
+  border: 1px solid var(--color-noir-gray);
+  border-radius: var(--border-radius);
+  overflow: hidden;
+  transition: transform var(--transition-fast);
+}
+
+.color-card:hover {
+  transform: translateY(-5px);
+}
+
+.color-sample {
+  width: 100%;
+  height: 100px;
+}
+
+.color-info {
+  padding: var(--spacing-md);
+}
+
+.color-name {
+  font-family: var(--font-primary);
+  color: var(--color-gold);
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  margin-bottom: var(--spacing-xs);
+}
+
+.color-hex {
+  font-family: 'Courier New', monospace;
+  color: var(--color-noir-silver);
+  font-size: 0.85rem;
+}
+
+/* Button Showcase */
+.button-showcase {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-md);
+}
+
+/* Badge Showcase */
+.badge-showcase {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-md);
+  align-items: center;
+}
+
+@media (max-width: 768px) {
+  .color-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .button-showcase {
+    flex-direction: column;
+  }
+  
+  .button-showcase .btn {
+    width: 100%;
+  }
+}

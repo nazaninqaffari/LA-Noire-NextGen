@@ -1,0 +1,118 @@
+/**
+ * Login page styles
+ */
+.login-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-xl);
+  background: 
+    linear-gradient(rgba(10, 10, 10, 0.85), rgba(10, 10, 10, 0.85)),
+    url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><rect width="100" height="100" fill="%231a1a1a"/><circle cx="50" cy="50" r="30" fill="none" stroke="%232a2a2a" stroke-width="0.5"/></svg>');
+  background-size: cover, 100px 100px;
+}
+
+.login-container {
+  max-width: 450px;
+  width: 100%;
+  background: linear-gradient(135deg, var(--color-noir-charcoal), var(--color-noir-dark-gray));
+  border: 2px solid var(--color-gold);
+  border-radius: var(--border-radius);
+  padding: var(--spacing-xxl);
+  box-shadow: var(--shadow-lg);
+  position: relative;
+}
+
+.login-container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--color-gold), var(--color-brass), var(--color-gold));
+}
+
+.login-header {
+  text-align: center;
+  margin-bottom: var(--spacing-xl);
+}
+
+.login-badge {
+  width: 80px;
+  height: 80px;
+  margin-bottom: var(--spacing-md);
+  filter: drop-shadow(2px 2px 4px rgba(0, 0, 0, 0.8));
+}
+
+.login-header h1 {
+  font-size: 2rem;
+  margin-bottom: var(--spacing-xs);
+  border: none;
+  padding: 0;
+}
+
+.login-subtitle {
+  font-family: var(--font-primary);
+  font-size: 0.9rem;
+  color: var(--color-brass);
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  margin-bottom: var(--spacing-xs);
+}
+
+.login-tagline {
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  color: var(--color-noir-silver);
+  font-style: italic;
+}
+
+.login-form {
+  margin-bottom: var(--spacing-lg);
+}
+
+.btn-block {
+  width: 100%;
+  margin-top: var(--spacing-md);
+}
+
+.login-footer {
+  text-align: center;
+  border-top: 1px solid var(--color-noir-gray);
+  padding-top: var(--spacing-md);
+}
+
+.login-notice {
+  font-size: 0.85rem;
+  color: var(--color-crimson);
+  margin-bottom: var(--spacing-sm);
+  font-family: var(--font-primary);
+}
+
+.login-era {
+  font-size: 0.8rem;
+  color: var(--color-brass);
+  font-family: var(--font-primary);
+  letter-spacing: 0.1em;
+}
+
+@media (max-width: 768px) {
+  .login-page {
+    padding: var(--spacing-md);
+  }
+  
+  .login-container {
+    padding: var(--spacing-xl);
+  }
+  
+  .login-badge {
+    width: 60px;
+    height: 60px;
+  }
+  
+  .login-header h1 {
+    font-size: 1.5rem;
+  }
+}
