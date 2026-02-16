@@ -1,0 +1,116 @@
+/**
+ * Header styles
+ */
+.header {
+  background: linear-gradient(135deg, var(--color-noir-charcoal), var(--color-noir-dark-gray));
+  border-bottom: 3px solid var(--color-gold);
+  box-shadow: var(--shadow-lg);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.header-content {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: var(--spacing-md) var(--spacing-xl);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+}
+
+.badge-container {
+  width: 60px;
+  height: 60px;
+}
+
+.badge-icon {
+  width: 100%;
+  height: 100%;
+  filter: drop-shadow(2px 2px 4px rgba(0, 0, 0, 0.8));
+}
+
+.header-title {
+  display: flex;
+  flex-direction: column;
+}
+
+.site-title {
+  font-family: var(--font-heading);
+  font-size: 1.75rem;
+  color: var(--color-gold);
+  margin: 0;
+  line-height: 1;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+  border: none;
+  padding: 0;
+}
+
+.site-subtitle {
+  font-family: var(--font-primary);
+  font-size: 0.75rem;
+  color: var(--color-brass);
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+}
+
+.header-nav {
+  display: flex;
+  gap: var(--spacing-lg);
+}
+
+.nav-link {
+  font-family: var(--font-primary);
+  font-size: 0.9rem;
+  color: var(--color-gold);
+  text-decoration: none;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: var(--spacing-sm) var(--spacing-md);
+  border: 1px solid transparent;
+  transition: all var(--transition-fast);
+  border-bottom: 2px solid transparent;
+}
+
+.nav-link:hover {
+  color: var(--color-brass);
+  border-bottom-color: var(--color-brass);
+}
+
+@media (max-width: 768px) {
+  .header-content {
+    flex-direction: column;
+    gap: var(--spacing-md);
+    padding: var(--spacing-md);
+  }
+  
+  .header-nav {
+    flex-wrap: wrap;
+    gap: var(--spacing-sm);
+  }
+  
+  .nav-link {
+    font-size: 0.8rem;
+    padding: var(--spacing-xs) var(--spacing-sm);
+  }
+  
+  .badge-container {
+    width: 40px;
+    height: 40px;
+  }
+  
+  .site-title {
+    font-size: 1.25rem;
+  }
+  
+  .site-subtitle {
+    font-size: 0.65rem;
+  }
+}

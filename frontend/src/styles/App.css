@@ -1,0 +1,62 @@
+/**
+ * App-level styles
+ */
+
+.app {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.main-content {
+  flex: 1;
+  max-width: 1400px;
+  width: 100%;
+  margin: 0 auto;
+  padding: var(--spacing-xl);
+}
+
+/* Container layouts */
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 var(--spacing-md);
+}
+
+.container-fluid {
+  width: 100%;
+  padding: 0 var(--spacing-md);
+}
+
+/* Grid system */
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  margin: 0 calc(var(--spacing-md) * -1);
+}
+
+.col {
+  flex: 1;
+  padding: 0 var(--spacing-md);
+  margin-bottom: var(--spacing-md);
+}
+
+.col-1 { flex: 0 0 8.333%; max-width: 8.333%; }
+.col-2 { flex: 0 0 16.666%; max-width: 16.666%; }
+.col-3 { flex: 0 0 25%; max-width: 25%; }
+.col-4 { flex: 0 0 33.333%; max-width: 33.333%; }
+.col-6 { flex: 0 0 50%; max-width: 50%; }
+.col-8 { flex: 0 0 66.666%; max-width: 66.666%; }
+.col-12 { flex: 0 0 100%; max-width: 100%; }
+
+@media (max-width: 768px) {
+  .col,
+  .col-1, .col-2, .col-3, .col-4, .col-6, .col-8, .col-12 {
+    flex: 0 0 100%;
+    max-width: 100%;
+  }
+  
+  .main-content {
+    padding: var(--spacing-md);
+  }
+}
