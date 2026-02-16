@@ -2,6 +2,8 @@
 
 A comprehensive police case management system inspired by the LA Noire video game, bringing 1940s-era manual police operations into the modern digital age for Los Angeles Police Department (2025).
 
+**Full-stack application** with Django REST API backend and React frontend featuring authentic 1940s Film Noir aesthetic.
+
 ## Features
 
 - **Dynamic Role System**: Administrators can create and modify roles at runtime with hierarchy levels
@@ -16,54 +18,68 @@ A comprehensive police case management system inspired by the LA Noire video gam
 - **Multi-Login Support**: Users can login with username, email, phone number, or national ID
 - **RESTful API**: Complete REST API with filtering, searching, and ordering
 - **Interactive Documentation**: Swagger UI and ReDoc for API exploration
+- **Film Noir UI**: Authentic 1940s detective aesthetic with period-appropriate styling
 
 ## Technology Stack
 
-- **Backend**: Django 4.2 + Django REST Framework
+### Backend
+- **Framework**: Django 4.2 + Django REST Framework
 - **Database**: PostgreSQL (configurable)
 - **API Documentation**: drf-spectacular (OpenAPI 3.0)
-- **Authentication**: Session-based authentication
-- **Filtering**: django-filter for advanced queries
-- **Image Processing**: Pillow for evidence photos and suspect mugshots
+- **Authentication**: Session-based with cookie support
+- **Testing**: pytest + pytest-django
+
+### Frontend
+- **Framework**: React 18 + Vite 5
+- **Routing**: React Router v6
+- **HTTP Client**: Axios
+- **Testing**: Vitest + React Testing Library
+- **Styling**: Custom CSS with Film Noir theme
 
 ## Project Structure
 
 ```
 LA-Noire-NextGen/
-├── src/                          # Main source directory
+├── backend/                      # Django REST API
+│   ├── apps/                     # Django applications
+│   │   ├── accounts/             # User authentication and roles
+│   │   ├── cases/                # Case management
+│   │   ├── evidence/             # Evidence collection
+│   │   ├── investigation/        # Detective work and suspects
+│   │   └── trial/                # Court trials and verdicts
+│   ├── config/                   # Django configuration
+│   ├── tests/                    # Backend tests
+│   ├── docs/                     # Backend documentation
+│   ├── scripts/                  # Utility scripts
 │   ├── manage.py                 # Django management script
-│   ├── config/                   # Project configuration
-│   │   ├── settings.py           # Django settings
-│   │   ├── urls.py               # Root URL configuration
-│   │   ├── wsgi.py               # WSGI configuration
-│   │   └── asgi.py               # ASGI configuration
-│   └── apps/                     # Django applications
-│       ├── accounts/             # User authentication and roles
-│       ├── cases/                # Case management
-│       ├── evidence/             # Evidence collection
-│       ├── investigation/        # Detective work and suspects
-│       └── trial/                # Court trials and verdicts
-├── scripts/                      # Utility scripts
-│   ├── initial_setup.py          # Initial setup for fresh installs
-│   ├── recreate_db.py            # Database recreation script
-│   └── verify_setup.py           # Installation verification
-├── doc/                          # Documentation (Obsidian format)
-│   ├── 01-Overview.md
-│   ├── 02-User-Roles.md
-│   ├── 03-Case-Workflows.md
-│   ├── 04-Evidence-Management.md
-│   └── 07-API-Reference.md
-└── requirements.txt              # Python dependencies
+│   ├── requirements.txt          # Python dependencies
+│   └── README.md                 # Backend setup guide
+│
+├── frontend/                     # React + Vite application
+│   ├── src/
+│   │   ├── components/           # Reusable UI components
+│   │   ├── pages/                # Route-level components
+│   │   ├── services/             # API and auth services
+│   │   ├── styles/               # CSS stylesheets
+│   │   └── assets/               # Static assets
+│   ├── tests/                    # Frontend tests
+│   ├── docs/                     # Frontend documentation
+│   ├── public/                   # Static public files
+│   ├── package.json              # Node dependencies
+│   └── README.md                 # Frontend setup guide
+│
+├── CONTRIBUTING.md               # Contribution guidelines
+├── PROJECT_SUMMARY.md            # Complete project overview
+└── README.md                     # This file
 ```
 
-## Installation
+## Quick Start
 
-### Quick Start (Recommended for New Installations)
+### Backend Setup
 
 ```bash
-# Clone repository
-git clone <repository-url>
-cd LA-Noire-NextGen
+# Navigate to backend
+cd backend
 
 # Create and activate virtual environment
 python -m venv venv
@@ -72,33 +88,39 @@ source venv/bin/activate  # On Windows: venv\Scripts\activate
 # Install dependencies
 pip install -r requirements.txt
 
-# Run automated setup (handles everything)
+# Run automated setup (creates database, superuser, sample data)
 python scripts/initial_setup.py
 
 # Start server
-cd src
 python manage.py runserver
 ```
 
-Visit http://localhost:8000/api/docs/ and login with `admin` / `admin123`
+Backend API: http://localhost:8000/api/
+API Documentation: http://localhost:8000/api/docs/
 
-**For detailed setup instructions and troubleshooting, see [SETUP_GUIDE.md](SETUP_GUIDE.md)**
+**Default credentials**: `admin` / `admin123`
 
-### Detailed Setup
+### Frontend Setup
 
-### Prerequisites
-
-- Python 3.10+
-- PostgreSQL (or other database)
-- pip
-
-### Setup Steps
-
-1. **Clone the repository**
 ```bash
-git clone <repository-url>
-cd LA-Noire-NextGen
+# Navigate to frontend (in a new terminal)
+cd frontend
+
+# Install dependencies
+npm install
+
+# Start development server
+npm run dev
 ```
+
+Frontend Application: http://localhost:3000
+
+**For detailed instructions, see:**
+- **Quick Start**: [QUICKSTART.md](QUICKSTART.md) - Fast setup for both backend and frontend
+- **Separation Summary**: [SEPARATION_SUMMARY.md](SEPARATION_SUMMARY.md) - Complete implementation details
+- Backend: [backend/README.md](backend/README.md) - Backend-specific guide
+- Frontend: [frontend/README.md](frontend/README.md) - Frontend-specific guide
+- Full Setup: [SETUP_GUIDE.md](SETUP_GUIDE.md) - Detailed setup instructions
 
 2. **Create virtual environment**
 ```bash
