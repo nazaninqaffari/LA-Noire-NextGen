@@ -43,7 +43,7 @@ describe('Register Component', () => {
   it('renders registration form with all fields', () => {
     renderRegister();
 
-    expect(screen.getByText('Create Account')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /Create Account/i })).toBeInTheDocument();
     expect(screen.getByLabelText(/first name/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/last name/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/national id/i)).toBeInTheDocument();
@@ -74,11 +74,20 @@ describe('Register Component', () => {
   it('validates email format', async () => {
     renderRegister();
 
-    const emailInput = screen.getByLabelText(/email/i);
-    fireEvent.change(emailInput, { target: { value: 'invalid-email' } });
+    // Fill all required fields with valid data except email
+    fireEvent.change(screen.getByLabelText(/first name/i), { target: { value: 'Cole' } });
+    fireEvent.change(screen.getByLabelText(/last name/i), { target: { value: 'Phelps' } });
+    fireEvent.change(screen.getByLabelText(/national id/i), { target: { value: 'CA123456789' } });
+    fireEvent.change(screen.getByLabelText(/phone number/i), { target: { value: '2135551234' } });
+    fireEvent.change(screen.getByLabelText(/^username/i), { target: { value: 'cole_phelps' } });
+    fireEvent.change(screen.getByLabelText(/^password/i), { target: { value: 'SecurePass123' } });
+    fireEvent.change(screen.getByLabelText(/confirm password/i), { target: { value: 'SecurePass123' } });
+    // Set invalid email
+    fireEvent.change(screen.getByLabelText(/email address/i), { target: { value: 'invalid-email' } });
 
-    const submitButton = screen.getByRole('button', { name: /create account/i });
-    fireEvent.click(submitButton);
+    // Submit the form directly (bypasses native type="email" validation in JSDOM)
+    const form = screen.getByRole('button', { name: /create account/i }).closest('form')!;
+    fireEvent.submit(form);
 
     await waitFor(() => {
       expect(screen.getByText(/invalid email format/i)).toBeInTheDocument();
@@ -196,9 +205,10 @@ describe('Register Component', () => {
     fireEvent.click(submitButton);
 
     await waitFor(() => {
-      expect(mockApiPost).toHaveBeenCalledWith('/auth/register/', {
+      expect(mockApiPost).toHaveBeenCalledWith('/v1/accounts/users/', {
         username: 'cole_phelps',
         password: 'SecurePass123',
+        password_confirm: 'SecurePass123',
         email: 'cole@lapd.gov',
         phone_number: '2135551234',
         first_name: 'Cole',
