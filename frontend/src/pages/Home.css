@@ -1,0 +1,260 @@
+/**
+ * Home page styles
+ * Film noir aesthetic with dramatic hero section
+ */
+
+.home-page {
+  animation: fadeIn 0.6s ease;
+}
+
+/* ─── Hero Section ──────────────────────────────────────────────── */
+
+.hero {
+  position: relative;
+  min-height: 70vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  background:
+    linear-gradient(135deg, rgba(10, 10, 10, 0.92), rgba(26, 26, 26, 0.85)),
+    url('/noir-bg.jpg') center/cover no-repeat;
+  border-bottom: 3px solid var(--color-gold);
+  margin: calc(-1 * var(--spacing-lg)) calc(-1 * var(--spacing-lg)) var(--spacing-xxl);
+  padding: var(--spacing-xxl) var(--spacing-lg);
+}
+
+.hero-overlay {
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0, 0, 0, 0.08) 2px,
+    rgba(0, 0, 0, 0.08) 4px
+  );
+  pointer-events: none;
+}
+
+.hero-content {
+  position: relative;
+  z-index: 1;
+  max-width: 700px;
+}
+
+.hero-badge svg {
+  width: 100px;
+  height: 100px;
+  margin-bottom: var(--spacing-lg);
+  filter: drop-shadow(0 0 20px rgba(212, 175, 55, 0.4));
+}
+
+.hero-title {
+  font-size: 4rem;
+  border-bottom: none;
+  margin-bottom: var(--spacing-sm);
+  text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.9);
+}
+
+.hero-subtitle {
+  font-family: var(--font-primary);
+  color: var(--color-brass);
+  font-size: 1.1rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  margin-bottom: var(--spacing-md);
+}
+
+.hero-tagline {
+  font-family: var(--font-body);
+  font-style: italic;
+  color: var(--color-noir-silver);
+  font-size: 1.2rem;
+  margin-bottom: var(--spacing-xl);
+}
+
+.hero-actions {
+  display: flex;
+  gap: var(--spacing-md);
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.btn-lg {
+  padding: var(--spacing-md) var(--spacing-xl);
+  font-size: 1.1rem;
+}
+
+/* ─── Stats Section ─────────────────────────────────────────────── */
+
+.home-stats {
+  margin-bottom: var(--spacing-xxl);
+  text-align: center;
+}
+
+.section-title {
+  text-align: center;
+  margin-bottom: var(--spacing-xl);
+}
+
+.stats-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--spacing-lg);
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.home-stat-card {
+  background: linear-gradient(135deg, var(--color-noir-charcoal), var(--color-noir-dark-gray));
+  border: 2px solid var(--color-noir-gray);
+  border-radius: var(--border-radius);
+  padding: var(--spacing-xl);
+  text-align: center;
+  transition: all var(--transition-normal);
+  position: relative;
+  overflow: hidden;
+}
+
+.home-stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--color-gold), var(--color-brass));
+}
+
+.home-stat-card:hover {
+  border-color: var(--color-gold);
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
+}
+
+.stat-number {
+  font-family: var(--font-heading);
+  font-size: 3rem;
+  color: var(--color-gold);
+  font-weight: 700;
+}
+
+.stat-desc {
+  font-family: var(--font-primary);
+  font-size: 0.9rem;
+  color: var(--color-brass);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-top: var(--spacing-xs);
+}
+
+/* ─── Features Section ──────────────────────────────────────────── */
+
+.home-features {
+  margin-bottom: var(--spacing-xxl);
+}
+
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: var(--spacing-lg);
+}
+
+.feature-card {
+  background: linear-gradient(135deg, var(--color-noir-charcoal), var(--color-noir-dark-gray));
+  border: 1px solid var(--color-noir-gray);
+  border-radius: var(--border-radius);
+  padding: var(--spacing-xl);
+  text-align: center;
+  transition: all var(--transition-normal);
+  position: relative;
+}
+
+.feature-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--color-gold), var(--color-brass), var(--color-gold));
+}
+
+.feature-card:hover {
+  border-color: var(--color-gold);
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-md);
+}
+
+.feature-icon {
+  font-size: 2.5rem;
+  margin-bottom: var(--spacing-sm);
+  filter: grayscale(40%);
+}
+
+.feature-card h3 {
+  font-size: 1.2rem;
+  margin-bottom: var(--spacing-sm);
+}
+
+.feature-card p {
+  color: var(--color-noir-silver);
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+/* ─── Most Wanted Teaser ────────────────────────────────────────── */
+
+.home-wanted {
+  text-align: center;
+  padding: var(--spacing-xxl) var(--spacing-lg);
+  background: linear-gradient(135deg, var(--color-noir-charcoal), var(--color-noir-dark-gray));
+  border: 1px solid var(--color-noir-gray);
+  border-radius: var(--border-radius);
+  margin-bottom: var(--spacing-xxl);
+  position: relative;
+}
+
+.home-wanted::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--color-crimson), var(--color-gold), var(--color-crimson));
+}
+
+.wanted-desc {
+  font-size: 1.1rem;
+  color: var(--color-noir-silver);
+  margin-bottom: var(--spacing-lg);
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* ─── Responsive ────────────────────────────────────────────────── */
+
+@media (max-width: 768px) {
+  .hero-title {
+    font-size: 2.5rem;
+  }
+
+  .hero-subtitle {
+    font-size: 0.9rem;
+  }
+
+  .hero {
+    min-height: 50vh;
+  }
+
+  .stats-row {
+    grid-template-columns: 1fr;
+  }
+
+  .features-grid {
+    grid-template-columns: 1fr;
+  }
+}

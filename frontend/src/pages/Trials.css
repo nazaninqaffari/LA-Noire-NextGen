@@ -1,0 +1,201 @@
+/**
+ * Trials page styles
+ */
+
+.trials-page {
+  animation: fadeIn 0.5s ease;
+}
+
+.trials-layout {
+  display: grid;
+  grid-template-columns: 350px 1fr;
+  gap: var(--spacing-lg);
+  align-items: start;
+}
+
+/* ─── Trial List ────────────────────────────────────────────────── */
+
+.trials-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.trial-card {
+  background: linear-gradient(135deg, var(--color-noir-charcoal), var(--color-noir-dark-gray));
+  border: 1px solid var(--color-noir-gray);
+  border-radius: var(--border-radius);
+  padding: var(--spacing-md);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.trial-card:hover {
+  border-color: var(--color-gold);
+}
+
+.trial-card.selected {
+  border-color: var(--color-gold);
+  box-shadow: 0 0 10px rgba(212, 175, 55, 0.2);
+}
+
+.trial-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-xs);
+}
+
+.trial-id {
+  font-family: var(--font-primary);
+  font-size: 0.85rem;
+  color: var(--color-gold);
+}
+
+.trial-status-badge {
+  font-family: var(--font-primary);
+  font-size: 0.7rem;
+  padding: 2px 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border: 1px solid;
+}
+
+.trial-pending { color: var(--color-gold); border-color: var(--color-gold); }
+.trial-progress { color: #6bb5e0; border-color: #6bb5e0; }
+.trial-completed { color: #4caf50; border-color: #4caf50; }
+
+.trial-suspect, .trial-case, .trial-date {
+  font-size: 0.85rem;
+  color: var(--color-noir-silver);
+  line-height: 1.4;
+}
+
+/* ─── Trial Detail ──────────────────────────────────────────────── */
+
+.trial-detail .card {
+  position: sticky;
+  top: var(--spacing-md);
+}
+
+.summary-section {
+  margin-bottom: var(--spacing-lg);
+}
+
+.summary-section h4 {
+  font-size: 1rem;
+  margin-bottom: var(--spacing-sm);
+}
+
+.summary-content {
+  background: var(--color-noir-dark-gray);
+  border: 1px solid var(--color-noir-gray);
+  padding: var(--spacing-md);
+  font-family: var(--font-primary);
+  font-size: 0.8rem;
+  color: var(--color-noir-silver);
+  overflow-x: auto;
+  white-space: pre-wrap;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+/* ─── Verdict ───────────────────────────────────────────────────── */
+
+.verdict-section {
+  margin-bottom: var(--spacing-lg);
+  padding-top: var(--spacing-md);
+  border-top: 1px solid var(--color-noir-gray);
+}
+
+.verdict-form h4 {
+  font-size: 1rem;
+  margin-bottom: var(--spacing-md);
+}
+
+.verdict-options {
+  display: flex;
+  gap: var(--spacing-lg);
+}
+
+.radio-label {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  font-family: var(--font-primary);
+  font-size: 0.9rem;
+  color: var(--color-noir-silver);
+  cursor: pointer;
+  text-transform: none;
+}
+
+.radio-label input[type="radio"] {
+  width: auto;
+  accent-color: var(--color-gold);
+}
+
+.verdicts-section {
+  margin-top: var(--spacing-lg);
+  padding-top: var(--spacing-md);
+  border-top: 1px solid var(--color-noir-gray);
+}
+
+.verdict-card {
+  background: var(--color-noir-dark-gray);
+  border: 1px solid var(--color-noir-gray);
+  border-radius: var(--border-radius);
+  padding: var(--spacing-md);
+  margin-bottom: var(--spacing-sm);
+  position: relative;
+}
+
+.verdict-card::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+}
+
+.verdict-card.guilty::before { background: var(--color-crimson); }
+.verdict-card.innocent::before { background: #4caf50; }
+
+.verdict-result {
+  font-family: var(--font-heading);
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin-bottom: var(--spacing-xs);
+}
+
+.verdict-card.guilty .verdict-result { color: var(--color-crimson); }
+.verdict-card.innocent .verdict-result { color: #4caf50; }
+
+.verdict-reasoning {
+  font-size: 0.9rem;
+  color: var(--color-noir-silver);
+  margin-bottom: var(--spacing-xs);
+}
+
+.verdict-meta {
+  font-size: 0.8rem;
+  color: var(--color-noir-light-gray);
+}
+
+.form-actions-inline {
+  display: flex;
+  gap: var(--spacing-sm);
+  margin-top: var(--spacing-md);
+}
+
+@media (max-width: 768px) {
+  .trials-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .trials-list {
+    max-height: none;
+  }
+}

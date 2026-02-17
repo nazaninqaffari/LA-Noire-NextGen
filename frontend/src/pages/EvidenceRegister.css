@@ -1,0 +1,82 @@
+/**
+ * Evidence Registration form styles
+ */
+
+.evidence-register-page {
+  animation: fadeIn 0.5s ease;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.evidence-form {
+  padding: var(--spacing-xl);
+}
+
+.type-selector {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-sm);
+}
+
+.type-btn {
+  padding: var(--spacing-sm) var(--spacing-md);
+  font-size: 0.85rem;
+  background: transparent;
+  border: 2px solid var(--color-noir-gray);
+  color: var(--color-noir-silver);
+  box-shadow: none;
+}
+
+.type-btn:hover {
+  border-color: var(--color-gold);
+  color: var(--color-gold);
+  transform: none;
+  box-shadow: none;
+}
+
+.type-btn.active {
+  border-color: var(--color-gold);
+  color: var(--color-gold);
+  background: rgba(212, 175, 55, 0.1);
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--spacing-md);
+}
+
+.file-input {
+  padding: var(--spacing-sm);
+  border: 2px dashed var(--color-noir-gray);
+  background: transparent;
+}
+
+.file-input::-webkit-file-upload-button {
+  font-family: var(--font-primary);
+  padding: var(--spacing-xs) var(--spacing-md);
+  background: var(--color-noir-dark-gray);
+  border: 1px solid var(--color-gold);
+  color: var(--color-gold);
+  cursor: pointer;
+  margin-right: var(--spacing-sm);
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--spacing-md);
+  margin-top: var(--spacing-lg);
+  padding-top: var(--spacing-lg);
+  border-top: 1px solid var(--color-noir-gray);
+}
+
+@media (max-width: 768px) {
+  .type-selector {
+    flex-direction: column;
+  }
+
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+}

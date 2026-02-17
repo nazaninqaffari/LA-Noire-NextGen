@@ -1,17 +1,60 @@
 /**
  * Header Component
- * Top navigation bar with LAPD branding
+ * Top navigation bar with LAPD branding and role-based navigation.
+ * Shows different menu items based on the user's assigned roles.
  */
-import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import React, { useMemo } from 'react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotification } from '../contexts/NotificationContext';
 import './Header.css';
+
+/** Check if user has a specific role */
+const hasRole = (user: any, roleName: string): boolean =>
+  user?.roles?.some((r: any) =>
+    (typeof r === 'string' ? r : r.name).toLowerCase() === roleName.toLowerCase()
+  ) ?? false;
 
 const Header: React.FC = () => {
   const { user, isAuthenticated, logout } = useAuth();
   const { showNotification } = useNotification();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // Determine role-based nav items
+  const navItems = useMemo(() => {
+    if (!isAuthenticated || !user) return [];
+
+    const items: { to: string; label: string }[] = [
+      { to: '/dashboard', label: 'Dashboard' },
+      { to: '/cases', label: 'Cases' },
+      { to: '/evidence', label: 'Evidence' },
+      { to: '/suspects', label: 'Suspects' },
+    ];
+
+    // Detective-specific
+    if (hasRole(user, 'detective') || hasRole(user, 'senior_detective')
+      || hasRole(user, 'captain') || hasRole(user, 'police_chief')) {
+      items.push({ to: '/detective-board', label: 'Detective Board' });
+    }
+
+    // Trial management – judges
+    if (hasRole(user, 'judge') || hasRole(user, 'captain') || hasRole(user, 'police_chief')) {
+      items.push({ to: '/trials', label: 'Trials' });
+    }
+
+    // Reports – leadership
+    if (hasRole(user, 'captain') || hasRole(user, 'police_chief') || hasRole(user, 'judge')) {
+      items.push({ to: '/reports', label: 'Reports' });
+    }
+
+    // Admin panel – admin/superuser
+    if (user.is_staff || user.is_superuser || hasRole(user, 'admin')) {
+      items.push({ to: '/admin', label: 'Admin' });
+    }
+
+    return items;
+  }, [user, isAuthenticated]);
 
   const handleLogout = async () => {
     try {
@@ -27,7 +70,7 @@ const Header: React.FC = () => {
     <header className="header">
       <div className="header-content">
         <div className="header-left">
-          <Link to="/dashboard" className="header-brand">
+          <Link to={isAuthenticated ? '/dashboard' : '/'} className="header-brand">
             <div className="badge-container">
               <svg className="badge-icon" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M50 5 L65 25 L90 30 L70 50 L75 75 L50 65 L25 75 L30 50 L10 30 L35 25 Z" 
@@ -46,12 +89,25 @@ const Header: React.FC = () => {
         </div>
         
         <nav className="header-nav">
+          {/* Most Wanted is always visible */}
+          <Link
+            to="/most-wanted"
+            className={`nav-link${location.pathname === '/most-wanted' ? ' active' : ''}`}
+          >
+            Most Wanted
+          </Link>
+
           {isAuthenticated ? (
             <>
-              <Link to="/dashboard" className="nav-link">Dashboard</Link>
-              <Link to="/cases" className="nav-link">Cases</Link>
-              <Link to="/evidence" className="nav-link">Evidence</Link>
-              <Link to="/suspects" className="nav-link">Suspects</Link>
+              {navItems.map((item) => (
+                <Link
+                  key={item.to}
+                  to={item.to}
+                  className={`nav-link${location.pathname.startsWith(item.to) ? ' active' : ''}`}
+                >
+                  {item.label}
+                </Link>
+              ))}
               <div className="header-user">
                 <span className="user-name">{user?.username}</span>
                 <button onClick={handleLogout} className="btn-logout">
@@ -61,8 +117,8 @@ const Header: React.FC = () => {
             </>
           ) : (
             <>
-              <Link to="/login" className="nav-link">Login</Link>
-              <Link to="/register" className="nav-link">Register</Link>
+              <Link to="/login" className={`nav-link${location.pathname === '/login' ? ' active' : ''}`}>Login</Link>
+              <Link to="/register" className={`nav-link${location.pathname === '/register' ? ' active' : ''}`}>Register</Link>
             </>
           )}
         </nav>

@@ -135,3 +135,98 @@
     font-size: 2rem;
   }
 }
+
+/* ─── Clickable rows ────────────────────────────────────────────── */
+.clickable-row {
+  cursor: pointer;
+  transition: background var(--transition-fast);
+}
+
+.clickable-row:hover {
+  background-color: rgba(212, 175, 55, 0.08);
+}
+
+.stat-card {
+  cursor: pointer;
+}
+
+/* ─── Crime Level indicators ────────────────────────────────────── */
+.crime-level {
+  font-family: var(--font-primary);
+  font-size: 0.8rem;
+  padding: 2px 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.crime-level.level-0 { color: var(--color-crimson); }
+.crime-level.level-1 { color: #e67e22; }
+.crime-level.level-2 { color: var(--color-gold); }
+.crime-level.level-3 { color: var(--color-noir-silver); }
+
+.empty-state {
+  text-align: center;
+  color: var(--color-noir-light-gray);
+  font-style: italic;
+  padding: var(--spacing-lg);
+}
+
+/* ─── Notification list ─────────────────────────────────────────── */
+.notif-badge {
+  background: var(--color-crimson);
+  color: white;
+  font-size: 0.75rem;
+  padding: 2px 6px;
+  border-radius: 10px;
+  margin-left: var(--spacing-sm);
+  font-family: var(--font-body);
+}
+
+.notification-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.notif-item {
+  padding: var(--spacing-sm) 0;
+  border-bottom: 1px solid var(--color-noir-gray);
+}
+
+.notif-item:last-child {
+  border-bottom: none;
+}
+
+.notif-item.unread {
+  border-left: 3px solid var(--color-gold);
+  padding-left: var(--spacing-sm);
+}
+
+.notif-title {
+  font-family: var(--font-primary);
+  font-size: 0.85rem;
+  color: var(--color-gold);
+}
+
+.notif-message {
+  font-size: 0.85rem;
+  color: var(--color-noir-silver);
+  margin-top: 2px;
+}
+
+.notif-time {
+  font-size: 0.75rem;
+  color: var(--color-noir-light-gray);
+  margin-top: 2px;
+}
+
+.btn-sm {
+  padding: var(--spacing-xs) var(--spacing-sm);
+  font-size: 0.8rem;
+}
+
+.btn-block {
+  display: block;
+  width: 100%;
+  text-align: center;
+}
