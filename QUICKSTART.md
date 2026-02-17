@@ -1,5 +1,27 @@
 # Quick Start Guide - Backend & Frontend
 
+## 🚀 Automatic Start (Recommended)
+
+The fastest way to get everything running:
+
+```bash
+./start.sh
+```
+
+This single command will:
+1. Check and start PostgreSQL if needed
+2. Create database and run migrations
+3. Start backend on http://localhost:8000
+4. Start frontend on http://localhost:3000
+
+**Press Ctrl+C to stop all services**
+
+---
+
+## Manual Setup (Alternative Method)
+
+Follow these steps if you prefer manual control:
+
 ## Prerequisites
 
 - **Backend**: Python 3.10+, pip

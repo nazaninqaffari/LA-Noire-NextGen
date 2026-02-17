@@ -6,7 +6,7 @@ import axios, { AxiosInstance, AxiosError, InternalAxiosRequestConfig } from 'ax
 
 // Create axios instance with default config
 export const api: AxiosInstance = axios.create({
-  baseURL: '/api',
+  baseURL: '/api/v1',
   withCredentials: true, // Important for cookie-based auth
   headers: {
     'Content-Type': 'application/json',

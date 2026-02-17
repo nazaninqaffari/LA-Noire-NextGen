@@ -1,0 +1,211 @@
+/**
+ * Cases Page Styles
+ * Film Noir themed case management interface
+ */
+.cases-page {
+  padding: var(--spacing-xl);
+  min-height: 100vh;
+}
+
+/* Page Header */
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: var(--spacing-2xl);
+  gap: var(--spacing-lg);
+  flex-wrap: wrap;
+}
+
+.page-title-section {
+  flex: 1;
+}
+
+.page-title {
+  font-family: var(--font-heading);
+  font-size: var(--font-size-3xl);
+  color: var(--color-gold);
+  margin-bottom: var(--spacing-sm);
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.page-subtitle {
+  font-family: var(--font-body);
+  font-size: var(--font-size-lg);
+  color: var(--color-text-secondary);
+  font-style: italic;
+}
+
+.page-actions {
+  display: flex;
+  gap: var(--spacing-md);
+  flex-wrap: wrap;
+}
+
+/* Filters Section */
+.cases-filters {
+  background: linear-gradient(135deg, var(--color-noir-charcoal), var(--color-noir-dark-gray));
+  border: 1px solid var(--color-noir-gray);
+  border-radius: var(--border-radius);
+  padding: var(--spacing-xl);
+  margin-bottom: var(--spacing-2xl);
+  box-shadow: var(--shadow-md);
+}
+
+.filter-search {
+  display: flex;
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-lg);
+}
+
+.search-input {
+  flex: 1;
+  font-family: var(--font-primary);
+}
+
+.filter-group {
+  display: flex;
+  gap: var(--spacing-lg);
+  flex-wrap: wrap;
+  align-items: flex-end;
+}
+
+.filter-item {
+  flex: 1;
+  min-width: 200px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.filter-label {
+  font-family: var(--font-primary);
+  font-size: var(--font-size-sm);
+  color: var(--color-brass);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.form-select {
+  background: rgba(25, 28, 31, 0.8);
+  border: 1px solid var(--color-noir-gray);
+  border-radius: var(--border-radius);
+  color: var(--color-text-primary);
+  padding: var(--spacing-sm) var(--spacing-md);
+  font-family: var(--font-primary);
+  font-size: var(--font-size-base);
+  transition: all var(--transition-normal);
+  cursor: pointer;
+}
+
+.form-select:focus {
+  outline: none;
+  border-color: var(--color-gold);
+  box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.1);
+}
+
+.form-select option {
+  background: var(--color-noir-charcoal);
+  color: var(--color-text-primary);
+}
+
+/* Cases Grid */
+.cases-container {
+  min-height: 400px;
+}
+
+.cases-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+  gap: var(--spacing-xl);
+}
+
+/* Empty State */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-3xl);
+  text-align: center;
+  background: linear-gradient(135deg, var(--color-noir-charcoal), var(--color-noir-dark-gray));
+  border: 2px dashed var(--color-noir-gray);
+  border-radius: var(--border-radius);
+  min-height: 400px;
+}
+
+.empty-state-icon {
+  font-size: 4rem;
+  margin-bottom: var(--spacing-lg);
+  opacity: 0.5;
+}
+
+.empty-state-title {
+  font-family: var(--font-heading);
+  font-size: var(--font-size-2xl);
+  color: var(--color-text-primary);
+  margin-bottom: var(--spacing-md);
+}
+
+.empty-state-text {
+  font-family: var(--font-body);
+  font-size: var(--font-size-lg);
+  color: var(--color-text-secondary);
+  max-width: 500px;
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .cases-grid {
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  }
+}
+
+@media (max-width: 768px) {
+  .cases-page {
+    padding: var(--spacing-lg);
+  }
+
+  .page-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .page-title {
+    font-size: var(--font-size-2xl);
+  }
+
+  .page-actions {
+    width: 100%;
+  }
+
+  .page-actions .btn {
+    flex: 1;
+  }
+
+  .cases-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .filter-search {
+    flex-direction: column;
+  }
+
+  .filter-group {
+    flex-direction: column;
+  }
+
+  .filter-item {
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .page-title {
+    font-size: var(--font-size-xl);
+  }
+
+  .cases-filters {
+    padding: var(--spacing-lg);
+  }
+}

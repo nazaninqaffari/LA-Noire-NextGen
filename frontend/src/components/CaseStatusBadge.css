@@ -1,0 +1,101 @@
+/**
+ * Case Status Badge Styles
+ * Film Noir themed status indicators
+ */
+.case-status-badge {
+  display: inline-block;
+  padding: var(--spacing-xs) var(--spacing-md);
+  font-family: var(--font-primary);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-radius: 12px;
+  border: 2px solid;
+  white-space: nowrap;
+  transition: all var(--transition-fast);
+}
+
+/* Status variants */
+.status-draft {
+  background: rgba(128, 128, 128, 0.2);
+  border-color: var(--color-noir-silver);
+  color: var(--color-noir-silver);
+}
+
+.status-pending {
+  background: rgba(139, 105, 20, 0.2);
+  border-color: var(--color-warning);
+  color: var(--color-warning);
+}
+
+.status-rejected {
+  background: rgba(139, 26, 26, 0.2);
+  border-color: var(--color-crimson);
+  color: var(--color-crimson);
+}
+
+.status-open {
+  background: rgba(212, 175, 55, 0.2);
+  border-color: var(--color-gold);
+  color: var(--color-gold);
+}
+
+.status-active {
+  background: rgba(26, 77, 122, 0.2);
+  border-color: var(--color-evidence-blue);
+  color: var(--color-evidence-blue);
+}
+
+.status-progress {
+  background: rgba(181, 166, 66, 0.2);
+  border-color: var(--color-brass);
+  color: var(--color-brass);
+}
+
+.status-warning {
+  background: rgba(139, 105, 20, 0.3);
+  border-color: var(--color-warning);
+  color: var(--color-gold);
+}
+
+.status-closed {
+  background: rgba(45, 80, 22, 0.2);
+  border-color: var(--color-success);
+  color: var(--color-success);
+}
+
+/* Crime level badge */
+.crime-level-badge {
+  display: inline-block;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  font-family: var(--font-primary);
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-radius: 4px;
+  border: 2px solid;
+  color: var(--color-noir-black);
+  white-space: nowrap;
+}
+
+.level-critical {
+  background: var(--color-crimson);
+  border-color: #b32424;
+}
+
+.level-major {
+  background: var(--color-warning);
+  border-color: #b8871a;
+}
+
+.level-medium {
+  background: var(--color-brass);
+  border-color: #9a8e3a;
+}
+
+.level-minor {
+  background: var(--color-noir-silver);
+  border-color: var(--color-noir-light-gray);
+}

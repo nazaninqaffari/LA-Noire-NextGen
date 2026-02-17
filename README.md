@@ -73,7 +73,33 @@ LA-Noire-NextGen/
 └── README.md                     # This file
 ```
 
-## Quick Start
+## 🚀 Quick Start (Recommended)
+
+The fastest way to start the entire application with one command:
+
+```bash
+./start.sh
+```
+
+This script automatically:
+- ✅ Checks if PostgreSQL is running (starts it if needed)
+- ✅ Creates the database if it doesn't exist
+- ✅ Runs all database migrations
+- ✅ Starts the Django backend on http://localhost:8000
+- ✅ Starts the React frontend on http://localhost:3000
+
+**Press `Ctrl+C` to stop all services**
+
+Then open your browser to:
+- **Frontend**: http://localhost:3000
+- **Backend API**: http://localhost:8000/api/
+- **API Docs**: http://localhost:8000/api/docs/
+
+---
+
+## Manual Setup (Alternative)
+
+If you prefer to start services manually:
 
 ### Backend Setup
 

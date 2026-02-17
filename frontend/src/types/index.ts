@@ -25,15 +25,27 @@ export interface User {
 
 // Case types
 export type CaseStatus = 
-  | 'draft' 
-  | 'pending_approval' 
-  | 'approved' 
-  | 'in_progress' 
-  | 'under_investigation' 
-  | 'closed' 
-  | 'rejected';
+  | 'draft'
+  | 'cadet_review'
+  | 'officer_review'
+  | 'rejected'
+  | 'open'
+  | 'under_investigation'
+  | 'suspects_identified'
+  | 'arrest_approved'
+  | 'interrogation'
+  | 'trial_pending'
+  | 'closed';
 
 export type CrimeLevel = 0 | 1 | 2 | 3; // 0=critical, 1=major, 2=medium, 3=minor
+
+export type CaseFormationType = 'complaint' | 'crime_scene';
+
+export interface WitnessData {
+  full_name: string;
+  phone_number: string;
+  national_id: string;
+}
 
 export interface Case {
   id: number;
@@ -42,11 +54,48 @@ export interface Case {
   description: string;
   status: CaseStatus;
   crime_level: CrimeLevel;
-  assigned_to: User;
+  formation_type?: CaseFormationType;
+  assigned_to?: User;
   created_by: User;
   created_at: string;
   updated_at: string;
+  opened_at?: string;
   rejection_count?: number;
+  complainant_statement?: string;
+  crime_scene_location?: string;
+  crime_scene_datetime?: string;
+  witness_data?: WitnessData[];
+}
+
+export interface CaseCreateComplaintData {
+  title: string;
+  description: string;
+  crime_level: CrimeLevel;
+  formation_type: 'complaint';
+  complainant_statement: string;
+}
+
+export interface CaseCreateSceneData {
+  title: string;
+  description: string;
+  crime_level: CrimeLevel;
+  formation_type: 'crime_scene';
+  crime_scene_location: string;
+  crime_scene_datetime: string;
+  witness_data: WitnessData[];
+}
+
+export interface CaseReviewData {
+  decision: 'approved' | 'rejected';
+  rejection_reason?: string;
+}
+
+export interface CaseReviewHistory {
+  id: number;
+  reviewer: User;
+  decision: 'approved' | 'rejected';
+  rejection_reason?: string;
+  timestamp: string;
 }
 
 // Evidence types
@@ -127,8 +176,19 @@ export interface DashboardStats {
 
 // Form types
 export interface LoginCredentials {
-  identifier: string;
+  username: string;
   password: string;
+}
+
+export interface RegistrationData {
+  username: string;
+  password: string;
+  confirm_password: string;
+  email: string;
+  phone_number: string;
+  first_name: string;
+  last_name: string;
+  national_id: string;
 }
 
 // Auth types
@@ -136,7 +196,7 @@ export interface AuthContextType {
   user: User | null;
   loading: boolean;
   error: Error | null;
-  login: (identifier: string, password: string) => Promise<void>;
+  login: (username: string, password: string) => Promise<User>;
   logout: () => Promise<void>;
   isAuthenticated: boolean;
 }

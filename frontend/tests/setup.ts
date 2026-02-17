@@ -3,7 +3,7 @@
  * Configures testing environment for Vitest
  */
 import '@testing-library/jest-dom';
-import { expect, afterEach, vi } from 'vitest';
+import { afterEach, vi } from 'vitest';
 import { cleanup } from '@testing-library/react';
 
 // Cleanup after each test
@@ -27,7 +27,11 @@ Object.defineProperty(window, 'matchMedia', {
 });
 
 // Mock IntersectionObserver
-global.IntersectionObserver = class IntersectionObserver {
+(global as any).IntersectionObserver = class IntersectionObserver {
+  root: Element | null = null;
+  rootMargin: string = '';
+  thresholds: ReadonlyArray<number> = [];
+  
   constructor() {}
   disconnect() {}
   observe() {}

@@ -1,0 +1,157 @@
+/**
+ * Case Card Styles
+ * Film Noir themed case display cards
+ */
+.case-card {
+  background: linear-gradient(135deg, var(--color-noir-charcoal), var(--color-noir-dark-gray));
+  border: 2px solid var(--color-noir-gray);
+  border-radius: var(--border-radius);
+  padding: var(--spacing-xl);
+  transition: all var(--transition-normal);
+  position: relative;
+  overflow: hidden;
+  animation: fadeInUp 0.3s ease;
+}
+
+.case-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--color-gold), var(--color-brass));
+}
+
+.case-card:hover {
+  border-color: var(--color-gold);
+  transform: translateY(-5px);
+  box-shadow: var(--shadow-lg);
+}
+
+/* Header */
+.case-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-lg);
+}
+
+.case-card-id {
+  font-family: var(--font-primary);
+  font-size: var(--font-size-lg);
+  color: var(--color-gold);
+  font-weight: 700;
+  letter-spacing: 0.05em;
+}
+
+.case-card-badges {
+  display: flex;
+  gap: var(--spacing-sm);
+  flex-wrap: wrap;
+}
+
+/* Body */
+.case-card-body {
+  margin-bottom: var(--spacing-lg);
+}
+
+.case-card-title {
+  font-family: var(--font-heading);
+  font-size: var(--font-size-xl);
+  color: var(--color-text-primary);
+  margin-bottom: var(--spacing-sm);
+  line-height: 1.3;
+}
+
+.case-card-description {
+  font-family: var(--font-body);
+  font-size: var(--font-size-base);
+  color: var(--color-text-secondary);
+  line-height: 1.6;
+  margin-bottom: var(--spacing-lg);
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Meta information */
+.case-card-meta {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--spacing-sm);
+  padding-top: var(--spacing-md);
+  border-top: 1px solid var(--color-noir-gray);
+}
+
+.case-meta-item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.meta-label {
+  font-family: var(--font-primary);
+  font-size: var(--font-size-xs);
+  color: var(--color-brass);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.meta-value {
+  font-family: var(--font-body);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-primary);
+}
+
+.case-formation-type {
+  font-weight: 600;
+}
+
+/* Footer */
+.case-card-footer {
+  display: flex;
+  gap: var(--spacing-md);
+  flex-wrap: wrap;
+}
+
+.case-card-footer .btn {
+  flex: 1;
+  min-width: 120px;
+  justify-content: center;
+}
+
+/* Animation */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .case-card {
+    padding: var(--spacing-lg);
+  }
+
+  .case-card-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--spacing-sm);
+  }
+
+  .case-card-meta {
+    grid-template-columns: 1fr;
+  }
+
+  .case-card-title {
+    font-size: var(--font-size-lg);
+  }
+}
