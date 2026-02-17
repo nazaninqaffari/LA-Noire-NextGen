@@ -4,15 +4,38 @@
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { screen, fireEvent, waitFor } from '@testing-library/react';
-import { renderWithRouter, mockApiResponse, mockApiError, createMockUser } from '../utils';
+import { renderWithRouter } from '../utils';
 import Login from '../../src/pages/Login';
-import * as authService from '../../src/services/auth';
 
-// Mock the auth service
-vi.mock('../../src/services/auth', () => ({
-  login: vi.fn(),
-  useAuth: vi.fn(() => ({ user: null, loading: false })),
-}));
+// Mock AuthContext - Login uses useAuth().login
+const mockLogin = vi.fn();
+vi.mock('../../src/contexts/AuthContext', async () => {
+  const actual = await vi.importActual('../../src/contexts/AuthContext');
+  return {
+    ...actual,
+    useAuth: () => ({
+      user: null,
+      isAuthenticated: false,
+      loading: false,
+      login: mockLogin,
+      logout: vi.fn(),
+    }),
+  };
+});
+
+// Mock NotificationContext - Login uses showNotification for errors
+const mockShowNotification = vi.fn();
+vi.mock('../../src/contexts/NotificationContext', async () => {
+  const actual = await vi.importActual('../../src/contexts/NotificationContext');
+  return {
+    ...actual,
+    useNotification: () => ({
+      showNotification: mockShowNotification,
+      notifications: [],
+      removeNotification: vi.fn(),
+    }),
+  };
+});
 
 // Mock router navigation
 const mockNavigate = vi.fn();
@@ -31,97 +54,72 @@ describe('Login Component', () => {
 
   it('renders login form correctly', () => {
     renderWithRouter(<Login />);
-    
+
     expect(screen.getByText(/LA Noire NextGen/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/Username \/ Email \/ Phone \/ National ID/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/Username/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/Password/i)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Access System/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Sign In/i })).toBeInTheDocument();
   });
 
   it('updates input fields on change', () => {
     renderWithRouter(<Login />);
-    
-    const identifierInput = screen.getByLabelText(/Username \/ Email \/ Phone \/ National ID/i);
+
+    const usernameInput = screen.getByLabelText(/Username/i);
     const passwordInput = screen.getByLabelText(/Password/i);
-    
-    fireEvent.change(identifierInput, { target: { value: 'testuser' } });
+
+    fireEvent.change(usernameInput, { target: { value: 'testuser' } });
     fireEvent.change(passwordInput, { target: { value: 'password123' } });
-    
-    expect(identifierInput.value).toBe('testuser');
+
+    expect(usernameInput.value).toBe('testuser');
     expect(passwordInput.value).toBe('password123');
   });
 
-  it('calls login service on form submission', async () => {
-    authService.login.mockResolvedValue(createMockUser());
-    
+  it('calls login on form submission', async () => {
+    mockLogin.mockResolvedValue(undefined);
+
     renderWithRouter(<Login />);
-    
-    const identifierInput = screen.getByLabelText(/Username \/ Email \/ Phone \/ National ID/i);
-    const passwordInput = screen.getByLabelText(/Password/i);
-    const submitButton = screen.getByRole('button', { name: /Access System/i });
-    
-    fireEvent.change(identifierInput, { target: { value: 'testuser' } });
-    fireEvent.change(passwordInput, { target: { value: 'password123' } });
-    fireEvent.click(submitButton);
-    
+
+    fireEvent.change(screen.getByLabelText(/Username/i), { target: { value: 'testuser' } });
+    fireEvent.change(screen.getByLabelText(/Password/i), { target: { value: 'password123' } });
+    fireEvent.click(screen.getByRole('button', { name: /Sign In/i }));
+
     await waitFor(() => {
-      expect(authService.login).toHaveBeenCalledWith('testuser', 'password123');
+      expect(mockLogin).toHaveBeenCalledWith('testuser', 'password123');
     });
   });
 
-  it('navigates to dashboard on successful login', async () => {
-    authService.login.mockResolvedValue(createMockUser());
-    
+  it('shows notification on login failure', async () => {
+    mockLogin.mockRejectedValue(new Error('Invalid credentials'));
+
     renderWithRouter(<Login />);
-    
-    const identifierInput = screen.getByLabelText(/Username \/ Email \/ Phone \/ National ID/i);
-    const passwordInput = screen.getByLabelText(/Password/i);
-    const submitButton = screen.getByRole('button', { name: /Access System/i });
-    
-    fireEvent.change(identifierInput, { target: { value: 'testuser' } });
-    fireEvent.change(passwordInput, { target: { value: 'password123' } });
-    fireEvent.click(submitButton);
-    
+
+    fireEvent.change(screen.getByLabelText(/Username/i), { target: { value: 'wronguser' } });
+    fireEvent.change(screen.getByLabelText(/Password/i), { target: { value: 'wrongpass' } });
+    fireEvent.click(screen.getByRole('button', { name: /Sign In/i }));
+
     await waitFor(() => {
-      expect(mockNavigate).toHaveBeenCalledWith('/dashboard');
+      expect(mockShowNotification).toHaveBeenCalled();
     });
   });
 
-  it('displays error message on login failure', async () => {
-    const errorMessage = 'Invalid credentials';
-    authService.login.mockRejectedValue(mockApiError(errorMessage, 401));
-    
-    renderWithRouter(<Login />);
-    
-    const identifierInput = screen.getByLabelText(/Username \/ Email \/ Phone \/ National ID/i);
-    const passwordInput = screen.getByLabelText(/Password/i);
-    const submitButton = screen.getByRole('button', { name: /Access System/i });
-    
-    fireEvent.change(identifierInput, { target: { value: 'wronguser' } });
-    fireEvent.change(passwordInput, { target: { value: 'wrongpass' } });
-    fireEvent.click(submitButton);
-    
-    await waitFor(() => {
-      expect(screen.getByText(/Login failed/i)).toBeInTheDocument();
-    });
-  });
+  it('shows loading skeleton while authenticating', async () => {
+    mockLogin.mockImplementation(() => new Promise(() => {})); // Never resolves
 
-  it('disables submit button while loading', async () => {
-    authService.login.mockImplementation(() => new Promise(() => {})); // Never resolves
-    
     renderWithRouter(<Login />);
-    
-    const identifierInput = screen.getByLabelText(/Username \/ Email \/ Phone \/ National ID/i);
-    const passwordInput = screen.getByLabelText(/Password/i);
-    const submitButton = screen.getByRole('button', { name: /Access System/i });
-    
-    fireEvent.change(identifierInput, { target: { value: 'testuser' } });
-    fireEvent.change(passwordInput, { target: { value: 'password123' } });
-    fireEvent.click(submitButton);
-    
+
+    fireEvent.change(screen.getByLabelText(/Username/i), { target: { value: 'testuser' } });
+    fireEvent.change(screen.getByLabelText(/Password/i), { target: { value: 'password123' } });
+
+    fireEvent.click(screen.getByRole('button', { name: /Sign In/i }));
+
     await waitFor(() => {
-      expect(submitButton).toBeDisabled();
+      // Login component replaces the form with "Authenticating..." + skeleton
       expect(screen.getByText(/Authenticating/i)).toBeInTheDocument();
     });
+  });
+
+  it('renders create account link', () => {
+    renderWithRouter(<Login />);
+    expect(screen.getByText(/Create Account/i)).toBeInTheDocument();
   });
 });

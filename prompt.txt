@@ -11,4 +11,4 @@ You may write helper scripts to improve testing, but ensure the CI/CD pipeline w
 6- for working on frontend, notice you should always have skeleton layout and loding screen
 7- for frontend tasks, notice its important to be responsive so keep that in mind
 8- keep the vibe i told you in all pages and the same theme and media vibe, again you are free to donwload anything from web if you want
-9- * please check the urls in backend match exaclty with frontend when implementing frontend(and also the result structure), many of your bugs are because of this step *
+9- very important * please check the urls in backend match exaclty with frontend when implementing frontend(and also the result structure), many of your bugs are because of this step *
