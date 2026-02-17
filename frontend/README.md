@@ -40,8 +40,8 @@ frontend/
 │   │   └── App.css         # App-level styles
 │   ├── assets/              # Static assets
 │   │   └── fonts/          # Custom fonts
-│   ├── App.jsx              # Root component
-│   └── main.jsx             # Application entry point
+│   ├── App.tsx              # Root component
+│   └── main.tsx             # Application entry point
 ├── tests/                   # Test suite
 │   ├── components/          # Component tests
 │   ├── services/            # Service tests

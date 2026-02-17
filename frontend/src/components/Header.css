@@ -84,6 +84,64 @@
   border-bottom-color: var(--color-brass);
 }
 
+/* Header Brand Link */
+.header-brand {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  text-decoration: none;
+  transition: opacity var(--transition-normal);
+}
+
+.header-brand:hover {
+  opacity: 0.8;
+}
+
+/* User Section */
+.header-user {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: rgba(212, 175, 55, 0.1);
+  border: 1px solid var(--color-brass);
+  border-radius: var(--border-radius);
+}
+
+.user-name {
+  font-family: var(--font-primary);
+  font-size: 0.9rem;
+  color: var(--color-text-primary);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.btn-logout {
+  background: transparent;
+  border: 1px solid var(--color-crimson);
+  color: var(--color-crimson);
+  font-family: var(--font-primary);
+  font-size: 0.85rem;
+  padding: var(--spacing-xs) var(--spacing-md);
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  transition: all var(--transition-normal);
+}
+
+.btn-logout:hover {
+  background: var(--color-crimson);
+  color: white;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(178, 34, 34, 0.3);
+}
+
+.btn-logout:active {
+  transform: translateY(0);
+}
+
 @media (max-width: 768px) {
   .header-content {
     flex-direction: column;
@@ -94,11 +152,23 @@
   .header-nav {
     flex-wrap: wrap;
     gap: var(--spacing-sm);
+    width: 100%;
+    justify-content: center;
   }
   
   .nav-link {
     font-size: 0.8rem;
     padding: var(--spacing-xs) var(--spacing-sm);
+  }
+
+  .header-user {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .btn-logout {
+    flex: 1;
+    max-width: 150px;
   }
   
   .badge-container {
