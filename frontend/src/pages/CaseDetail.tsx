@@ -4,8 +4,8 @@
  */
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { getCase, getCaseReviewHistory } from '../services/case';
-import type { Case, CaseReviewHistory } from '../types';
+import { getCase } from '../services/case';
+import type { Case } from '../types';
 import type { AxiosError } from 'axios';
 import { useNotification } from '../contexts/NotificationContext';
 import { extractErrorMessage } from '../utils/errorHandler';
@@ -19,7 +19,6 @@ const CaseDetail: React.FC = () => {
   const navigate = useNavigate();
   const { showNotification } = useNotification();
   const [caseData, setCaseData] = useState<Case | null>(null);
-  const [reviewHistory, setReviewHistory] = useState<CaseReviewHistory[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -28,12 +27,8 @@ const CaseDetail: React.FC = () => {
 
       try {
         setLoading(true);
-        const [caseData, historyData] = await Promise.all([
-          getCase(parseInt(id)),
-          getCaseReviewHistory(parseInt(id)),
-        ]);
-        setCaseData(caseData);
-        setReviewHistory(historyData);
+        const data = await getCase(parseInt(id));
+        setCaseData(data);
       } catch (err) {
         const errorMessage = extractErrorMessage(
           err as AxiosError,
@@ -88,7 +83,7 @@ const CaseDetail: React.FC = () => {
           </div>
           <div className="detail-meta">
             <span className="meta-item">
-              <strong>Case ID:</strong> {caseData.case_id}
+              <strong>Case ID:</strong> {caseData.case_number}
             </span>
             <span className="meta-item">
               <strong>Created:</strong> {formatDate(caseData.created_at)}
@@ -119,19 +114,35 @@ const CaseDetail: React.FC = () => {
                 <div className="info-group">
                   <label className="info-label">Created By</label>
                   <p className="info-value">
-                    {caseData.created_by.first_name} {caseData.created_by.last_name}
-                    <br />
-                    <span className="info-subtitle">{caseData.created_by.email}</span>
+                    {caseData.created_by_details ? (
+                      <>
+                        {caseData.created_by_details.first_name} {caseData.created_by_details.last_name}
+                        <br />
+                        <span className="info-subtitle">{caseData.created_by_details.email}</span>
+                      </>
+                    ) : (
+                      <span>User #{caseData.created_by}</span>
+                    )}
                   </p>
                 </div>
 
-                {caseData.assigned_to && (
+                {caseData.assigned_officer_details && (
                   <div className="info-group">
-                    <label className="info-label">Assigned To</label>
+                    <label className="info-label">Assigned Officer</label>
                     <p className="info-value">
-                      {caseData.assigned_to.first_name} {caseData.assigned_to.last_name}
+                      {caseData.assigned_officer_details.first_name} {caseData.assigned_officer_details.last_name}
                       <br />
-                      <span className="info-subtitle">{caseData.assigned_to.email}</span>
+                      <span className="info-subtitle">{caseData.assigned_officer_details.email}</span>
+                    </p>
+                  </div>
+                )}
+                {caseData.assigned_cadet_details && (
+                  <div className="info-group">
+                    <label className="info-label">Assigned Cadet</label>
+                    <p className="info-value">
+                      {caseData.assigned_cadet_details.first_name} {caseData.assigned_cadet_details.last_name}
+                      <br />
+                      <span className="info-subtitle">{caseData.assigned_cadet_details.email}</span>
                     </p>
                   </div>
                 )}
@@ -198,19 +209,19 @@ const CaseDetail: React.FC = () => {
           <section className="detail-section">
             <h2 className="section-title">Review History</h2>
             <div className="section-content">
-              {reviewHistory.length === 0 ? (
+              {(!caseData.reviews || caseData.reviews.length === 0) ? (
                 <div className="empty-history">
                   <p>No review history available</p>
                 </div>
               ) : (
                 <div className="timeline">
-                  {reviewHistory.map((review, index) => (
+                  {caseData.reviews.map((review: any, index: number) => (
                     <div key={index} className="timeline-item">
                       <div className="timeline-marker" />
                       <div className="timeline-content">
                         <div className="review-header">
                           <strong className="reviewer-name">
-                            {review.reviewer.first_name} {review.reviewer.last_name}
+                            {review.reviewer_details?.first_name} {review.reviewer_details?.last_name}
                           </strong>
                           <span
                             className={`review-decision ${
@@ -220,7 +231,7 @@ const CaseDetail: React.FC = () => {
                             {review.decision === 'approved' ? '✓ Approved' : '✗ Rejected'}
                           </span>
                         </div>
-                        <p className="review-timestamp">{formatDate(review.timestamp)}</p>
+                        <p className="review-timestamp">{formatDate(review.reviewed_at)}</p>
                         {review.rejection_reason && (
                           <div className="rejection-reason">
                             <label>Reason:</label>

@@ -156,7 +156,7 @@ const CaseReview: React.FC = () => {
               <div className="case-info-grid">
                 <div className="info-item">
                   <label>Case ID</label>
-                  <span>{caseData.case_id}</span>
+                  <span>{caseData.case_number}</span>
                 </div>
                 <div className="info-item">
                   <label>Created</label>
@@ -165,7 +165,7 @@ const CaseReview: React.FC = () => {
                 <div className="info-item">
                   <label>Created By</label>
                   <span>
-                    {caseData.created_by.first_name} {caseData.created_by.last_name}
+                    {caseData.created_by_details?.first_name} {caseData.created_by_details?.last_name}
                   </span>
                 </div>
                 {caseData.formation_type && (
