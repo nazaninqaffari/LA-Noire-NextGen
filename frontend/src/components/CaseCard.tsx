@@ -26,7 +26,7 @@ const CaseCard: React.FC<CaseCardProps> = ({ case: caseData, showActions = true 
   return (
     <div className="case-card">
       <div className="case-card-header">
-        <div className="case-card-id">{caseData.case_id}</div>
+        <div className="case-card-id">{caseData.case_number}</div>
         <div className="case-card-badges">
           <CrimeLevelBadge level={caseData.crime_level} />
           <CaseStatusBadge status={caseData.status} />
@@ -41,18 +41,22 @@ const CaseCard: React.FC<CaseCardProps> = ({ case: caseData, showActions = true 
           <div className="case-meta-item">
             <span className="meta-label">Created by:</span>
             <span className="meta-value">
-              {caseData.created_by.first_name} {caseData.created_by.last_name}
+              {caseData.created_by_details ? (
+                <>{caseData.created_by_details.first_name} {caseData.created_by_details.last_name}</>
+              ) : (
+                <>User #{caseData.created_by}</>
+              )}
             </span>
           </div>
           <div className="case-meta-item">
             <span className="meta-label">Created:</span>
             <span className="meta-value">{formatDate(caseData.created_at)}</span>
           </div>
-          {caseData.assigned_to && (
+          {caseData.assigned_officer_details && (
             <div className="case-meta-item">
               <span className="meta-label">Assigned to:</span>
               <span className="meta-value">
-                {caseData.assigned_to.first_name} {caseData.assigned_to.last_name}
+                {caseData.assigned_officer_details.first_name} {caseData.assigned_officer_details.last_name}
               </span>
             </div>
           )}

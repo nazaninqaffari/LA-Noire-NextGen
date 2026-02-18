@@ -58,17 +58,30 @@ export interface WitnessData {
 
 export interface Case {
   id: number;
-  case_id: string;
+  case_number: string;
   title: string;
   description: string;
   status: CaseStatus;
   crime_level: CrimeLevel;
+  crime_level_details?: any;
   formation_type?: CaseFormationType;
-  assigned_to?: User;
-  created_by: User;
+  created_by: number;
+  created_by_details?: User;
+  assigned_cadet?: number;
+  assigned_cadet_details?: User;
+  assigned_officer?: number;
+  assigned_officer_details?: User;
+  assigned_detective?: number;
+  assigned_detective_details?: User;
+  assigned_sergeant?: number;
+  assigned_sergeant_details?: User;
+  complainants?: any[];
+  witnesses?: any[];
+  reviews?: any[];
   created_at: string;
   updated_at: string;
   opened_at?: string;
+  closed_at?: string;
   rejection_count?: number;
   complainant_statement?: string;
   crime_scene_location?: string;

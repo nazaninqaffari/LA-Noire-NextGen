@@ -188,7 +188,7 @@ const Reports: React.FC = () => {
                 <tbody>
                   {recentCases.map((c) => (
                     <tr key={c.id}>
-                      <td>{c.case_id}</td>
+                      <td>{c.case_number}</td>
                       <td>{c.title}</td>
                       <td>
                         <span className={`status-badge status-${c.status.replace(/_/g, '-')}`}>

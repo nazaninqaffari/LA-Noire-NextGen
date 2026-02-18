@@ -146,7 +146,7 @@ const Dashboard: React.FC = () => {
                   <tbody>
                     {recentCases.map((c) => (
                       <tr key={c.id} onClick={() => navigate(`/cases/${c.id}`)} className="clickable-row">
-                        <td>{c.case_id}</td>
+                        <td>{c.case_number}</td>
                         <td>{c.title}</td>
                         <td><CaseStatusBadge status={c.status} /></td>
                         <td>

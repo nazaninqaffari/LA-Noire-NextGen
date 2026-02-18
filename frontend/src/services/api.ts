@@ -33,8 +33,11 @@ api.interceptors.response.use(
   (response) => response,
   (error: AxiosError) => {
     if (error.response?.status === 401) {
-      // Redirect to login on authentication failure
-      window.location.href = '/login';
+      // Don't redirect if already on login/register page (prevents infinite reload loop)
+      const path = window.location.pathname;
+      if (path !== '/login' && path !== '/register') {
+        window.location.href = '/login';
+      }
     }
     return Promise.reject(error);
   }
