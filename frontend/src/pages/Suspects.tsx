@@ -1,24 +1,44 @@
 /**
  * Suspects Page
- * View and manage case suspects with submission workflow
+ * View and manage case suspects with submission workflow.
+ * Detectives can add new suspects from this page.
  */
 import React, { useEffect, useState, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useNotification } from '../contexts/NotificationContext';
-import { getSuspects } from '../services/investigation';
-import type { Suspect, SuspectStatus } from '../types';
+import { useAuth } from '../contexts/AuthContext';
+import { getSuspects, createSuspect } from '../services/investigation';
+import { getUsers } from '../services/admin';
+import { extractErrorMessage } from '../utils/errorHandler';
+import type { AxiosError } from 'axios';
+import type { Suspect, SuspectStatus, User } from '../types';
 import LoadingSkeleton from '../components/LoadingSkeleton';
 import './Suspects.css';
 
 const Suspects: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const { showNotification } = useNotification();
+  const { user } = useAuth();
 
   const statusFilter = (searchParams.get('status') as SuspectStatus) || '';
   const caseFilter = searchParams.get('case') ? Number(searchParams.get('case')) : undefined;
 
   const [suspects, setSuspects] = useState<Suspect[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Add suspect form state
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [addSubmitting, setAddSubmitting] = useState(false);
+  const [personSearch, setPersonSearch] = useState('');
+  const [personResults, setPersonResults] = useState<User[]>([]);
+  const [selectedPerson, setSelectedPerson] = useState<User | null>(null);
+  const [reason, setReason] = useState('');
+  const [photo, setPhoto] = useState<File | null>(null);
+
+  // Check if user can add suspects (detective or higher police rank)
+  const canAddSuspect = user?.roles?.some(
+    (r) => ['detective', 'sergeant', 'lieutenant', 'captain', 'police chief', 'administrator'].includes(r.name.toLowerCase())
+  );
 
   const fetchSuspects = useCallback(async () => {
     setLoading(true);
@@ -38,6 +58,54 @@ const Suspects: React.FC = () => {
   useEffect(() => {
     fetchSuspects();
   }, [fetchSuspects]);
+
+  // Search users when typing in person search
+  useEffect(() => {
+    if (personSearch.length < 2) {
+      setPersonResults([]);
+      return;
+    }
+    const timeout = setTimeout(async () => {
+      try {
+        const res = await getUsers({ search: personSearch });
+        setPersonResults(res.results);
+      } catch {
+        // silently fail
+      }
+    }, 400);
+    return () => clearTimeout(timeout);
+  }, [personSearch]);
+
+  const handleAddSuspect = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedPerson || !caseFilter) {
+      showNotification('Please select a person and ensure a case is specified', 'error');
+      return;
+    }
+
+    setAddSubmitting(true);
+    try {
+      const formData = new FormData();
+      formData.append('case', String(caseFilter));
+      formData.append('person', String(selectedPerson.id));
+      if (reason) formData.append('reason', reason);
+      if (photo) formData.append('photo', photo);
+
+      await createSuspect(formData);
+      showNotification('Suspect added successfully', 'success');
+      setShowAddForm(false);
+      setSelectedPerson(null);
+      setPersonSearch('');
+      setReason('');
+      setPhoto(null);
+      fetchSuspects();
+    } catch (err) {
+      const errorMessage = extractErrorMessage(err as AxiosError, 'Failed to add suspect');
+      showNotification(errorMessage, 'error');
+    } finally {
+      setAddSubmitting(false);
+    }
+  };
 
   const handleStatusFilter = (status: string) => {
     const params: Record<string, string> = {};
@@ -67,7 +135,91 @@ const Suspects: React.FC = () => {
             {caseFilter && <span className="filter-indicator"> — Case #{caseFilter}</span>}
           </p>
         </div>
+        {/* Add Suspect button — only visible for detectives with a case selected */}
+        {canAddSuspect && caseFilter && (
+          <div className="page-actions">
+            <button
+              className="btn btn-primary add-suspect-btn"
+              onClick={() => setShowAddForm(!showAddForm)}
+            >
+              {showAddForm ? '✕ Cancel' : '+ Add Suspect'}
+            </button>
+          </div>
+        )}
       </div>
+
+      {/* Add Suspect Form */}
+      {showAddForm && caseFilter && (
+        <form className="add-suspect-form card" onSubmit={handleAddSuspect}>
+          <h3>Identify New Suspect</h3>
+          <div className="form-group">
+            <label htmlFor="person-search">Search Person</label>
+            <input
+              id="person-search"
+              type="text"
+              className="person-search-input"
+              value={personSearch}
+              onChange={(e) => { setPersonSearch(e.target.value); setSelectedPerson(null); }}
+              placeholder="Type name or username to search..."
+              autoComplete="off"
+            />
+            {personResults.length > 0 && !selectedPerson && (
+              <ul className="person-results-dropdown">
+                {personResults.map((p) => (
+                  <li
+                    key={p.id}
+                    className="person-result-item"
+                    onClick={() => {
+                      setSelectedPerson(p);
+                      setPersonSearch(`${p.first_name} ${p.last_name} (${p.username})`);
+                      setPersonResults([]);
+                    }}
+                  >
+                    <span className="person-name">{p.first_name} {p.last_name}</span>
+                    <span className="person-username">@{p.username}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+            {selectedPerson && (
+              <div className="selected-person-badge">
+                ✓ Selected: {selectedPerson.first_name} {selectedPerson.last_name}
+              </div>
+            )}
+          </div>
+          <div className="form-group">
+            <label htmlFor="suspect-reason">Reason / Evidence</label>
+            <textarea
+              id="suspect-reason"
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+              placeholder="Describe why this person is a suspect..."
+              rows={3}
+            />
+          </div>
+          <div className="form-group">
+            <label htmlFor="suspect-photo">Photo (optional)</label>
+            <input
+              id="suspect-photo"
+              type="file"
+              accept="image/*"
+              onChange={(e) => setPhoto(e.target.files?.[0] || null)}
+            />
+          </div>
+          <div className="form-actions">
+            <button
+              type="submit"
+              className="btn btn-primary"
+              disabled={!selectedPerson || addSubmitting}
+            >
+              {addSubmitting ? 'Adding...' : 'Add Suspect'}
+            </button>
+            <button type="button" className="btn" onClick={() => setShowAddForm(false)}>
+              Cancel
+            </button>
+          </div>
+        </form>
+      )}
 
       {/* Status Filters */}
       <div className="suspect-filters">

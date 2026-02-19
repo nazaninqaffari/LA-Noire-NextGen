@@ -119,7 +119,7 @@ const Register: React.FC = () => {
         password_confirm: confirm_password,
       };
       
-      await api.post('/v1/accounts/users/', registrationData);
+      await api.post('/accounts/users/', registrationData);
 
       addNotification({
         type: 'success',

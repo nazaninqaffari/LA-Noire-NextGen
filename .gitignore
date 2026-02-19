@@ -108,3 +108,5 @@ cython_debug/
 Thumbs.db
 .DS_Store
 commit_helper.txt
+tmp/
+backend/media/

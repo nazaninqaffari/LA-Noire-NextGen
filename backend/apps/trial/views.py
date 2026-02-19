@@ -14,6 +14,13 @@ from drf_spectacular.utils import extend_schema
 
 from apps.evidence.models import Testimony, BiologicalEvidence, VehicleEvidence
 from .models import Trial, Verdict, Punishment, BailPayment
+
+
+def user_has_role(user, role_name):
+    """Check if user has a specific role."""
+    return user.roles.filter(name=role_name).exists()
+
+
 from .serializers import (
     TrialSerializer, VerdictSerializer, PunishmentSerializer,
     BailPaymentSerializer, VerdictWithPunishmentSerializer,
@@ -50,10 +57,10 @@ class TrialViewSet(viewsets.ModelViewSet):
         user = self.request.user
         queryset = super().get_queryset()
         
-        if user.roles.filter(name='judge').exists():
+        if user.roles.filter(name='Judge').exists():
             # Judges see their assigned trials
             return queryset.filter(judge=user)
-        elif user.roles.filter(name__in=['captain', 'police_chief']).exists():
+        elif user.roles.filter(name__in=['Captain', 'Police Chief']).exists():
             # Captains and chiefs see trials they submitted
             return queryset.filter(
                 models.Q(submitted_by_captain=user) | models.Q(submitted_by_chief=user)
@@ -93,7 +100,7 @@ class TrialViewSet(viewsets.ModelViewSet):
         trial = self.get_object()
         
         # Check permission - judge only
-        if request.user != trial.judge and request.user.role != 'judge':
+        if request.user != trial.judge and not user_has_role(request.user, 'Judge'):
             return Response(
                 {"detail": "فقط قاضی می‌تواند خلاصه پرونده را مشاهده کند."},
                 status=status.HTTP_403_FORBIDDEN
@@ -275,7 +282,7 @@ class BailPaymentViewSet(viewsets.ModelViewSet):
         user = self.request.user
         queryset = super().get_queryset()
         
-        if user.roles.filter(name='sergeant').exists():
+        if user.roles.filter(name='Sergeant').exists():
             # Sergeants see all bail requests
             return queryset
         else:
@@ -300,7 +307,7 @@ class BailPaymentViewSet(viewsets.ModelViewSet):
         bail = self.get_object()
         
         # Check permission - sergeant only
-        if request.user.role != 'sergeant':
+        if not user_has_role(request.user, 'Sergeant'):
             return Response(
                 {"detail": "فقط گروهبان می‌تواند وثیقه را تایید کند."},
                 status=status.HTTP_403_FORBIDDEN

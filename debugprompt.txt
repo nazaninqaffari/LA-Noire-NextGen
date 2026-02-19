@@ -1,0 +1,13 @@
+as always, in case of backend change add backend related tests
+
+in case of any change add patch related cases 
+
+run all cases till you sure its debugged
+
+the bug might be on front or back or tests, dont be bias to one side
+
+keep debugging until you have the bugs fixed
+
+dont use /something dirs for anything it requires authorization, you can use the tmp subdir in the proj if you needed
+
+and finally, i recommend you run the new patch testcases only to save time, not the old one, you can create a subdir in patch dir for each patch to know what is what

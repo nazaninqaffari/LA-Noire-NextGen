@@ -73,11 +73,20 @@ class BiologicalEvidenceSerializer(serializers.ModelSerializer):
     
     Blood stains, hair, fingerprints requiring forensic analysis.
     Results from forensic doctor and identity database can be added later.
+    Accepts either PK ids or raw file uploads for the 'images' field.
     """
     images_data = EvidenceImageSerializer(source='images', many=True, read_only=True)
     recorded_by_name = serializers.CharField(source='recorded_by.get_full_name', read_only=True)
     verified_by_name = serializers.CharField(source='verified_by_coroner.get_full_name', read_only=True)
     identity_match_name = serializers.CharField(source='identity_match.get_full_name', read_only=True)
+    # Make the M2M 'images' field optional and write-only so DRF doesn't
+    # complain when raw files arrive instead of PK values.
+    images = serializers.PrimaryKeyRelatedField(
+        queryset=EvidenceImage.objects.all(),
+        many=True,
+        required=False,
+        write_only=True,
+    )
     
     class Meta:
         model = BiologicalEvidence
@@ -88,6 +97,26 @@ class BiologicalEvidenceSerializer(serializers.ModelSerializer):
             'recorded_by', 'recorded_by_name', 'recorded_at'
         ]
         read_only_fields = ['id', 'recorded_by', 'recorded_at', 'verified_at']
+
+    def to_internal_value(self, data):
+        """
+        Override to gracefully skip PK validation on 'images' when raw
+        file uploads are sent (multipart/form-data).  Files will be
+        handled in create() instead.
+        """
+        from django.core.files.uploadedfile import UploadedFile
+        # Check if any image value is a file upload
+        images_raw = data.getlist('images') if hasattr(data, 'getlist') else data.get('images', [])
+        has_file_uploads = any(isinstance(f, UploadedFile) for f in (images_raw or []))
+        if has_file_uploads:
+            # Temporarily remove images from data so PrimaryKeyRelatedField doesn't choke
+            mutable = data.copy() if hasattr(data, 'copy') else dict(data)
+            if hasattr(mutable, 'pop'):
+                mutable.pop('images', None)
+            elif 'images' in mutable:
+                del mutable['images']
+            return super().to_internal_value(mutable)
+        return super().to_internal_value(data)
     
     def validate(self, data):
         """Validate biological evidence data."""
@@ -105,6 +134,31 @@ class BiologicalEvidenceSerializer(serializers.ModelSerializer):
             })
         
         return data
+
+    def create(self, validated_data):
+        """
+        Handle creation with optional raw image file uploads.
+        If the request contains files under 'images', create EvidenceImage
+        objects first, then link them via the M2M relationship.
+        """
+        # Pop out any PK-based images list (may be empty)
+        image_pks = validated_data.pop('images', [])
+        
+        instance = BiologicalEvidence.objects.create(**validated_data)
+        
+        # Link any existing EvidenceImage objects by PK
+        if image_pks:
+            instance.images.set(image_pks)
+        
+        # Handle raw file uploads from the request
+        request = self.context.get('request')
+        if request and hasattr(request, 'FILES'):
+            uploaded_files = request.FILES.getlist('images')
+            for f in uploaded_files:
+                img = EvidenceImage.objects.create(image=f, caption=f.name)
+                instance.images.add(img)
+        
+        return instance
 
 
 class BiologicalEvidenceUpdateSerializer(serializers.ModelSerializer):
@@ -158,13 +212,13 @@ class VehicleEvidenceSerializer(serializers.ModelSerializer):
                 serial_number = self.instance.serial_number
         
         if license_plate and serial_number:
-            raise serializers.ValidationError({
-                "license_plate": "Vehicle cannot have both license plate and serial number. Provide only one."
-            })
+            raise serializers.ValidationError(
+                "Vehicle cannot have both license plate and serial number. Provide only one."
+            )
         if not license_plate and not serial_number:
-            raise serializers.ValidationError({
-                "license_plate": "Vehicle must have either license plate or serial number"
-            })
+            raise serializers.ValidationError(
+                "Vehicle must have either a license plate or a serial number."
+            )
         
         # Ensure case exists and is open
         case = data.get('case')

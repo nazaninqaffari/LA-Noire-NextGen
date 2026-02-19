@@ -2,9 +2,9 @@
  * Create Complaint Page
  * Citizen-initiated case formation
  */
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { createComplaintCase } from '../services/case';
+import { createComplaintCase, getCrimeLevels } from '../services/case';
 import type { CaseCreateComplaintData } from '../types';
 import type { AxiosError } from 'axios';
 import { useNotification } from '../contexts/NotificationContext';
@@ -16,13 +16,31 @@ const CreateComplaint: React.FC = () => {
   const navigate = useNavigate();
   const { showNotification } = useNotification();
   const [loading, setLoading] = useState(false);
+  const [crimeLevels, setCrimeLevels] = useState<any[]>([]);
   const [formData, setFormData] = useState<CaseCreateComplaintData>({
     title: '',
     description: '',
-    crime_level: 2,
+    crime_level: 0,
     formation_type: 'complaint',
     complainant_statement: '',
   });
+
+  // Fetch crime levels from backend so we use real FK IDs
+  useEffect(() => {
+    const fetchLevels = async () => {
+      try {
+        const levels = await getCrimeLevels();
+        setCrimeLevels(levels);
+        // Default to first available if formData has no valid selection
+        if (levels.length > 0 && !levels.find((l: any) => l.id === formData.crime_level)) {
+          setFormData((prev) => ({ ...prev, crime_level: levels[0].id }));
+        }
+      } catch {
+        // Fallback: leave as-is
+      }
+    };
+    fetchLevels();
+  }, []);
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
@@ -65,13 +83,6 @@ const CreateComplaint: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
-
-  const crimeLevelInfo = {
-    0: { label: 'Critical', description: 'Immediate threat to life or major crime' },
-    1: { label: 'Major', description: 'Serious crime requiring urgent attention' },
-    2: { label: 'Medium', description: 'Standard investigation required' },
-    3: { label: 'Minor', description: 'Low priority case' },
   };
 
   if (loading) {
@@ -127,15 +138,26 @@ const CreateComplaint: React.FC = () => {
             className="form-select"
             required
           >
-            <option value={0}>Critical - {crimeLevelInfo[0].description}</option>
-            <option value={1}>Major - {crimeLevelInfo[1].description}</option>
-            <option value={2}>Medium - {crimeLevelInfo[2].description}</option>
-            <option value={3}>Minor - {crimeLevelInfo[3].description}</option>
+            {crimeLevels.length > 0 ? (
+              crimeLevels.map((cl: any) => (
+                <option key={cl.id} value={cl.id}>
+                  {cl.name || `Level ${cl.level}`} — {cl.description || ''}
+                </option>
+              ))
+            ) : (
+              <>
+                <option value={0}>Critical - Immediate threat to life or major crime</option>
+                <option value={1}>Major - Serious crime requiring urgent attention</option>
+                <option value={2}>Medium - Standard investigation required</option>
+                <option value={3}>Minor - Low priority case</option>
+              </>
+            )}
           </select>
           <div className="crime-level-info">
             <span className="info-icon">ℹ️</span>
             <span className="info-text">
-              {crimeLevelInfo[formData.crime_level as keyof typeof crimeLevelInfo].description}
+              {crimeLevels.find((cl: any) => cl.id === formData.crime_level)?.description
+                || 'Select a crime severity level'}
             </span>
           </div>
         </div>

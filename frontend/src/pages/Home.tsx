@@ -5,7 +5,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { getCases } from '../services/case';
+import { getPublicStats } from '../services/case';
 import { SkeletonStats } from '../components/LoadingSkeleton';
 import './Home.css';
 
@@ -26,19 +26,11 @@ const Home: React.FC = () => {
 
   const fetchStats = async () => {
     try {
-      // Fetch actual case counts from API
-      const [allCases, closedCases] = await Promise.allSettled([
-        getCases({ page: 1 }),
-        getCases({ status: 'closed', page: 1 }),
-      ]);
-
+      const data = await getPublicStats();
       setStats({
-        totalCases: allCases.status === 'fulfilled' ? allCases.value.count : 0,
-        activeCases:
-          allCases.status === 'fulfilled' && closedCases.status === 'fulfilled'
-            ? allCases.value.count - closedCases.value.count
-            : 0,
-        solvedCases: closedCases.status === 'fulfilled' ? closedCases.value.count : 0,
+        totalCases: data.total_cases,
+        activeCases: data.active_cases,
+        solvedCases: data.solved_cases,
       });
     } catch {
       // Silently fail – stats default to 0

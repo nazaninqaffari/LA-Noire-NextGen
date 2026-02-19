@@ -1,10 +1,10 @@
 """Views for Case formation and management.
 Handles complaint-based and crime scene-based case workflows.
 """
-from rest_framework import viewsets, status
+from rest_framework import viewsets, status, views
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import SearchFilter, OrderingFilter
 from drf_spectacular.utils import extend_schema, OpenApiExample, OpenApiParameter
@@ -28,6 +28,38 @@ def user_has_role(user, role_name):
 def get_user_highest_police_role(user):
     """Get user's highest police role by hierarchy level."""
     return user.roles.filter(is_police_rank=True).order_by('-hierarchy_level').first()
+
+
+class PublicStatsView(views.APIView):
+    """Public endpoint returning case statistics without authentication."""
+    permission_classes = [AllowAny]
+
+    @extend_schema(
+        summary="Public case statistics",
+        description="Returns aggregate case counts. No authentication required.",
+        responses={
+            200: OpenApiExample(
+                'Stats',
+                value={
+                    'total_cases': 42,
+                    'active_cases': 15,
+                    'solved_cases': 20,
+                },
+                response_only=True
+            )
+        }
+    )
+    def get(self, request):
+        total = Case.objects.count()
+        solved = Case.objects.filter(status=Case.STATUS_CLOSED).count()
+        active = total - solved - Case.objects.filter(
+            status__in=[Case.STATUS_REJECTED, Case.STATUS_DRAFT]
+        ).count()
+        return Response({
+            'total_cases': total,
+            'active_cases': max(active, 0),
+            'solved_cases': solved,
+        })
 
 
 class CrimeLevelViewSet(viewsets.ModelViewSet):
@@ -154,6 +186,71 @@ class CaseViewSet(viewsets.ModelViewSet):
         headers = self.get_success_headers(response_serializer.data)
         return Response(response_serializer.data, status=status.HTTP_201_CREATED, headers=headers)
     
+    def perform_update(self, serializer):
+        """Only allow updates to cases in draft status by the original creator."""
+        case = self.get_object()
+        user = self.request.user
+        if case.status != Case.STATUS_DRAFT:
+            from rest_framework.exceptions import PermissionDenied
+            raise PermissionDenied('Only cases in draft status can be edited.')
+        if case.created_by != user and not user_has_role(user, 'Administrator'):
+            from rest_framework.exceptions import PermissionDenied
+            raise PermissionDenied('Only the case creator can edit this case.')
+        serializer.save()
+
+    @extend_schema(
+        summary="Resubmit a draft case for review",
+        description="""Resubmit a case that was rejected back to draft.
+        The complainant (case creator) can call this after editing the case
+        to send it back to cadet_review. Only works for cases in draft status.
+        The same cadet who previously reviewed it will see it again.
+        """,
+        request=None,
+        responses={
+            200: CaseSerializer,
+            400: {"description": "Case not in draft status or max rejections reached"},
+            403: {"description": "User is not the case creator"}
+        },
+        examples=[
+            OpenApiExample(
+                'Resubmit Case',
+                value={"message": "Case resubmitted for review"},
+                response_only=True
+            )
+        ]
+    )
+    @action(detail=True, methods=['post'])
+    def resubmit(self, request, pk=None):
+        """Resubmit a draft case back to cadet_review after editing."""
+        case = self.get_object()
+        user = request.user
+
+        # Only the case creator (complainant) can resubmit
+        if case.created_by != user:
+            return Response(
+                {'error': 'Only the case creator can resubmit.'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        if case.status != Case.STATUS_DRAFT:
+            return Response(
+                {'error': 'Only cases in draft status can be resubmitted.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if case.rejection_count >= 3:
+            return Response(
+                {'error': 'This case has been permanently rejected after 3 failed submissions.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Move case back to cadet_review
+        case.status = Case.STATUS_CADET_REVIEW
+        case.save()
+
+        response_serializer = self.get_serializer(case)
+        return Response(response_serializer.data)
+    
     @extend_schema(
         summary="Cadet reviews case",
         description="""Cadet reviews and approves or rejects a case in cadet review status.
@@ -204,8 +301,20 @@ class CaseViewSet(viewsets.ModelViewSet):
         rejection_reason = serializer.validated_data.get('rejection_reason', '')
         
         if case.status != Case.STATUS_CADET_REVIEW:
+            # Provide clear, contextual error about why review can't proceed
+            current = case.get_status_display()
+            if case.status == Case.STATUS_OFFICER_REVIEW:
+                msg = f'This case has already passed cadet review and is now in officer review stage.'
+            elif case.status == Case.STATUS_OPEN:
+                msg = f'This case is already open for investigation — it has been fully approved.'
+            elif case.status == Case.STATUS_REJECTED:
+                msg = f'This case has been permanently rejected after {case.rejection_count} failed review(s).'
+            elif case.status == Case.STATUS_DRAFT:
+                msg = f'This case is a draft and has not been submitted for cadet review yet.'
+            else:
+                msg = f'This case is currently in "{current}" status and cannot be reviewed by a cadet.'
             return Response(
-                {'error': 'Case is not in cadet review status'},
+                {'error': msg},
                 status=status.HTTP_400_BAD_REQUEST
             )
         
@@ -292,8 +401,20 @@ class CaseViewSet(viewsets.ModelViewSet):
         rejection_reason = serializer.validated_data.get('rejection_reason', '')
         
         if case.status != Case.STATUS_OFFICER_REVIEW:
+            # Provide clear, contextual error about why review can't proceed
+            current = case.get_status_display()
+            if case.status == Case.STATUS_CADET_REVIEW:
+                msg = f'This case is still awaiting cadet review and has not reached the officer review stage yet.'
+            elif case.status == Case.STATUS_OPEN:
+                msg = f'This case is already open for investigation — it has been fully approved.'
+            elif case.status == Case.STATUS_REJECTED:
+                msg = f'This case has been permanently rejected after {case.rejection_count} failed review(s).'
+            elif case.status == Case.STATUS_DRAFT:
+                msg = f'This case is a draft and must pass cadet review before officer review.'
+            else:
+                msg = f'This case is currently in "{current}" status and cannot be reviewed by an officer.'
             return Response(
-                {'error': 'Case is not in officer review status'},
+                {'error': msg},
                 status=status.HTTP_400_BAD_REQUEST
             )
         

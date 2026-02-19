@@ -7,7 +7,7 @@ const ADMIN_AUTH = path.join(__dirname, 'tests/e2e/.auth/admin.json');
  * Playwright Configuration for LA Noire NextGen E2E Tests
  * 
  * Optimized for speed:
- * - 4 parallel workers (8 cores, 8GB RAM)
+ * - 2 parallel workers (stable with dev server)
  * - CSS/font/image blocking (doesn't affect test logic)
  * - Saved auth state to skip redundant logins
  * - Reduced timeouts for faster failure detection
@@ -17,7 +17,7 @@ export default defineConfig({
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
-  workers: 4,
+  workers: 2,
   reporter: [
     ['html', { open: 'never', outputFolder: 'tests/e2e/reports' }],
     ['list'],

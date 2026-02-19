@@ -5,6 +5,8 @@
 import React, { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useNotification } from '../contexts/NotificationContext';
+import { extractErrorMessage } from '../utils/errorHandler';
+import type { AxiosError } from 'axios';
 import {
   createTestimony,
   createBiologicalEvidence,
@@ -111,8 +113,9 @@ const EvidenceRegister: React.FC = () => {
 
       showNotification('Evidence registered successfully', 'success');
       navigate(`/evidence?case=${caseId}`);
-    } catch {
-      showNotification('Failed to register evidence', 'error');
+    } catch (err) {
+      const errorMessage = extractErrorMessage(err as AxiosError, 'Failed to register evidence');
+      showNotification(errorMessage, 'error');
     } finally {
       setSubmitting(false);
     }

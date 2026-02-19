@@ -34,7 +34,14 @@ export const getTrial = async (id: number): Promise<Trial> => {
 };
 
 export const createTrial = async (
-  data: { case: number; suspect: number; trial_date?: string }
+  data: {
+    case: number;
+    suspect: number;
+    trial_date?: string;
+    judge?: number;
+    submitted_by_captain?: number;
+    captain_notes?: string;
+  }
 ): Promise<Trial> => {
   const response = await api.post<Trial>(`${TRIALS_URL}/`, data);
   return response.data;
@@ -49,7 +56,12 @@ export const getCaseSummary = async (trialId: number): Promise<any> => {
 /** Judge delivers verdict on trial */
 export const deliverVerdict = async (
   trialId: number,
-  data: { verdict: 'guilty' | 'innocent'; reasoning: string }
+  data: {
+    decision: 'guilty' | 'innocent';
+    reasoning: string;
+    punishment_title?: string;
+    punishment_description?: string;
+  }
 ): Promise<Trial> => {
   const response = await api.post<Trial>(`${TRIALS_URL}/${trialId}/deliver_verdict/`, data);
   return response.data;
@@ -90,7 +102,7 @@ export const getBailPayments = async (params?: {
 };
 
 export const createBailPayment = async (
-  data: { verdict: number; amount: number }
+  data: { suspect: number; amount: number }
 ): Promise<BailPayment> => {
   const response = await api.post<BailPayment>(`${BAIL_URL}/`, data);
   return response.data;

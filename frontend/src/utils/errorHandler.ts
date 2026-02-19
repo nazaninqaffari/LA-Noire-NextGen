@@ -47,19 +47,66 @@ export const extractErrorMessage = (
 
   // Check for field-specific errors
   const fieldErrors: string[] = [];
+  // Human-readable field name mapping
+  const fieldLabels: Record<string, string> = {
+    username: 'Username',
+    email: 'Email',
+    password: 'Password',
+    password_confirm: 'Password confirmation',
+    phone_number: 'Phone number',
+    national_id: 'National ID',
+    first_name: 'First name',
+    last_name: 'Last name',
+    title: 'Title',
+    description: 'Description',
+    crime_level: 'Crime level',
+    complainant_statement: 'Statement',
+    decision: 'Decision',
+    rejection_reason: 'Rejection reason',
+    case: 'Case',
+    evidence_type: 'Evidence type',
+    license_plate: 'License plate',
+    serial_number: 'Serial number',
+    owner_full_name: 'Owner name',
+    document_type: 'Document type',
+    witness: 'Witness',
+    witness_name: 'Witness name',
+    transcript: 'Transcript',
+    images: 'Images',
+    image: 'Image',
+    model: 'Vehicle model',
+    color: 'Color',
+    coroner_analysis: 'Coroner analysis',
+    person: 'Person',
+    reason: 'Reason',
+    photo: 'Photo',
+    status: 'Status',
+  };
+
   Object.keys(data).forEach((key) => {
+    const label = fieldLabels[key] || key.replace(/_/g, ' ');
     if (Array.isArray(data[key])) {
       const fieldError = data[key][0];
-      if (fieldError) {
-        fieldErrors.push(`${key}: ${fieldError}`);
+      if (typeof fieldError === 'string' && fieldError.trim()) {
+        fieldErrors.push(`${label}: ${fieldError}`);
       }
-    } else if (typeof data[key] === 'string') {
-      fieldErrors.push(`${key}: ${data[key]}`);
+    } else if (typeof data[key] === 'string' && data[key].trim()) {
+      fieldErrors.push(`${label}: ${data[key]}`);
+    } else if (typeof data[key] === 'object' && data[key] !== null) {
+      // Handle nested error objects
+      Object.entries(data[key]).forEach(([subKey, subVal]) => {
+        const subLabel = fieldLabels[subKey] || subKey.replace(/_/g, ' ');
+        if (Array.isArray(subVal) && subVal[0]) {
+          fieldErrors.push(`${label} → ${subLabel}: ${subVal[0]}`);
+        } else if (typeof subVal === 'string') {
+          fieldErrors.push(`${label} → ${subLabel}: ${subVal}`);
+        }
+      });
     }
   });
 
   if (fieldErrors.length > 0) {
-    return fieldErrors.join('; ');
+    return fieldErrors.join('. ');
   }
 
   return defaultMessage;
@@ -85,16 +132,23 @@ export const extractValidationErrors = (
     errors.push(...data.non_field_errors);
   }
 
-  // Handle field-specific errors
+  // Handle field-specific errors with readable labels
+  const fieldLabels: Record<string, string> = {
+    username: 'Username', email: 'Email', password: 'Password',
+    password_confirm: 'Password confirmation', phone_number: 'Phone number',
+    national_id: 'National ID', first_name: 'First name', last_name: 'Last name',
+  };
+
   Object.keys(data).forEach((key) => {
-    if (key === 'non_field_errors') return; // Already handled
+    if (key === 'non_field_errors') return;
+    const label = fieldLabels[key] || key.replace(/_/g, ' ');
 
     if (Array.isArray(data[key])) {
       data[key].forEach((msg: string) => {
-        errors.push(`${key}: ${msg}`);
+        if (typeof msg === 'string') errors.push(`${label}: ${msg}`);
       });
     } else if (typeof data[key] === 'string') {
-      errors.push(`${key}: ${data[key]}`);
+      errors.push(`${label}: ${data[key]}`);
     }
   });
 

@@ -7,6 +7,7 @@ import React, { useMemo } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotification } from '../contexts/NotificationContext';
+import NotificationBell from './NotificationBell';
 import './Header.css';
 
 /** Check if user has a specific role */
@@ -38,8 +39,15 @@ const Header: React.FC = () => {
       items.push({ to: '/detective-board', label: 'Detective Board' });
     }
 
-    // Trial management – judges
-    if (hasRole(user, 'judge') || hasRole(user, 'captain') || hasRole(user, 'police_chief')) {
+    // Interrogations – detective, sergeant, captain
+    if (hasRole(user, 'detective') || hasRole(user, 'senior_detective')
+      || hasRole(user, 'sergeant') || hasRole(user, 'captain') || hasRole(user, 'police_chief')) {
+      items.push({ to: '/interrogations', label: 'Interrogations' });
+    }
+
+    // Trial management – judges, captain, sergeant (for bail)
+    if (hasRole(user, 'judge') || hasRole(user, 'captain') || hasRole(user, 'police_chief')
+      || hasRole(user, 'sergeant')) {
       items.push({ to: '/trials', label: 'Trials' });
     }
 
@@ -109,6 +117,7 @@ const Header: React.FC = () => {
                 </Link>
               ))}
               <div className="header-user">
+                <NotificationBell />
                 <span className="user-name">{user?.username}</span>
                 <button onClick={handleLogout} className="btn-logout">
                   Logout

@@ -19,6 +19,7 @@ import Dashboard from './pages/Dashboard';
 import Cases from './pages/Cases';
 import CaseDetail from './pages/CaseDetail';
 import CaseReview from './pages/CaseReview';
+import CaseEdit from './pages/CaseEdit';
 import CreateComplaint from './pages/CreateComplaint';
 import CreateCrimeScene from './pages/CreateCrimeScene';
 import Evidence from './pages/Evidence';
@@ -26,7 +27,9 @@ import EvidenceRegister from './pages/EvidenceRegister';
 import MostWanted from './pages/MostWanted';
 import DetectiveBoard from './pages/DetectiveBoard';
 import Suspects from './pages/Suspects';
+import SuspectSubmissions from './pages/SuspectSubmissions';
 import Trials from './pages/Trials';
+import Interrogations from './pages/Interrogations';
 import Reports from './pages/Reports';
 import AdminPanel from './pages/AdminPanel';
 import StyleGuide from './pages/StyleGuide';
@@ -54,12 +57,15 @@ const App: React.FC = () => {
                 <Route path="/cases" element={<Cases />} />
                 <Route path="/cases/:id" element={<CaseDetail />} />
                 <Route path="/cases/:id/review" element={<CaseReview />} />
+                <Route path="/cases/:id/edit" element={<CaseEdit />} />
                 <Route path="/cases/complaint/new" element={<CreateComplaint />} />
                 <Route path="/cases/scene/new" element={<CreateCrimeScene />} />
                 <Route path="/evidence" element={<Evidence />} />
                 <Route path="/evidence/register" element={<EvidenceRegister />} />
                 <Route path="/detective-board" element={<DetectiveBoard />} />
                 <Route path="/suspects" element={<Suspects />} />
+                <Route path="/suspect-submissions" element={<SuspectSubmissions />} />
+                <Route path="/interrogations" element={<Interrogations />} />
                 <Route path="/trials" element={<Trials />} />
                 <Route path="/reports" element={<Reports />} />
                 <Route path="/admin" element={<AdminPanel />} />

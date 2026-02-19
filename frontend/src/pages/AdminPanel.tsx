@@ -1,8 +1,11 @@
 /**
  * Admin Panel Page
  * Custom admin panel (non-Django) for user and role management
+ * Restricted to administrators only.
  */
 import React, { useEffect, useState, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 import { useNotification } from '../contexts/NotificationContext';
 import { getUsers, assignRoles } from '../services/admin';
 import { getRoles, createRole, deleteRole } from '../services/admin';
@@ -12,7 +15,21 @@ import './AdminPanel.css';
 
 type AdminTab = 'users' | 'roles';
 
+/**
+ * Check if a user has admin privileges.
+ * An admin is: superuser, staff, or has the 'Administrator' role.
+ */
+function isAdmin(user: User | null): boolean {
+  if (!user) return false;
+  if (user.is_superuser || user.is_staff) return true;
+  return (user.roles ?? []).some(
+    (r) => r.name.toLowerCase() === 'administrator'
+  );
+}
+
 const AdminPanel: React.FC = () => {
+  const { user, isAuthenticated, loading: authLoading } = useAuth();
+  const navigate = useNavigate();
   const { showNotification } = useNotification();
   const [activeTab, setActiveTab] = useState<AdminTab>('users');
   const [users, setUsers] = useState<User[]>([]);
@@ -31,6 +48,15 @@ const AdminPanel: React.FC = () => {
   const [newRoleLevel, setNewRoleLevel] = useState(1);
   const [newRoleDesc, setNewRoleDesc] = useState('');
   const [newRoleIsPolice, setNewRoleIsPolice] = useState(false);
+
+  // --- Admin guard: redirect non-admin users ---
+  useEffect(() => {
+    if (authLoading) return; // wait for auth check
+    if (!isAuthenticated || !isAdmin(user as User)) {
+      showNotification('Access denied. Administrator privileges required.', 'error');
+      navigate('/dashboard', { replace: true });
+    }
+  }, [authLoading, isAuthenticated, user, navigate, showNotification]);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -110,6 +136,11 @@ const AdminPanel: React.FC = () => {
     setSelectedUser(user);
     setSelectedRoles(user.roles?.map((r) => r.id) || []);
   };
+
+  // Don't render until auth is resolved and user is confirmed admin
+  if (authLoading || !isAuthenticated || !isAdmin(user as User)) {
+    return null;
+  }
 
   return (
     <div className="admin-page">

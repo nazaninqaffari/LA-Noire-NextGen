@@ -1,0 +1,204 @@
+/* ─── Suspect Submissions Page ───────────────────────────────────── */
+
+.suspect-submissions-page {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+}
+
+/* ─── Submission Form ────────────────────────────────────────────── */
+
+.submission-form {
+  margin-bottom: 2rem;
+  border-left: 3px solid var(--color-gold, #d4a843);
+}
+
+.submission-form h3 {
+  margin-top: 0;
+  margin-bottom: 0.25rem;
+}
+
+.form-hint {
+  color: var(--color-text-muted, #888);
+  font-size: 0.9rem;
+  margin-bottom: 1.25rem;
+}
+
+.suspect-checkboxes {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
+}
+
+.suspect-checkbox {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--color-border, #3a3a3a);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: border-color 0.2s, background-color 0.2s;
+}
+
+.suspect-checkbox:hover {
+  border-color: var(--color-gold, #d4a843);
+}
+
+.suspect-checkbox.checked {
+  border-color: var(--color-crimson, #dc143c);
+  background: rgba(220, 20, 60, 0.05);
+}
+
+.suspect-checkbox input[type="checkbox"] {
+  margin-top: 3px;
+  accent-color: var(--color-crimson, #dc143c);
+}
+
+.suspect-checkbox-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.suspect-meta {
+  font-size: 0.8rem;
+  color: var(--color-text-muted, #888);
+  margin-top: 0.15rem;
+}
+
+/* ─── Submissions List ───────────────────────────────────────────── */
+
+.submissions-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.submission-card {
+  border-left: 3px solid var(--color-border, #3a3a3a);
+}
+
+.submission-card.pending {
+  border-left-color: var(--color-gold, #d4a843);
+}
+
+.submission-card.approved {
+  border-left-color: #2e8b57;
+}
+
+.submission-card.rejected {
+  border-left-color: var(--color-crimson, #dc143c);
+}
+
+.submission-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 0.75rem;
+}
+
+.submission-header h3 {
+  margin: 0 0.5rem 0 0;
+  display: inline-block;
+}
+
+.submission-date {
+  font-size: 0.85rem;
+  color: var(--color-text-muted, #888);
+}
+
+.submission-badge {
+  display: inline-block;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 0.15rem 0.5rem;
+  border-radius: 3px;
+  vertical-align: middle;
+}
+
+.badge-pending {
+  background: rgba(212, 168, 67, 0.15);
+  color: var(--color-gold, #d4a843);
+  border: 1px solid var(--color-gold, #d4a843);
+}
+
+.badge-approved {
+  background: rgba(46, 139, 87, 0.15);
+  color: #2e8b57;
+  border: 1px solid #2e8b57;
+}
+
+.badge-rejected {
+  background: rgba(220, 20, 60, 0.15);
+  color: var(--color-crimson, #dc143c);
+  border: 1px solid var(--color-crimson, #dc143c);
+}
+
+.submission-meta {
+  display: flex;
+  gap: 1.5rem;
+  font-size: 0.9rem;
+  margin-bottom: 0.75rem;
+  color: var(--color-text-secondary, #aaa);
+}
+
+.submission-reasoning,
+.submission-feedback {
+  margin-top: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.submission-reasoning p,
+.submission-feedback p {
+  margin: 0.25rem 0 0;
+  color: var(--color-text-secondary, #ccc);
+}
+
+.submission-feedback {
+  background: rgba(220, 20, 60, 0.05);
+  border: 1px solid var(--color-border, #3a3a3a);
+  border-radius: 4px;
+  padding: 0.75rem;
+  margin-top: 0.75rem;
+}
+
+/* ─── Review Form ────────────────────────────────────────────────── */
+
+.review-form {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--color-border, #3a3a3a);
+}
+
+.btn-success {
+  background: #2e8b57;
+  color: #fff;
+  border: 1px solid #2e8b57;
+}
+
+.btn-success:hover {
+  background: #267349;
+}
+
+.empty-hint {
+  color: var(--color-text-muted, #888);
+  font-style: italic;
+  text-align: center;
+  padding: 1rem 0;
+}
+
+/* ─── Responsive ─────────────────────────────────────────────────── */
+
+@media (max-width: 768px) {
+  .submission-header {
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .submission-meta {
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+}

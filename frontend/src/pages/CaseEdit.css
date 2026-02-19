@@ -1,0 +1,147 @@
+/**
+ * CaseEdit Styles
+ * Matches the noir theme used in CaseReview and other pages
+ */
+.case-edit-page {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.edit-header {
+  margin-bottom: 2rem;
+}
+
+.edit-header .btn-back {
+  background: none;
+  border: none;
+  color: var(--color-gold);
+  font-size: 0.9rem;
+  cursor: pointer;
+  padding: 0.4rem 0;
+  margin-bottom: 0.5rem;
+  display: inline-block;
+}
+
+.edit-header-content {
+  margin-top: 0.5rem;
+}
+
+.edit-title {
+  font-family: var(--font-heading);
+  font-size: 1.75rem;
+  color: var(--color-text);
+  margin-bottom: 0.25rem;
+}
+
+.edit-subtitle {
+  color: var(--color-text-muted);
+  font-size: 0.95rem;
+}
+
+.edit-grid {
+  display: grid;
+  grid-template-columns: 1fr 1.5fr;
+  gap: 2rem;
+}
+
+@media (max-width: 900px) {
+  .edit-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.edit-section {
+  background: var(--color-noir-card);
+  border-radius: 8px;
+  border: 1px solid var(--color-noir-border);
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.rejection-info-panel .section-content {
+  padding: 0;
+}
+
+.rejection-stats {
+  display: flex;
+  gap: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.stat-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.stat-label {
+  color: var(--color-text-muted);
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.stat-value.rejection-count {
+  font-family: var(--font-mono, monospace);
+  font-size: 1.2rem;
+  color: var(--color-danger, #d23030);
+  font-weight: 700;
+}
+
+.alert-danger {
+  background: rgba(210, 48, 48, 0.15);
+  color: var(--color-danger, #d23030);
+  border: 1px solid rgba(210, 48, 48, 0.3);
+  border-radius: 6px;
+  padding: 0.75rem 1rem;
+  font-size: 0.9rem;
+  margin-bottom: 1rem;
+}
+
+.rejection-reasons h3 {
+  font-size: 1rem;
+  color: var(--color-text);
+  margin-bottom: 0.75rem;
+}
+
+.rejection-card {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--color-noir-border);
+  border-radius: 6px;
+  padding: 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.rejection-meta {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+  font-size: 0.85rem;
+}
+
+.reviewer-name {
+  color: var(--color-gold);
+  font-weight: 600;
+}
+
+.rejection-date {
+  color: var(--color-text-muted);
+}
+
+.rejection-text {
+  color: var(--color-text);
+  font-size: 0.9rem;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.form-actions-row {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.form-actions-row .btn {
+  flex: 1;
+}

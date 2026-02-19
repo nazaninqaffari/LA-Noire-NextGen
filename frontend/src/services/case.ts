@@ -13,6 +13,30 @@ import type {
 } from '../types';
 
 const CASES_BASE_URL = '/cases/cases';
+const CRIME_LEVELS_URL = '/cases/crime-levels';
+const PUBLIC_STATS_URL = '/cases/public-stats';
+
+export const getPublicStats = async (): Promise<{
+  total_cases: number;
+  active_cases: number;
+  solved_cases: number;
+}> => {
+  const response = await api.get<{
+    total_cases: number;
+    active_cases: number;
+    solved_cases: number;
+  }>(`${PUBLIC_STATS_URL}/`);
+  return response.data;
+};
+
+/**
+ * Get list of crime levels
+ */
+export const getCrimeLevels = async (): Promise<any[]> => {
+  const response = await api.get<any>(`${CRIME_LEVELS_URL}/`);
+  // Handle both paginated and flat responses
+  return response.data.results || response.data || [];
+};
 
 /**
  * Get list of cases with optional filters
@@ -93,5 +117,13 @@ export const deleteCase = async (id: number): Promise<void> => {
  */
 export const updateCase = async (id: number, data: Partial<CaseCreateComplaintData | CaseCreateSceneData>): Promise<Case> => {
   const response = await api.patch<Case>(`${CASES_BASE_URL}/${id}/`, data);
+  return response.data;
+};
+
+/**
+ * Resubmit a draft case back to cadet review after editing
+ */
+export const resubmitCase = async (id: number): Promise<Case> => {
+  const response = await api.post<Case>(`${CASES_BASE_URL}/${id}/resubmit/`);
   return response.data;
 };
