@@ -199,3 +199,139 @@
     max-height: none;
   }
 }
+
+/* ─── Trial Create Form ─────────────────────────────────────────── */
+
+.trial-create-form {
+  margin-bottom: var(--spacing-lg);
+  padding: var(--spacing-lg);
+}
+
+.trial-create-form h3 {
+  font-size: 1.1rem;
+  margin-bottom: var(--spacing-md);
+  color: var(--color-gold);
+}
+
+.form-row {
+  display: flex;
+  gap: var(--spacing-md);
+  flex-wrap: wrap;
+}
+
+.form-row .form-group {
+  flex: 1 1 200px;
+}
+
+/* ─── Bail Section ──────────────────────────────────────────────── */
+
+.bail-section {
+  margin-top: var(--spacing-xl);
+  padding-top: var(--spacing-lg);
+  border-top: 2px solid var(--color-noir-gray);
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-md);
+}
+
+.section-header h2 {
+  font-size: 1.2rem;
+  color: var(--color-gold);
+}
+
+.bail-form {
+  margin-bottom: var(--spacing-lg);
+  padding: var(--spacing-lg);
+}
+
+.bail-form h3 {
+  margin-bottom: var(--spacing-md);
+  color: var(--color-gold);
+}
+
+.bail-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.bail-card {
+  border-left: 4px solid var(--color-noir-gray);
+}
+
+.bail-card.pending { border-left-color: var(--color-gold); }
+.bail-card.approved { border-left-color: #6bb5e0; }
+.bail-card.paid { border-left-color: #4caf50; }
+.bail-card.rejected { border-left-color: var(--color-crimson); }
+
+.bail-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-xs);
+}
+
+.bail-badge {
+  font-family: var(--font-primary);
+  font-size: 0.7rem;
+  padding: 2px 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border: 1px solid;
+}
+
+.bail-pending { color: var(--color-gold); border-color: var(--color-gold); }
+.bail-approved { color: #6bb5e0; border-color: #6bb5e0; }
+.bail-paid { color: #4caf50; border-color: #4caf50; }
+.bail-rejected { color: var(--color-crimson); border-color: var(--color-crimson); }
+
+.bail-meta {
+  display: flex;
+  gap: var(--spacing-md);
+  flex-wrap: wrap;
+  font-size: 0.85rem;
+  color: var(--color-noir-silver);
+  margin-bottom: var(--spacing-sm);
+}
+
+.bail-actions {
+  display: flex;
+  gap: var(--spacing-sm);
+  align-items: center;
+}
+
+.pay-form-inline {
+  display: flex;
+  gap: var(--spacing-sm);
+  align-items: center;
+}
+
+.pay-form-inline input {
+  max-width: 200px;
+}
+
+/* Punishment info in verdict cards */
+.punishment-info {
+  margin-top: var(--spacing-sm);
+  padding-top: var(--spacing-sm);
+  border-top: 1px solid var(--color-noir-gray);
+  font-size: 0.85rem;
+  color: var(--color-noir-silver);
+}
+
+.punishment-info strong {
+  color: var(--color-crimson);
+}
+
+.page-title-section {
+  display: flex;
+  flex-direction: column;
+}
+
+.page-actions .btn {
+  white-space: nowrap;
+}

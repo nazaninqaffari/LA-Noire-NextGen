@@ -2,7 +2,7 @@ from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from .views import (
     CrimeLevelViewSet, CaseViewSet, ComplainantViewSet, 
-    WitnessViewSet, CaseReviewViewSet
+    WitnessViewSet, CaseReviewViewSet, PublicStatsView
 )
 
 router = DefaultRouter()
@@ -13,5 +13,6 @@ router.register(r'witnesses', WitnessViewSet, basename='witness')
 router.register(r'reviews', CaseReviewViewSet, basename='case-review')
 
 urlpatterns = [
+    path('public-stats/', PublicStatsView.as_view(), name='public-stats'),
     path('', include(router.urls)),
 ]

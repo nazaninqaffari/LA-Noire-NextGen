@@ -1,0 +1,391 @@
+
+Running 67 tests using 2 workers
+
+  ✓   1 …sts/e2e/global.setup.ts:11:6 › authenticate as admin (2.6s)
+  ✓   2 …utton is visible for detective user with case filter (4.7s)
+  ✓   3 …› "+ Add Suspect" button is hidden for regular users (5.6s)
+  ✓   4 … clicking "+ Add Suspect" opens the add suspect form (3.7s)
+  ✓   5 …orm contains person search, reason, and photo fields (5.7s)
+  ✓   6 … › person search shows dropdown results after typing (4.5s)
+  ✓   7 …orm › selecting a person shows selected person badge (6.9s)
+  ✓   8 …m › successful suspect submission refreshes the list (8.6s)
+  ✓   9 …m › add suspect button not shown without case filter (5.2s)
+  ✓  10 …cal evidence type shows file upload field for images (4.7s)
+  ✓  11 …ence submission with file navigates to evidence page (6.8s)
+  ✘  12 …ogical evidence API request goes to correct endpoint (7.2s)
+  ✓  13 …dence creation failure shows error from API response (7.2s)
+  ✓  14 …r_investigation case should show investigation links (4.5s)
+  ✓  15 …nks › draft case should NOT show investigation links (5.3s)
+  ✓  16 …n links should navigate to correct URLs with case ID (5.0s)
+  ✓  17 …entified status should also show investigation links (5.8s)
+  ✓  18 …ail should show edit/resubmit button for draft cases (4.8s)
+  ✓  19 …t › CaseEdit page should load with rejection history (4.8s)
+  ✓  20 …t should have Save Draft and Save & Resubmit buttons (4.7s)
+  ✓  21 … Resubmit › resubmit should POST to correct endpoint (7.9s)
+  ✓  22 …rejections should show permanently dismissed warning (4.9s)
+  ✓  23 …esubmit › /cases/:id/edit route should be accessible (1.2s)
+  ✓  24 … show "Show Evidence" button when case ID is present (6.3s)
+  ✓  25 … clicking "Show Evidence" should open evidence panel (6.7s)
+  ✓  26 …dence panel should display evidence items with types (7.5s)
+  ✓  27 …nce Panel › evidence panel should have "Add" buttons (7.3s)
+  ✓  28 …nel › toggling evidence button should hide the panel (6.3s)
+  ✘  29 …tems display their label text instead of "Item #ID" (10.8s)
+  ✘  30 …r › board items with notes show truncated notes text (8.7s)
+  ✘  31 …r › hovering over a board item shows preview tooltip (6.4s)
+  ✘  32 …ltip contains evidence description for linked items (16.6s)
+  ✘  33 …ooltip shows content type badge for linked evidence (16.9s)
+  ✘  34 …ver › add item form includes label and notes fields (12.7s)
+  ✘  35 …timony creation error shows real API detail message (13.4s)
+  ✘  36 …eation error shows field-level messages with labels (12.8s)
+  ✓  37 …e creation error shows non_field_errors from backend (7.3s)
+  ✘  38 …ID document creation error shows real error message (14.2s)
+  ✓  39 …ror shows error.message fallback, not generic string (7.3s)
+  ✓  40 … should be visible in header for authenticated users (4.7s)
+  ✓  41 …: Notification Bell › should show unread count badge (5.8s)
+  ✓  42 …ll › clicking bell should open notification dropdown (6.6s)
+  ✓  43 …ation Bell › dropdown should show notification items (5.6s)
+  ✓  44 …ll › unread notifications should have "unread" class (6.2s)
+  ✓  45 …ld show "Mark all read" button when there are unread (4.4s)
+  ✓  46 …cking "Mark all read" should clear unread indicators (8.1s)
+  ✓  47 …ion Bell › clicking outside dropdown should close it (7.4s)
+  ✓  48 …n with related_case should navigate to case on click (7.5s)
+  ✓  49 …bell should not be visible for unauthenticated users (3.4s)
+  ✓  50 …n should POST to correct URL /api/v1/accounts/users/ (3.7s)
+  ✓  51 … Messages › should NOT post to double /v1/v1/ prefix (4.9s)
+  ✓  52 …ages should show readable field labels, not raw keys (3.6s)
+  ✘  53 …aft case returns descriptive error mentioning draft (177ms)
+  ✘  54 …returns descriptive error mentioning officer review (273ms)
+  ✘  55 …returns descriptive error mentioning fully approved (160ms)
+  ✘  56 …e returns descriptive error mentioning cadet review (277ms)
+  ✘  57 … descriptive error about needing cadet review first (286ms)
+  ✓  58 …ge › route /suspect-submissions should be accessible (3.8s)
+  ✓  59 … Page › detective should see "New Submission" button (5.1s)
+  ✓  60 …list should show submission cards with status badges (4.9s)
+  ✓  61 …uld see "Review Submission" button for pending items (9.4s)
+  ✓  62 … "New Submission" should show suspect selection form (6.1s)
+  ✓  63 …ssion reasoning and detective info should be visible (4.9s)
+  ✓  64 …e with both plate and serial returns non-field error (7.3s)
+  ✓  65 …ith neither plate nor serial returns non-field error (7.9s)
+  ✓  66 …ce form shows model, color, plate, and serial fields (5.2s)
+  ✓  67 …hicle evidence submission navigates to evidence page (8.0s)
+^C
+
+  1) [chromium] › tests/e2e/patch-tests/biological-evidence-upload.spec.ts:93:7 › Patch: Biological Evidence Image Upload › biological evidence API request goes to correct endpoint 
+
+    Error: expect(received).toContain(expected) // indexOf
+
+    Expected substring: "/api/v1/evidence/biological/"
+    Received string:    ""
+
+      131 |
+      132 |     // Verify the request was sent to the biological endpoint
+    > 133 |     expect(requestUrl).toContain('/api/v1/evidence/biological/');
+          |                        ^
+      134 |     expect(requestMethod).toBe('POST');
+      135 |   });
+      136 |
+        at /Users/soheilmohammadkhani/LA-Noire-NextGen/tests/e2e/patch-tests/biological-evidence-upload.spec.ts:133:24
+
+    Error Context: tests/e2e/test-results/patch-tests-biological-evi-13f77-st-goes-to-correct-endpoint-chromium/error-context.md
+
+  2) [chromium] › tests/e2e/patch-tests/detective-board-hover.spec.ts:115:7 › Patch: Detective Board Item Titles & Hover › board items display their label text instead of "Item #ID" 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: locator('.board-item-label:has-text("Blood stain near entrance")')
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" with timeout 5000ms
+      - waiting for locator('.board-item-label:has-text("Blood stain near entrance")')
+
+
+      119 |     // Item with label should show its label
+      120 |     const labelledItem = page.locator('.board-item-label:has-text("Blood stain near entrance")');
+    > 121 |     await expect(labelledItem).toBeVisible();
+          |                                ^
+      122 |
+      123 |     // Item without label should fall back to "Item #12"
+      124 |     const fallbackItem = page.locator('.board-item-label:has-text("Item #12")');
+        at /Users/soheilmohammadkhani/LA-Noire-NextGen/tests/e2e/patch-tests/detective-board-hover.spec.ts:121:32
+
+    Error Context: tests/e2e/test-results/patch-tests-detective-boar-f1ee2-el-text-instead-of-Item-ID--chromium/error-context.md
+
+  3) [chromium] › tests/e2e/patch-tests/detective-board-hover.spec.ts:128:7 › Patch: Detective Board Item Titles & Hover › board items with notes show truncated notes text 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: locator('.board-item-notes').first()
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" with timeout 5000ms
+      - waiting for locator('.board-item-notes').first()
+
+
+      132 |     // The blood stain item has notes — check for notes element
+      133 |     const notesEl = page.locator('.board-item-notes').first();
+    > 134 |     await expect(notesEl).toBeVisible();
+          |                           ^
+      135 |     const notesText = await notesEl.textContent();
+      136 |     expect(notesText).toContain('Matched victim DNA');
+      137 |   });
+        at /Users/soheilmohammadkhani/LA-Noire-NextGen/tests/e2e/patch-tests/detective-board-hover.spec.ts:134:27
+
+    Error Context: tests/e2e/test-results/patch-tests-detective-boar-993d0-s-show-truncated-notes-text-chromium/error-context.md
+
+  4) [chromium] › tests/e2e/patch-tests/detective-board-hover.spec.ts:139:7 › Patch: Detective Board Item Titles & Hover › hovering over a board item shows preview tooltip 
+
+    Error: expect(received).toBeGreaterThanOrEqual(expected)
+
+    Expected: >= 3
+    Received:    2
+
+      147 |     const boardItems = page.locator('.board-item');
+      148 |     const count = await boardItems.count();
+    > 149 |     expect(count).toBeGreaterThanOrEqual(3);
+          |                   ^
+      150 |
+      151 |     // Check that preview elements are part of board items
+      152 |     const previewsInDom = page.locator('.board-item-preview');
+        at /Users/soheilmohammadkhani/LA-Noire-NextGen/tests/e2e/patch-tests/detective-board-hover.spec.ts:149:19
+
+    Error Context: tests/e2e/test-results/patch-tests-detective-boar-63af9--item-shows-preview-tooltip-chromium/error-context.md
+
+  5) [chromium] › tests/e2e/patch-tests/detective-board-hover.spec.ts:157:7 › Patch: Detective Board Item Titles & Hover › preview tooltip contains evidence description for linked items 
+
+    TimeoutError: locator.hover: Timeout 10000ms exceeded.
+    Call log:
+      - waiting for locator('.board-item').filter({ hasText: 'Blood stain near entrance' })
+
+
+      161 |     // Hover over the blood stain item to trigger preview
+      162 |     const bloodItem = page.locator('.board-item').filter({ hasText: 'Blood stain near entrance' });
+    > 163 |     await bloodItem.hover();
+          |                     ^
+      164 |     await page.waitForTimeout(500);
+      165 |
+      166 |     // Check preview content
+        at /Users/soheilmohammadkhani/LA-Noire-NextGen/tests/e2e/patch-tests/detective-board-hover.spec.ts:163:21
+
+    Error Context: tests/e2e/test-results/patch-tests-detective-boar-1e6f4-escription-for-linked-items-chromium/error-context.md
+
+  6) [chromium] › tests/e2e/patch-tests/detective-board-hover.spec.ts:179:7 › Patch: Detective Board Item Titles & Hover › preview tooltip shows content type badge for linked evidence 
+
+    TimeoutError: locator.hover: Timeout 10000ms exceeded.
+    Call log:
+      - waiting for locator('.board-item').filter({ hasText: 'Blood stain near entrance' })
+
+
+      183 |     // Hover over the blood stain item (biological type)
+      184 |     const bloodItem = page.locator('.board-item').filter({ hasText: 'Blood stain near entrance' });
+    > 185 |     await bloodItem.hover();
+          |                     ^
+      186 |     await page.waitForTimeout(500);
+      187 |
+      188 |     const preview = bloodItem.locator('.board-item-preview');
+        at /Users/soheilmohammadkhani/LA-Noire-NextGen/tests/e2e/patch-tests/detective-board-hover.spec.ts:185:21
+
+    Error Context: tests/e2e/test-results/patch-tests-detective-boar-8c48f-e-badge-for-linked-evidence-chromium/error-context.md
+
+  7) [chromium] › tests/e2e/patch-tests/detective-board-hover.spec.ts:194:7 › Patch: Detective Board Item Titles & Hover › add item form includes label and notes fields 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: locator('.add-item-form').locator('#item-label')
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" with timeout 5000ms
+      - waiting for locator('.add-item-form').locator('#item-label')
+
+
+      208 |     const labelInput = form.locator('#item-label');
+      209 |     const notesInput = form.locator('#item-notes');
+    > 210 |     await expect(labelInput).toBeVisible();
+          |                              ^
+      211 |     await expect(notesInput).toBeVisible();
+      212 |   });
+      213 | });
+        at /Users/soheilmohammadkhani/LA-Noire-NextGen/tests/e2e/patch-tests/detective-board-hover.spec.ts:210:30
+
+    Error Context: tests/e2e/test-results/patch-tests-detective-boar-85dc5-udes-label-and-notes-fields-chromium/error-context.md
+
+  8) [chromium] › tests/e2e/patch-tests/evidence-error-display.spec.ts:30:7 › Patch: Evidence Registration Error Messages › testimony creation error shows real API detail message 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: locator('.notification')
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" with timeout 5000ms
+      - waiting for locator('.notification')
+
+
+      52 |
+      53 |     const notification = page.locator('.notification');
+    > 54 |     await expect(notification).toBeVisible({ timeout: 5000 });
+         |                                ^
+      55 |     const text = await notification.textContent();
+      56 |     // Should show actual error, NOT "Failed to register evidence"
+      57 |     expect(text).toContain('Transcript');
+        at /Users/soheilmohammadkhani/LA-Noire-NextGen/tests/e2e/patch-tests/evidence-error-display.spec.ts:54:32
+
+    Error Context: tests/e2e/test-results/patch-tests-evidence-error-d9dd3-ows-real-API-detail-message-chromium/error-context.md
+
+  9) [chromium] › tests/e2e/patch-tests/evidence-error-display.spec.ts:61:7 › Patch: Evidence Registration Error Messages › generic evidence creation error shows field-level messages with labels 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: locator('.notification')
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" with timeout 5000ms
+      - waiting for locator('.notification')
+
+
+      85 |
+      86 |     const notification = page.locator('.notification');
+    > 87 |     await expect(notification).toBeVisible({ timeout: 5000 });
+         |                                ^
+      88 |     const text = await notification.textContent();
+      89 |     // Should show field labels from errorHandler.ts
+      90 |     expect(text?.toLowerCase()).toMatch(/title|description/);
+        at /Users/soheilmohammadkhani/LA-Noire-NextGen/tests/e2e/patch-tests/evidence-error-display.spec.ts:87:32
+
+    Error Context: tests/e2e/test-results/patch-tests-evidence-error-650ab--level-messages-with-labels-chromium/error-context.md
+
+  10) [chromium] › tests/e2e/patch-tests/evidence-error-display.spec.ts:127:7 › Patch: Evidence Registration Error Messages › ID document creation error shows real error message 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: locator('.notification')
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" with timeout 5000ms
+      - waiting for locator('.notification')
+
+
+      150 |
+      151 |     const notification = page.locator('.notification');
+    > 152 |     await expect(notification).toBeVisible({ timeout: 5000 });
+          |                                ^
+      153 |     const text = await notification.textContent();
+      154 |     // Should mention "Owner Full Name" (label from errorHandler.ts)
+      155 |     expect(text?.toLowerCase()).toMatch(/owner|required/);
+        at /Users/soheilmohammadkhani/LA-Noire-NextGen/tests/e2e/patch-tests/evidence-error-display.spec.ts:152:32
+
+    Error Context: tests/e2e/test-results/patch-tests-evidence-error-bbe13-or-shows-real-error-message-chromium/error-context.md
+
+  11) [chromium] › tests/e2e/patch-tests/review-error-messages.spec.ts:54:7 › Patch: Descriptive Case Review Error Messages › cadet review on draft case returns descriptive error mentioning draft 
+
+    Error: expect(received).toBe(expected) // Object.is equality
+
+    Expected: 400
+    Received: 403
+
+      83 |     const body = await response.json();
+      84 |
+    > 85 |     expect(response.status()).toBe(400);
+         |                               ^
+      86 |     expect(body.error).toContain('draft');
+      87 |     expect(body.error).toContain('not been submitted');
+      88 |   });
+        at /Users/soheilmohammadkhani/LA-Noire-NextGen/tests/e2e/patch-tests/review-error-messages.spec.ts:85:31
+
+  12) [chromium] › tests/e2e/patch-tests/review-error-messages.spec.ts:90:7 › Patch: Descriptive Case Review Error Messages › cadet review on officer_review case returns descriptive error mentioning officer review 
+
+    Error: expect(received).toBe(expected) // Object.is equality
+
+    Expected: 400
+    Received: 403
+
+      109 |     const body = await response.json();
+      110 |
+    > 111 |     expect(response.status()).toBe(400);
+          |                               ^
+      112 |     expect(body.error).toContain('officer review');
+      113 |   });
+      114 |
+        at /Users/soheilmohammadkhani/LA-Noire-NextGen/tests/e2e/patch-tests/review-error-messages.spec.ts:111:31
+
+  13) [chromium] › tests/e2e/patch-tests/review-error-messages.spec.ts:115:7 › Patch: Descriptive Case Review Error Messages › cadet review on open case returns descriptive error mentioning fully approved 
+
+    Error: expect(received).toBe(expected) // Object.is equality
+
+    Expected: 400
+    Received: 403
+
+      134 |     const body = await response.json();
+      135 |
+    > 136 |     expect(response.status()).toBe(400);
+          |                               ^
+      137 |     expect(body.error.toLowerCase()).toMatch(/open|approved/);
+      138 |   });
+      139 |
+        at /Users/soheilmohammadkhani/LA-Noire-NextGen/tests/e2e/patch-tests/review-error-messages.spec.ts:136:31
+
+  14) [chromium] › tests/e2e/patch-tests/review-error-messages.spec.ts:140:7 › Patch: Descriptive Case Review Error Messages › officer review on cadet_review case returns descriptive error mentioning cadet review 
+
+    Error: expect(received).toBe(expected) // Object.is equality
+
+    Expected: 400
+    Received: 403
+
+      159 |     const body = await response.json();
+      160 |
+    > 161 |     expect(response.status()).toBe(400);
+          |                               ^
+      162 |     expect(body.error).toContain('cadet review');
+      163 |   });
+      164 |
+        at /Users/soheilmohammadkhani/LA-Noire-NextGen/tests/e2e/patch-tests/review-error-messages.spec.ts:161:31
+
+  15) [chromium] › tests/e2e/patch-tests/review-error-messages.spec.ts:165:7 › Patch: Descriptive Case Review Error Messages › officer review on draft case returns descriptive error about needing cadet review first 
+
+    Error: expect(received).toBe(expected) // Object.is equality
+
+    Expected: 400
+    Received: 403
+
+      184 |     const body = await response.json();
+      185 |
+    > 186 |     expect(response.status()).toBe(400);
+          |                               ^
+      187 |     expect(body.error.toLowerCase()).toMatch(/draft|cadet/);
+      188 |   });
+      189 | });
+        at /Users/soheilmohammadkhani/LA-Noire-NextGen/tests/e2e/patch-tests/review-error-messages.spec.ts:186:31
+
+  15 failed
+    [chromium] › tests/e2e/patch-tests/biological-evidence-upload.spec.ts:93:7 › Patch: Biological Evidence Image Upload › biological evidence API request goes to correct endpoint 
+    [chromium] › tests/e2e/patch-tests/detective-board-hover.spec.ts:115:7 › Patch: Detective Board Item Titles & Hover › board items display their label text instead of "Item #ID" 
+    [chromium] › tests/e2e/patch-tests/detective-board-hover.spec.ts:128:7 › Patch: Detective Board Item Titles & Hover › board items with notes show truncated notes text 
+    [chromium] › tests/e2e/patch-tests/detective-board-hover.spec.ts:139:7 › Patch: Detective Board Item Titles & Hover › hovering over a board item shows preview tooltip 
+    [chromium] › tests/e2e/patch-tests/detective-board-hover.spec.ts:157:7 › Patch: Detective Board Item Titles & Hover › preview tooltip contains evidence description for linked items 
+    [chromium] › tests/e2e/patch-tests/detective-board-hover.spec.ts:179:7 › Patch: Detective Board Item Titles & Hover › preview tooltip shows content type badge for linked evidence 
+    [chromium] › tests/e2e/patch-tests/detective-board-hover.spec.ts:194:7 › Patch: Detective Board Item Titles & Hover › add item form includes label and notes fields 
+    [chromium] › tests/e2e/patch-tests/evidence-error-display.spec.ts:30:7 › Patch: Evidence Registration Error Messages › testimony creation error shows real API detail message 
+    [chromium] › tests/e2e/patch-tests/evidence-error-display.spec.ts:61:7 › Patch: Evidence Registration Error Messages › generic evidence creation error shows field-level messages with labels 
+    [chromium] › tests/e2e/patch-tests/evidence-error-display.spec.ts:127:7 › Patch: Evidence Registration Error Messages › ID document creation error shows real error message 
+    [chromium] › tests/e2e/patch-tests/review-error-messages.spec.ts:54:7 › Patch: Descriptive Case Review Error Messages › cadet review on draft case returns descriptive error mentioning draft 
+    [chromium] › tests/e2e/patch-tests/review-error-messages.spec.ts:90:7 › Patch: Descriptive Case Review Error Messages › cadet review on officer_review case returns descriptive error mentioning officer review 
+    [chromium] › tests/e2e/patch-tests/review-error-messages.spec.ts:115:7 › Patch: Descriptive Case Review Error Messages › cadet review on open case returns descriptive error mentioning fully approved 
+    [chromium] › tests/e2e/patch-tests/review-error-messages.spec.ts:140:7 › Patch: Descriptive Case Review Error Messages › officer review on cadet_review case returns descriptive error mentioning cadet review 
+    [chromium] › tests/e2e/patch-tests/review-error-messages.spec.ts:165:7 › Patch: Descriptive Case Review Error Messages › officer review on draft case returns descriptive error about needing cadet review first 
+  52 passed (5.9m)

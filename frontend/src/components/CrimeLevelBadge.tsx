@@ -19,7 +19,7 @@ const levelConfig: Record<CrimeLevel, { label: string; className: string }> = {
 };
 
 const CrimeLevelBadge: React.FC<CrimeLevelBadgeProps> = ({ level, className = '' }) => {
-  const config = levelConfig[level];
+  const config = levelConfig[level] ?? { label: `Level ${level}`, className: 'level-unknown' };
 
   return (
     <span className={`crime-level-badge ${config.className} ${className}`}>

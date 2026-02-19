@@ -28,7 +28,7 @@ const CaseCard: React.FC<CaseCardProps> = ({ case: caseData, showActions = true 
       <div className="case-card-header">
         <div className="case-card-id">{caseData.case_number}</div>
         <div className="case-card-badges">
-          <CrimeLevelBadge level={caseData.crime_level} />
+          <CrimeLevelBadge level={caseData.crime_level_details?.level ?? caseData.crime_level} />
           <CaseStatusBadge status={caseData.status} />
         </div>
       </div>

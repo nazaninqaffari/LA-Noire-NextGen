@@ -1,0 +1,186 @@
+/**
+ * Interrogations page styles
+ */
+
+.interrogations-page {
+  animation: fadeIn 0.5s ease;
+}
+
+/* ─── Interrogation Form ────────────────────────────────────────── */
+
+.interrogation-form {
+  margin-bottom: var(--spacing-lg);
+}
+
+.interrogation-form h3 {
+  margin-bottom: var(--spacing-md);
+}
+
+/* ─── Interrogation List ────────────────────────────────────────── */
+
+.interrogation-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.interrogation-card {
+  position: relative;
+}
+
+.interrogation-card::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  border-radius: var(--border-radius) 0 0 var(--border-radius);
+}
+
+.interrogation-card.pending::before { background: var(--color-gold); }
+.interrogation-card.submitted::before { background: #6bb5e0; }
+.interrogation-card.reviewed::before { background: #4caf50; }
+
+.interrogation-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-sm);
+}
+
+.interrogation-header h3 {
+  font-size: 1rem;
+  margin: 0;
+}
+
+.interrogation-badge {
+  font-family: var(--font-primary);
+  font-size: 0.7rem;
+  padding: 2px 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border: 1px solid;
+  border-radius: 3px;
+}
+
+.badge-pending { color: var(--color-gold); border-color: var(--color-gold); }
+.badge-submitted { color: #6bb5e0; border-color: #6bb5e0; }
+.badge-reviewed { color: #4caf50; border-color: #4caf50; }
+
+.interrogation-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-md);
+  font-size: 0.85rem;
+  color: var(--color-noir-silver);
+  margin-bottom: var(--spacing-sm);
+}
+
+/* ─── Ratings Display ───────────────────────────────────────────── */
+
+.ratings-display {
+  display: flex;
+  gap: var(--spacing-lg);
+  margin: var(--spacing-sm) 0;
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: var(--color-noir-dark-gray);
+  border: 1px solid var(--color-noir-gray);
+  border-radius: var(--border-radius);
+}
+
+.rating-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.rating-label {
+  font-size: 0.75rem;
+  color: var(--color-noir-light-gray);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.rating-value {
+  font-family: var(--font-heading);
+  font-size: 1.1rem;
+  color: var(--color-gold);
+}
+
+.rating-value.highlight {
+  font-size: 1.3rem;
+  color: var(--color-crimson);
+}
+
+.interrogation-notes {
+  font-size: 0.85rem;
+  color: var(--color-noir-silver);
+  margin: var(--spacing-xs) 0;
+}
+
+.interrogation-notes p {
+  margin: 2px 0 0;
+}
+
+/* ─── Ratings Form ──────────────────────────────────────────────── */
+
+.ratings-form,
+.decision-form {
+  margin-top: var(--spacing-md);
+  padding: var(--spacing-md);
+  background: var(--color-noir-dark-gray);
+  border: 1px solid var(--color-noir-gray);
+  border-radius: var(--border-radius);
+}
+
+.ratings-form h4,
+.decision-form h4 {
+  margin-bottom: var(--spacing-sm);
+  font-size: 1rem;
+}
+
+.rating-inputs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--spacing-md);
+}
+
+/* ─── Decision Form ─────────────────────────────────────────────── */
+
+.decision-options {
+  display: flex;
+  gap: var(--spacing-lg);
+  flex-wrap: wrap;
+}
+
+.radio-label {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  font-family: var(--font-primary);
+  font-size: 0.9rem;
+  color: var(--color-noir-silver);
+  cursor: pointer;
+}
+
+.radio-label input[type="radio"] {
+  width: auto;
+  accent-color: var(--color-gold);
+}
+
+.form-actions-inline {
+  display: flex;
+  gap: var(--spacing-sm);
+  margin-top: var(--spacing-md);
+}
+
+@media (max-width: 768px) {
+  .rating-inputs {
+    grid-template-columns: 1fr;
+  }
+  .decision-options {
+    flex-direction: column;
+  }
+}

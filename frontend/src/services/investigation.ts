@@ -143,7 +143,7 @@ export const createSuspectSubmission = async (
 /** Sergeant reviews suspect submission */
 export const reviewSuspectSubmission = async (
   id: number,
-  data: { status: 'approved' | 'rejected'; sergeant_feedback?: string }
+  data: { decision: 'approve' | 'reject'; review_notes: string }
 ): Promise<SuspectSubmission> => {
   const response = await api.post<SuspectSubmission>(`${SUBMISSIONS_URL}/${id}/review/`, data);
   return response.data;
@@ -182,7 +182,12 @@ export const updateInterrogation = async (
 /** Submit completed ratings to captain for review */
 export const submitInterrogationRatings = async (
   id: number,
-  data: { detective_guilt_rating: number; sergeant_guilt_rating: number }
+  data: {
+    detective_guilt_rating: number;
+    sergeant_guilt_rating: number;
+    detective_notes: string;
+    sergeant_notes: string;
+  }
 ): Promise<Interrogation> => {
   const response = await api.post<Interrogation>(
     `${INTERROGATIONS_URL}/${id}/submit_ratings/`,

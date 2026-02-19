@@ -43,6 +43,7 @@ class BoardItem(models.Model):
     """
     Evidence or document placed on detective board.
     Stores position coordinates for visual layout.
+    Includes label and notes for display in the UI.
     """
     board = models.ForeignKey(
         DetectiveBoard,
@@ -57,6 +58,18 @@ class BoardItem(models.Model):
     )
     object_id = models.IntegerField(
         help_text="ID of the evidence object"
+    )
+    # Human-readable label and notes saved from the evidence at add-time
+    label = models.CharField(
+        max_length=255,
+        blank=True,
+        default='',
+        help_text="Display label for the board item (e.g., 'Testimony: Witness Statement')"
+    )
+    notes = models.TextField(
+        blank=True,
+        default='',
+        help_text="Optional notes or description for this board item"
     )
     # Visual position on board
     position_x = models.FloatField(

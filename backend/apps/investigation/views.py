@@ -295,13 +295,13 @@ class InterrogationViewSet(viewsets.ModelViewSet):
         user = self.request.user
         queryset = super().get_queryset()
         
-        if user.role == 'detective':
-            return queryset.filter(detective=user)
-        elif user.role == 'sergeant':
-            return queryset.filter(sergeant=user)
-        elif user.role == 'captain':
+        if user_has_role(user, 'Captain'):
             # Captain can see submitted interrogations
             return queryset.filter(status=Interrogation.STATUS_SUBMITTED)
+        elif user_has_role(user, 'Sergeant'):
+            return queryset.filter(sergeant=user)
+        elif user_has_role(user, 'Detective'):
+            return queryset.filter(detective=user)
         
         return queryset
     
@@ -394,11 +394,11 @@ class CaptainDecisionViewSet(viewsets.ModelViewSet):
         user = self.request.user
         queryset = super().get_queryset()
         
-        if user.role == 'captain':
-            return queryset.filter(captain=user)
-        elif user.role == 'police_chief':
+        if user_has_role(user, 'Police Chief'):
             # Police chief sees decisions awaiting approval
             return queryset.filter(status=CaptainDecision.STATUS_AWAITING_CHIEF)
+        elif user_has_role(user, 'Captain'):
+            return queryset.filter(captain=user)
         
         return queryset
     
@@ -425,7 +425,7 @@ class CaptainDecisionViewSet(viewsets.ModelViewSet):
     def create(self, request, *args, **kwargs):
         """Captain creates decision on interrogation."""
         # Check permission
-        if request.user.role != 'captain':
+        if not user_has_role(request.user, 'Captain'):
             return Response(
                 {"detail": "فقط سرگروه می‌تواند تصمیم بگیرد."},
                 status=status.HTTP_403_FORBIDDEN
@@ -481,7 +481,7 @@ class PoliceChiefDecisionViewSet(viewsets.ModelViewSet):
         user = self.request.user
         queryset = super().get_queryset()
         
-        if user.role == 'police_chief':
+        if user_has_role(user, 'Police Chief'):
             return queryset.filter(police_chief=user)
         
         return queryset
@@ -509,7 +509,7 @@ class PoliceChiefDecisionViewSet(viewsets.ModelViewSet):
     def create(self, request, *args, **kwargs):
         """Police chief creates decision on captain's decision."""
         # Check permission
-        if request.user.role != 'police_chief':
+        if not user_has_role(request.user, 'Police Chief'):
             return Response(
                 {"detail": "فقط رئیس پلیس می‌تواند این تصمیم را بگیرد."},
                 status=status.HTTP_403_FORBIDDEN
@@ -1015,14 +1015,14 @@ class SuspectSubmissionViewSet(viewsets.ModelViewSet):
         - Admins see all submissions
         """
         user = self.request.user
-        queryset = self.queryset
+        queryset = self.queryset.all()
         
-        if user_has_role(user, 'Detective'):
-            queryset = queryset.filter(detective=user)
-        elif user_has_role(user, 'Sergeant'):
-            # Sergeants see all submissions (to review cases in their jurisdiction)
+        if user_has_role(user, 'Sergeant') or user_has_role(user, 'Administrator'):
+            # Sergeants and Admins see all submissions
             pass
-        elif not user_has_role(user, 'Administrator'):
+        elif user_has_role(user, 'Detective'):
+            queryset = queryset.filter(detective=user)
+        else:
             queryset = queryset.none()
         
         return queryset

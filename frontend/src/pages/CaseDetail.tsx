@@ -247,6 +247,25 @@ const CaseDetail: React.FC = () => {
           </section>
 
           {/* Action Buttons */}
+          {/* Edit & Resubmit button for complainants with draft cases */}
+          {caseData.status === 'draft' && (
+            <div className="detail-actions">
+              <button
+                onClick={() => navigate(`/cases/${caseData.id}/edit`)}
+                className="btn btn-primary btn-block"
+              >
+                ✏️ Edit & Resubmit Case
+              </button>
+              {caseData.rejection_count !== undefined && caseData.rejection_count > 0 && (
+                <p className="rejection-counter-hint">
+                  Rejection count: {caseData.rejection_count}/3
+                  {caseData.rejection_count >= 3 && ' — Case permanently dismissed'}
+                </p>
+              )}
+            </div>
+          )}
+
+          {/* Review button for cadets/officers */}
           {(caseData.status === 'cadet_review' || caseData.status === 'officer_review') && (
             <div className="detail-actions">
               <button
@@ -254,6 +273,36 @@ const CaseDetail: React.FC = () => {
                 className="btn btn-primary btn-block"
               >
                 Review Case
+              </button>
+            </div>
+          )}
+
+          {/* Investigation actions for open/under_investigation/suspects_identified cases */}
+          {['open', 'under_investigation', 'suspects_identified', 'arrest_approved', 'interrogation'].includes(caseData.status) && (
+            <div className="detail-actions investigation-links">
+              <button
+                onClick={() => navigate(`/detective-board?case=${caseData.id}`)}
+                className="btn btn-block"
+              >
+                🔍 Detective Board
+              </button>
+              <button
+                onClick={() => navigate(`/suspects?case=${caseData.id}`)}
+                className="btn btn-block"
+              >
+                👤 Suspects
+              </button>
+              <button
+                onClick={() => navigate(`/suspect-submissions?case=${caseData.id}`)}
+                className="btn btn-block"
+              >
+                📋 Suspect Submissions
+              </button>
+              <button
+                onClick={() => navigate(`/evidence?case=${caseData.id}`)}
+                className="btn btn-block"
+              >
+                📂 Evidence
               </button>
             </div>
           )}

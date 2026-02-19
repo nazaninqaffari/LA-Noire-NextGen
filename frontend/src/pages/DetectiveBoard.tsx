@@ -1,7 +1,7 @@
 /**
  * Detective Board Page
- * Visual investigation board with draggable items and red-line connections
- * Connects evidence, suspects, and leads in a visual map
+ * Visual investigation board with draggable items, red-line connections,
+ * and actual case evidence displayed. Connects evidence, suspects and leads.
  */
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
@@ -16,6 +16,13 @@ import {
   createEvidenceConnection,
   deleteEvidenceConnection,
 } from '../services/investigation';
+import {
+  getTestimonies,
+  getBiologicalEvidence,
+  getVehicleEvidence,
+  getIDDocuments,
+  getGenericEvidence,
+} from '../services/evidence';
 import type { DetectiveBoard, BoardItem } from '../types';
 import LoadingSkeleton from '../components/LoadingSkeleton';
 import './DetectiveBoard.css';
@@ -43,6 +50,9 @@ const DetectiveBoardPage: React.FC = () => {
   const [showAddItem, setShowAddItem] = useState(false);
   const [newItemLabel, setNewItemLabel] = useState('');
   const [newItemNotes, setNewItemNotes] = useState('');
+  const [showEvidencePanel, setShowEvidencePanel] = useState(false);
+  const [caseEvidence, setCaseEvidence] = useState<any[]>([]);
+  const [evidenceLoading, setEvidenceLoading] = useState(false);
 
   const fetchBoards = useCallback(async () => {
     setLoading(true);
@@ -64,6 +74,60 @@ const DetectiveBoardPage: React.FC = () => {
   useEffect(() => {
     fetchBoards();
   }, [fetchBoards]);
+
+  /** Fetch all evidence types for the current case */
+  const fetchCaseEvidence = useCallback(async () => {
+    if (!caseId) return;
+    setEvidenceLoading(true);
+    try {
+      const [testimonies, bio, vehicles, ids, generic] = await Promise.all([
+        getTestimonies({ case: caseId }).catch(() => ({ results: [] })),
+        getBiologicalEvidence({ case: caseId }).catch(() => ({ results: [] })),
+        getVehicleEvidence({ case: caseId }).catch(() => ({ results: [] })),
+        getIDDocuments({ case: caseId }).catch(() => ({ results: [] })),
+        getGenericEvidence({ case: caseId }).catch(() => ({ results: [] })),
+      ]);
+      const all: any[] = [
+        ...testimonies.results.map((t: any) => ({ ...t, _type: 'testimony', _label: `Testimony: ${t.title || t.witness_name || 'Unknown'}` })),
+        ...bio.results.map((b: any) => ({ ...b, _type: 'biological', _label: `Bio Evidence: ${b.title || 'Unknown'}` })),
+        ...vehicles.results.map((v: any) => ({ ...v, _type: 'vehicle', _label: `Vehicle: ${v.model || v.plate_number || 'Unknown'}` })),
+        ...ids.results.map((d: any) => ({ ...d, _type: 'id_document', _label: `ID Doc: ${d.owner_name || d.title || 'Unknown'}` })),
+        ...generic.results.map((g: any) => ({ ...g, _type: 'generic', _label: `Evidence: ${g.title || 'Unknown'}` })),
+      ];
+      setCaseEvidence(all);
+    } catch {
+      // Silently fail – evidence panel will just be empty
+    } finally {
+      setEvidenceLoading(false);
+    }
+  }, [caseId]);
+
+  // Auto-fetch evidence when we have a case
+  useEffect(() => {
+    if (caseId) fetchCaseEvidence();
+  }, [caseId, fetchCaseEvidence]);
+
+  /** Add an evidence item to the detective board */
+  const handleAddEvidenceToBoard = async (ev: any) => {
+    if (!activeBoard) return;
+    try {
+      const item = await createBoardItem({
+        board: activeBoard.id,
+        content_type: ev._type,
+        object_id: ev.id,
+        label: ev._label,
+        notes: ev.description || ev.transcription || '',
+        position_x: 80 + Math.random() * 400,
+        position_y: 80 + Math.random() * 300,
+      });
+      setActiveBoard((prev) =>
+        prev ? { ...prev, items: [...(prev.items || []), item] } : prev
+      );
+      showNotification('Evidence added to board', 'success');
+    } catch {
+      showNotification('Failed to add evidence', 'error');
+    }
+  };
 
   // Draw connections on canvas
   useEffect(() => {
@@ -288,6 +352,14 @@ const DetectiveBoardPage: React.FC = () => {
               <button className="btn" onClick={() => setShowAddItem(true)}>
                 + Add Item
               </button>
+              {caseId && (
+                <button
+                  className={`btn ${showEvidencePanel ? 'btn-primary' : ''}`}
+                  onClick={() => setShowEvidencePanel(!showEvidencePanel)}
+                >
+                  🔍 {showEvidencePanel ? 'Hide Evidence' : 'Show Evidence'}
+                </button>
+              )}
               <button className="btn" onClick={handleExport}>
                 📸 Export
               </button>
@@ -331,8 +403,9 @@ const DetectiveBoardPage: React.FC = () => {
       {showAddItem && (
         <div className="card add-item-form">
           <div className="form-group">
-            <label>Label</label>
+            <label htmlFor="item-label">Label</label>
             <input
+              id="item-label"
               type="text"
               value={newItemLabel}
               onChange={(e) => setNewItemLabel(e.target.value)}
@@ -340,8 +413,9 @@ const DetectiveBoardPage: React.FC = () => {
             />
           </div>
           <div className="form-group">
-            <label>Notes (optional)</label>
+            <label htmlFor="item-notes">Notes (optional)</label>
             <textarea
+              id="item-notes"
               value={newItemNotes}
               onChange={(e) => setNewItemNotes(e.target.value)}
               placeholder="Additional notes..."
@@ -356,6 +430,50 @@ const DetectiveBoardPage: React.FC = () => {
               Cancel
             </button>
           </div>
+        </div>
+      )}
+
+      {/* Evidence Panel */}
+      {showEvidencePanel && (
+        <div className="evidence-panel card">
+          <div className="evidence-panel-header">
+            <h3>📂 Case Evidence</h3>
+            <button className="btn btn-sm" onClick={fetchCaseEvidence} disabled={evidenceLoading}>
+              {evidenceLoading ? 'Loading…' : '↻ Refresh'}
+            </button>
+          </div>
+          {evidenceLoading ? (
+            <div className="skeleton-list">
+              <div className="skeleton-line" />
+              <div className="skeleton-line" />
+              <div className="skeleton-line" />
+            </div>
+          ) : caseEvidence.length === 0 ? (
+            <p className="empty-hint">No evidence found for this case.</p>
+          ) : (
+            <ul className="evidence-list">
+              {caseEvidence.map((ev) => {
+                const alreadyOnBoard = (activeBoard?.items || []).some(
+                  (bi) => bi.object_id === ev.id && bi.content_type === ev._type
+                );
+                return (
+                  <li key={`${ev._type}-${ev.id}`} className="evidence-list-item">
+                    <div className="evidence-info">
+                      <span className={`evidence-type-badge ${ev._type}`}>{ev._type.replace('_', ' ')}</span>
+                      <span className="evidence-label">{ev._label}</span>
+                    </div>
+                    <button
+                      className="btn btn-sm btn-primary"
+                      disabled={alreadyOnBoard}
+                      onClick={() => handleAddEvidenceToBoard(ev)}
+                    >
+                      {alreadyOnBoard ? 'On Board' : '+ Add'}
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
         </div>
       )}
 
@@ -381,6 +499,63 @@ const DetectiveBoardPage: React.FC = () => {
             >
               <div className="board-item-label">{item.label || `Item #${item.id}`}</div>
               {item.notes && <div className="board-item-notes">{item.notes}</div>}
+              {/* Hover preview tooltip with evidence details */}
+              <div className="board-item-preview">
+                <div className="preview-type">{item.content_type?.replace('_', ' ')}</div>
+                {item.label && <div className="preview-title">{item.label}</div>}
+                {item.notes && <div className="preview-notes">{item.notes}</div>}
+                {/* Show linked evidence image if available */}
+                {(() => {
+                  const ev = caseEvidence.find(
+                    (e) => e._type === item.content_type && e.id === item.object_id
+                  );
+                  if (!ev) return null;
+                  // Try to find an image from various evidence image fields
+                  const imgSrc =
+                    ev.image ||
+                    ev.images_data?.[0]?.image ||
+                    ev.photo ||
+                    null;
+                  return (
+                    <>
+                      {ev.description && (
+                        <div className="preview-description">{ev.description}</div>
+                      )}
+                      {ev.evidence_type && (
+                        <div className="preview-meta">Type: {ev.evidence_type}</div>
+                      )}
+                      {ev.model && (
+                        <div className="preview-meta">Model: {ev.model}</div>
+                      )}
+                      {ev.color && (
+                        <div className="preview-meta">Color: {ev.color}</div>
+                      )}
+                      {ev.license_plate && (
+                        <div className="preview-meta">Plate: {ev.license_plate}</div>
+                      )}
+                      {ev.serial_number && (
+                        <div className="preview-meta">Serial: {ev.serial_number}</div>
+                      )}
+                      {ev.witness_name && (
+                        <div className="preview-meta">Witness: {ev.witness_name}</div>
+                      )}
+                      {ev.owner_full_name && (
+                        <div className="preview-meta">Owner: {ev.owner_full_name}</div>
+                      )}
+                      {ev.coroner_analysis && (
+                        <div className="preview-meta">Analysis: {ev.coroner_analysis}</div>
+                      )}
+                      {imgSrc && (
+                        <img
+                          src={imgSrc}
+                          alt="Evidence"
+                          className="preview-image"
+                        />
+                      )}
+                    </>
+                  );
+                })()}
+              </div>
               {!connectMode && (
                 <button
                   className="board-item-delete"

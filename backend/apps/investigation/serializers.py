@@ -12,10 +12,10 @@ User = get_user_model()
 
 
 class BoardItemSerializer(serializers.ModelSerializer):
-    """Serializer for Board Items."""
+    """Serializer for Board Items. Includes label and notes for UI display."""
     class Meta:
         model = BoardItem
-        fields = ['id', 'board', 'content_type', 'object_id', 'position_x', 'position_y', 'added_at']
+        fields = ['id', 'board', 'content_type', 'object_id', 'label', 'notes', 'position_x', 'position_y', 'added_at']
         read_only_fields = ['id', 'added_at']
 
 
