@@ -57,6 +57,12 @@ const Header: React.FC = () => {
       items.push({ to: '/trials', label: 'Trials' });
     }
 
+    // Tip reviews – officer reviews pending, detective reviews officer-approved
+    if (hasRole(user, 'police_officer') || hasRole(user, 'detective') || hasRole(user, 'senior_detective')
+      || hasRole(user, 'sergeant') || hasRole(user, 'captain') || hasRole(user, 'police_chief')) {
+      items.push({ to: '/tip-reviews', label: 'Tip Reviews' });
+    }
+
     // Reports – leadership
     if (hasRole(user, 'captain') || hasRole(user, 'police_chief') || hasRole(user, 'judge')) {
       items.push({ to: '/reports', label: 'Reports' });

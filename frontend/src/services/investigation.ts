@@ -255,7 +255,7 @@ export const getTipOffs = async (params?: {
 };
 
 export const createTipOff = async (
-  data: { case?: number; suspect?: number; information: string }
+  data: { case: number; suspect?: number; information: string }
 ): Promise<TipOff> => {
   const response = await api.post<TipOff>(`${TIPOFFS_URL}/`, data);
   return response.data;
@@ -263,17 +263,17 @@ export const createTipOff = async (
 
 export const officerReviewTipOff = async (
   id: number,
-  data: { status: string }
-): Promise<TipOff> => {
-  const response = await api.post<TipOff>(`${TIPOFFS_URL}/${id}/officer_review/`, data);
+  data: { approved: boolean; rejection_reason?: string }
+): Promise<{ message: string; tip: TipOff }> => {
+  const response = await api.post<{ message: string; tip: TipOff }>(`${TIPOFFS_URL}/${id}/officer_review/`, data);
   return response.data;
 };
 
 export const detectiveReviewTipOff = async (
   id: number,
-  data: { status: string }
-): Promise<TipOff> => {
-  const response = await api.post<TipOff>(`${TIPOFFS_URL}/${id}/detective_review/`, data);
+  data: { approved: boolean; rejection_reason?: string }
+): Promise<{ message: string; tip: TipOff }> => {
+  const response = await api.post<{ message: string; tip: TipOff }>(`${TIPOFFS_URL}/${id}/detective_review/`, data);
   return response.data;
 };
 

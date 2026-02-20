@@ -5,6 +5,7 @@
  */
 import React, { useEffect, useState } from 'react';
 import { getIntensivePursuitSuspects, createTipOff, verifyReward } from '../services/investigation';
+import { getCases } from '../services/case';
 import { useNotification } from '../contexts/NotificationContext';
 import type { Suspect } from '../types';
 import LoadingSkeleton from '../components/LoadingSkeleton';
@@ -16,9 +17,12 @@ const MostWanted: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [showTipForm, setShowTipForm] = useState(false);
   const [showRewardForm, setShowRewardForm] = useState(false);
+  const [tipType, setTipType] = useState<'suspect' | 'case'>('suspect');
   const [tipSuspectId, setTipSuspectId] = useState<number | null>(null);
+  const [tipCaseId, setTipCaseId] = useState<number | null>(null);
   const [tipInfo, setTipInfo] = useState('');
   const [submittingTip, setSubmittingTip] = useState(false);
+  const [caseList, setCaseList] = useState<any[]>([]);
 
   // Reward verification
   const [rewardCode, setRewardCode] = useState('');
@@ -28,6 +32,13 @@ const MostWanted: React.FC = () => {
   useEffect(() => {
     fetchSuspects();
   }, []);
+
+  // Load cases when tip form opens with "case" type
+  useEffect(() => {
+    if (showTipForm && tipType === 'case' && caseList.length === 0) {
+      getCases({ page_size: 100 } as any).then(res => setCaseList(res.results || [])).catch(() => {});
+    }
+  }, [showTipForm, tipType]);
 
   const fetchSuspects = async () => {
     try {
@@ -47,16 +58,33 @@ const MostWanted: React.FC = () => {
     e.preventDefault();
     if (!tipInfo.trim()) return;
 
+    // Determine case ID
+    let caseId: number | undefined;
+    if (tipType === 'suspect' && tipSuspectId) {
+      // Get case from selected suspect
+      const suspect = suspects.find(s => s.id === tipSuspectId);
+      caseId = suspect?.case || (suspect as any)?.case_id;
+    } else if (tipType === 'case' && tipCaseId) {
+      caseId = tipCaseId;
+    }
+
+    if (!caseId) {
+      showNotification('Please select a case or suspect', 'error');
+      return;
+    }
+
     setSubmittingTip(true);
     try {
       await createTipOff({
-        suspect: tipSuspectId ?? undefined,
+        case: caseId,
+        suspect: tipType === 'suspect' ? (tipSuspectId ?? undefined) : undefined,
         information: tipInfo,
       });
       showNotification('Tip submitted successfully. Thank you for your help.', 'success');
       setShowTipForm(false);
       setTipInfo('');
       setTipSuspectId(null);
+      setTipCaseId(null);
     } catch {
       showNotification('Failed to submit tip', 'error');
     } finally {
@@ -147,20 +175,59 @@ const MostWanted: React.FC = () => {
           <h3>Submit Anonymous Tip</h3>
           <form onSubmit={handleSubmitTip}>
             <div className="form-group">
-              <label htmlFor="tip-suspect">Related Suspect (optional)</label>
+              <label htmlFor="tip-type">Tip About</label>
               <select
-                id="tip-suspect"
-                value={tipSuspectId ?? ''}
-                onChange={(e) => setTipSuspectId(e.target.value ? Number(e.target.value) : null)}
+                id="tip-type"
+                value={tipType}
+                onChange={(e) => {
+                  setTipType(e.target.value as 'suspect' | 'case');
+                  setTipSuspectId(null);
+                  setTipCaseId(null);
+                }}
               >
-                <option value="">-- General Tip --</option>
-                {suspects.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.person?.first_name} {s.person?.last_name}
-                  </option>
-                ))}
+                <option value="suspect">A Suspect</option>
+                <option value="case">A Case</option>
               </select>
             </div>
+
+            {tipType === 'suspect' && (
+              <div className="form-group">
+                <label htmlFor="tip-suspect">Select Suspect</label>
+                <select
+                  id="tip-suspect"
+                  value={tipSuspectId ?? ''}
+                  onChange={(e) => setTipSuspectId(e.target.value ? Number(e.target.value) : null)}
+                  required
+                >
+                  <option value="">-- Select a Suspect --</option>
+                  {suspects.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.person?.first_name} {s.person?.last_name} — {s.case_title || 'Unknown Case'}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            {tipType === 'case' && (
+              <div className="form-group">
+                <label htmlFor="tip-case">Select Case</label>
+                <select
+                  id="tip-case"
+                  value={tipCaseId ?? ''}
+                  onChange={(e) => setTipCaseId(e.target.value ? Number(e.target.value) : null)}
+                  required
+                >
+                  <option value="">-- Select a Case --</option>
+                  {caseList.map((c: any) => (
+                    <option key={c.id} value={c.id}>
+                      {c.title} ({c.case_number})
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
             <div className="form-group">
               <label htmlFor="tip-info">Your Information</label>
               <textarea
@@ -271,6 +338,7 @@ const MostWanted: React.FC = () => {
                 <button
                   className="btn btn-tip"
                   onClick={() => {
+                    setTipType('suspect');
                     setTipSuspectId(suspect.id);
                     setShowTipForm(true);
                     setShowRewardForm(false);

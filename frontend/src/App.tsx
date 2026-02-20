@@ -31,6 +31,7 @@ import SuspectSubmissions from './pages/SuspectSubmissions';
 import Trials from './pages/Trials';
 import Interrogations from './pages/Interrogations';
 import Reports from './pages/Reports';
+import TipReview from './pages/TipReview';
 import AdminPanel from './pages/AdminPanel';
 import StyleGuide from './pages/StyleGuide';
 import NotFound from './pages/NotFound';
@@ -68,6 +69,7 @@ const App: React.FC = () => {
                 <Route path="/interrogations" element={<Interrogations />} />
                 <Route path="/trials" element={<Trials />} />
                 <Route path="/reports" element={<Reports />} />
+                <Route path="/tip-reviews" element={<TipReview />} />
                 <Route path="/admin" element={<AdminPanel />} />
 
                 {/* Utility routes */}

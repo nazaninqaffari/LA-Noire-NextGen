@@ -12,3 +12,28 @@ sednding tip dosnt work in frontend, first see the full requirements and impleme
 
 
 ------
+
+
+1- the suspect name is not written on both mostwanted card + when selecting him(its empty - case name)
+
+2- there is no way to navigato to a place to review submitted tips for cadet 
+also test reviewing system, i told you, its first a cadet/officer should accept the tip, then a detective should accept it
+
+3- implement bail payment system, when a citizen for crime level 2 and 3 pays the bail, they status will change to free and they are removed from that case
+to pay the bail, you should use a payment system
+you can use the sandbox of zarinpal for now, the doc is in zarinpaldoc.txt
+
+there should be a payment return page also that the person should be redirected to after paying the bail
+
+notice that there should be a mechanism for crime level 3 so before paying the bail, the seargent accepts it(its need acceptance), and also there should be a option for seargent to navigate to accepting bails page and the page should exists
+
+you can also change backend and add endpoint to it fox fixing this 
+
+after that
+
+1- create backend related tests if you changed any thing in backend and keep testing till fixing
+2- create patch related tsets for every chagne in playwright and tset that patches only, and keep testing till fixing, dont run every playwright test, just run the new one added for this bugs
+3- create another full scenario test, from login, creating a level3 complaint, adding some evidence, changing state to mostwanted, sending tips from citizens, reviewing the tips from cadet and detective, reviewing tip status, solving the case from detective, sending suspects, accepting suspects from seargent, interogation and sending scores from detective, creation of trial, guilty, and paying the bail(except the last step of paying it, leave it there  because it will go to a zarinpal website where you dont know shit about it), i want the test to be from a real life example fun example also, but it should be comprehansive, and also, no mocking data or api call, everything in test should be done from frontend, you can only use api calls to confirm something has been done,
+also the navigations should be done really on the page, so if you have missed anything, you add it
+
+and use the test to keep debugging front and back until it passes

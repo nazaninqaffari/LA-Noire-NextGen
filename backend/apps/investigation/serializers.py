@@ -78,7 +78,7 @@ class IntensivePursuitSuspectSerializer(serializers.ModelSerializer):
     class Meta:
         model = Suspect
         fields = [
-            'id', 'person_full_name', 'person_username', 'photo',
+            'id', 'case', 'person_full_name', 'person_username', 'photo',
             'case_number', 'case_title', 'crime_level', 'crime_level_name',
             'reason', 'days_at_large', 'danger_score', 'reward_amount',
             'identified_at', 'status'
