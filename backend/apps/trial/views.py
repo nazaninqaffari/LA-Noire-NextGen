@@ -291,6 +291,22 @@ class BailPaymentViewSet(viewsets.ModelViewSet):
             # Others see only their own requests (as suspect)
             return queryset.filter(suspect__person=user)
     
+    def create(self, request, *args, **kwargs):
+        """
+        Only police officers (Cadet and above) can issue bail requests.
+        Normal citizens cannot create bail requests.
+        """
+        police_roles = [
+            'Cadet', 'Patrol Officer', 'Police Officer', 'Detective',
+            'Sergeant', 'Captain', 'Police Chief', 'Administrator',
+        ]
+        if not request.user.roles.filter(name__in=police_roles).exists():
+            return Response(
+                {'detail': 'Only police officers (Cadet and above) can issue bail requests.'},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        return super().create(request, *args, **kwargs)
+
     def perform_create(self, serializer):
         """
         Auto-approve level 2 bail requests.

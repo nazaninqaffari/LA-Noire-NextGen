@@ -2,8 +2,9 @@
  * Header Component
  * Top navigation bar with LAPD branding and role-based navigation.
  * Shows different menu items based on the user's assigned roles.
+ * Nav items are grouped into dropdown menus for better organization.
  */
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useRef, useEffect, useCallback } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotification } from '../contexts/NotificationContext';
@@ -19,73 +20,151 @@ const hasRole = (user: any, roleName: string): boolean => {
   ) ?? false;
 };
 
+interface NavItem {
+  to: string;
+  label: string;
+}
+
+interface NavGroup {
+  label: string;
+  items: NavItem[];
+}
+
+/** Dropdown component for grouped nav items */
+const NavDropdown: React.FC<{ group: NavGroup; currentPath: string }> = ({ group, currentPath }) => {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  const isActive = group.items.some(item => currentPath.startsWith(item.to));
+
+  const handleClose = useCallback(() => setOpen(false), []);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        handleClose();
+      }
+    };
+    if (open) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [open, handleClose]);
+
+  return (
+    <div className={`nav-dropdown${open ? ' open' : ''}`} ref={ref}>
+      <button
+        className={`nav-dropdown-toggle${isActive ? ' active' : ''}`}
+        onClick={() => setOpen(prev => !prev)}
+        aria-expanded={open}
+        aria-haspopup="true"
+      >
+        {group.label}
+        <span className="dropdown-arrow">▾</span>
+      </button>
+      {open && (
+        <div className="nav-dropdown-menu">
+          {group.items.map(item => (
+            <Link
+              key={item.to}
+              to={item.to}
+              className={`nav-dropdown-item${currentPath.startsWith(item.to) ? ' active' : ''}`}
+              onClick={handleClose}
+            >
+              {item.label}
+            </Link>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
 const Header: React.FC = () => {
   const { user, isAuthenticated, logout } = useAuth();
   const { showNotification } = useNotification();
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Determine role-based nav items
-  const navItems = useMemo(() => {
-    if (!isAuthenticated || !user) return [];
+  // Build grouped navigation items
+  const navGroups = useMemo(() => {
+    if (!isAuthenticated || !user) return { standalone: [] as NavItem[], groups: [] as NavGroup[] };
 
-    const items: { to: string; label: string }[] = [
+    const standalone: NavItem[] = [
       { to: '/dashboard', label: 'Dashboard' },
+    ];
+
+    // ── Cases & Evidence ──
+    const casesItems: NavItem[] = [
       { to: '/cases', label: 'Cases' },
       { to: '/evidence', label: 'Evidence' },
       { to: '/suspects', label: 'Suspects' },
     ];
 
-    // Detective-specific
+    // Public Cases visible to all authenticated users
+    casesItems.push({ to: '/public-cases', label: 'Public Cases' });
+
+    // ── Investigation ──
+    const investigationItems: NavItem[] = [];
+
     if (hasRole(user, 'detective') || hasRole(user, 'senior_detective')
       || hasRole(user, 'captain') || hasRole(user, 'police_chief')) {
-      items.push({ to: '/detective-board', label: 'Detective Board' });
+      investigationItems.push({ to: '/detective-board', label: 'Detective Board' });
     }
 
-    // Suspect submissions – detective creates, sergeant reviews
     if (hasRole(user, 'detective') || hasRole(user, 'senior_detective')
       || hasRole(user, 'sergeant')) {
-      items.push({ to: '/suspect-submissions', label: 'Suspect Submissions' });
+      investigationItems.push({ to: '/suspect-submissions', label: 'Suspect Submissions' });
     }
 
-    // Interrogations – detective, sergeant, captain
     if (hasRole(user, 'detective') || hasRole(user, 'senior_detective')
       || hasRole(user, 'sergeant') || hasRole(user, 'captain') || hasRole(user, 'police_chief')) {
-      items.push({ to: '/interrogations', label: 'Interrogations' });
+      investigationItems.push({ to: '/interrogations', label: 'Interrogations' });
     }
 
-    // Trial management – judges, captain, sergeant (for bail)
-    if (hasRole(user, 'judge') || hasRole(user, 'captain') || hasRole(user, 'police_chief')
-      || hasRole(user, 'sergeant')) {
-      items.push({ to: '/trials', label: 'Trials' });
-    }
-
-    // Tip reviews – officer reviews pending, detective reviews officer-approved
     if (hasRole(user, 'cadet') || hasRole(user, 'patrol_officer') || hasRole(user, 'police_officer')
       || hasRole(user, 'detective') || hasRole(user, 'senior_detective')
       || hasRole(user, 'sergeant') || hasRole(user, 'captain') || hasRole(user, 'police_chief')) {
-      items.push({ to: '/tip-reviews', label: 'Tip Reviews' });
+      investigationItems.push({ to: '/tip-reviews', label: 'Tip Reviews' });
     }
 
-    // Bail management – sergeant approves, suspects/citizens pay
+    // ── Justice & Trials ──
+    const justiceItems: NavItem[] = [];
+
+    if (hasRole(user, 'judge') || hasRole(user, 'captain') || hasRole(user, 'police_chief')
+      || hasRole(user, 'sergeant')) {
+      justiceItems.push({ to: '/trials', label: 'Trials' });
+    }
+
+    if (hasRole(user, 'cadet') || hasRole(user, 'patrol_officer') || hasRole(user, 'police_officer')
+      || hasRole(user, 'detective') || hasRole(user, 'senior_detective')
+      || hasRole(user, 'sergeant') || hasRole(user, 'captain') || hasRole(user, 'police_chief')) {
+      justiceItems.push({ to: '/bail', label: 'Bail' });
+    }
+
     if (hasRole(user, 'sergeant') || hasRole(user, 'captain') || hasRole(user, 'police_chief')) {
-      items.push({ to: '/bail-approvals', label: 'Bail Approvals' });
+      justiceItems.push({ to: '/bail-approvals', label: 'Bail Approvals' });
     }
-    
-    // Bail payments – available for all authenticated users (citizens, suspects)
-    items.push({ to: '/bail', label: 'Bail' });
 
-    // Reports – leadership
+    // ── Admin & Reports ──
+    const adminItems: NavItem[] = [];
+
     if (hasRole(user, 'captain') || hasRole(user, 'police_chief') || hasRole(user, 'judge')) {
-      items.push({ to: '/reports', label: 'Reports' });
+      adminItems.push({ to: '/reports', label: 'Reports' });
     }
 
-    // Admin panel – admin/superuser
     if (user.is_staff || user.is_superuser || hasRole(user, 'admin')) {
-      items.push({ to: '/admin', label: 'Admin' });
+      adminItems.push({ to: '/admin', label: 'Admin Panel' });
     }
 
-    return items;
+    // Build groups (only include non-empty ones)
+    const groups: NavGroup[] = [];
+    if (casesItems.length > 0) groups.push({ label: 'Cases & Evidence', items: casesItems });
+    if (investigationItems.length > 0) groups.push({ label: 'Investigation', items: investigationItems });
+    if (justiceItems.length > 0) groups.push({ label: 'Justice', items: justiceItems });
+    if (adminItems.length > 0) groups.push({ label: 'Admin', items: adminItems });
+
+    return { standalone, groups };
   }, [user, isAuthenticated]);
 
   const handleLogout = async () => {
@@ -131,7 +210,8 @@ const Header: React.FC = () => {
 
           {isAuthenticated ? (
             <>
-              {navItems.map((item) => (
+              {/* Standalone links */}
+              {navGroups.standalone.map(item => (
                 <Link
                   key={item.to}
                   to={item.to}
@@ -140,6 +220,12 @@ const Header: React.FC = () => {
                   {item.label}
                 </Link>
               ))}
+
+              {/* Dropdown groups */}
+              {navGroups.groups.map(group => (
+                <NavDropdown key={group.label} group={group} currentPath={location.pathname} />
+              ))}
+
               <div className="header-user">
                 <NotificationBell />
                 <span className="user-name">{user?.username}</span>

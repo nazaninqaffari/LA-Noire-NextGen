@@ -88,15 +88,17 @@ class CaseSerializer(serializers.ModelSerializer):
         read_only_fields = [
             'id', 'case_number', 'status', 'rejection_count', 'formation_type',
             'created_by', 'assigned_cadet', 'assigned_officer',
-            'assigned_detective', 'assigned_sergeant',
             'created_at', 'updated_at', 'opened_at', 'closed_at'
         ]
+        # Note: assigned_detective and assigned_sergeant are intentionally
+        # writable so Administrators can assign them via PATCH (see perform_update).
 
 
 class CaseCreateSerializer(serializers.ModelSerializer):
     """
     Serializer for creating a case via complaint.
     Complainant submits case information and initial statement.
+    Supports collaborative complaints – the creator can add other persons.
     """
     complainant_statement = serializers.CharField(
         write_only=True,
@@ -104,12 +106,18 @@ class CaseCreateSerializer(serializers.ModelSerializer):
         min_length=10,
         help_text="Primary complainant's statement about the incident"
     )
+    additional_complainants = serializers.ListField(
+        child=serializers.DictField(),
+        write_only=True,
+        required=False,
+        help_text="List of additional complainants: [{user_id, statement}, ...]"
+    )
     
     class Meta:
         model = Case
         fields = [
             'title', 'description', 'crime_level',
-            'complainant_statement'
+            'complainant_statement', 'additional_complainants'
         ]
     
     def validate(self, data):
@@ -126,10 +134,29 @@ class CaseCreateSerializer(serializers.ModelSerializer):
         
         return data
     
+    def validate_additional_complainants(self, value):
+        """Validate each additional complainant entry."""
+        from apps.accounts.models import User
+        for entry in value:
+            if 'user_id' not in entry:
+                raise serializers.ValidationError("Each entry must have a 'user_id' field.")
+            if 'statement' not in entry or len(str(entry['statement'])) < 10:
+                raise serializers.ValidationError(
+                    "Each entry must have a 'statement' of at least 10 characters."
+                )
+            try:
+                User.objects.get(id=entry['user_id'])
+            except User.DoesNotExist:
+                raise serializers.ValidationError(
+                    f"User with id {entry['user_id']} not found."
+                )
+        return value
+    
     @transaction.atomic
     def create(self, validated_data):
-        """Create case with complainant and set to cadet review."""
+        """Create case with complainant(s) and set to cadet review."""
         complainant_statement = validated_data.pop('complainant_statement')
+        additional_complainants = validated_data.pop('additional_complainants', [])
         user = self.context['request'].user
         
         # Generate unique case number
@@ -152,6 +179,21 @@ class CaseCreateSerializer(serializers.ModelSerializer):
             is_primary=True,
             verified_by_cadet=False
         )
+        
+        # Create additional complainants
+        for entry in additional_complainants:
+            uid = entry['user_id']
+            stmt = entry['statement']
+            # Skip if same as primary complainant
+            if int(uid) == user.id:
+                continue
+            Complainant.objects.create(
+                case=case,
+                user_id=uid,
+                statement=stmt,
+                is_primary=False,
+                verified_by_cadet=False
+            )
         
         return case
 

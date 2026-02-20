@@ -1,0 +1,87 @@
+/**
+ * Public Cases Page Styles
+ * Shows crime scene cases citizens can join
+ */
+.public-cases-page {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.public-cases-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+  gap: var(--spacing-lg);
+}
+
+.public-case-card {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--color-brass);
+}
+
+.public-case-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-sm);
+}
+
+.public-case-title {
+  font-family: var(--font-heading);
+  font-size: 1.1rem;
+  color: var(--color-gold);
+  text-decoration: none;
+  transition: color var(--transition-fast);
+}
+
+.public-case-title:hover {
+  color: var(--color-brass);
+}
+
+.public-case-body {
+  flex: 1;
+}
+
+.public-case-description {
+  color: var(--color-text-secondary);
+  font-size: 0.9rem;
+  margin-bottom: var(--spacing-sm);
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.public-case-detail {
+  font-size: 0.85rem;
+  color: var(--color-text-secondary);
+  margin-bottom: 4px;
+}
+
+.public-case-detail strong {
+  color: var(--color-text-primary);
+}
+
+.public-case-actions {
+  margin-top: var(--spacing-md);
+  padding-top: var(--spacing-sm);
+  border-top: 1px solid var(--color-noir-dark-gray);
+}
+
+.join-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.join-buttons {
+  display: flex;
+  gap: var(--spacing-sm);
+}
+
+@media (max-width: 768px) {
+  .public-cases-grid {
+    grid-template-columns: 1fr;
+  }
+}

@@ -95,6 +95,7 @@ export interface CaseCreateComplaintData {
   crime_level: CrimeLevel;
   formation_type: 'complaint';
   complainant_statement: string;
+  additional_complainants?: { user_id: number; statement: string }[];
 }
 
 export interface CaseCreateSceneData {

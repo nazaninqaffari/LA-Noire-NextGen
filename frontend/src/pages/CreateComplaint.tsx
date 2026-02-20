@@ -1,20 +1,29 @@
 /**
  * Create Complaint Page
- * Citizen-initiated case formation
+ * Citizen-initiated case formation with collaborative complainant support.
  */
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { createComplaintCase, getCrimeLevels } from '../services/case';
+import { getUsers } from '../services/admin';
 import type { CaseCreateComplaintData } from '../types';
 import type { AxiosError } from 'axios';
 import { useNotification } from '../contexts/NotificationContext';
+import { useAuth } from '../contexts/AuthContext';
 import { extractErrorMessage } from '../utils/errorHandler';
 import LoadingSkeleton from '../components/LoadingSkeleton';
 import './CreateComplaint.css';
 
+interface CoComplainant {
+  user_id: number;
+  username: string;
+  statement: string;
+}
+
 const CreateComplaint: React.FC = () => {
   const navigate = useNavigate();
   const { showNotification } = useNotification();
+  const { user: currentUser } = useAuth();
   const [loading, setLoading] = useState(false);
   const [crimeLevels, setCrimeLevels] = useState<any[]>([]);
   const [formData, setFormData] = useState<CaseCreateComplaintData>({
@@ -24,6 +33,14 @@ const CreateComplaint: React.FC = () => {
     formation_type: 'complaint',
     complainant_statement: '',
   });
+
+  // Co-complainant state
+  const [coComplainants, setCoComplainants] = useState<CoComplainant[]>([]);
+  const [userSearchQuery, setUserSearchQuery] = useState('');
+  const [userSearchResults, setUserSearchResults] = useState<any[]>([]);
+  const [searchingUsers, setSearchingUsers] = useState(false);
+  const [newCoStatement, setNewCoStatement] = useState('');
+  const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
 
   // Fetch crime levels from backend so we use real FK IDs
   useEffect(() => {
@@ -52,6 +69,46 @@ const CreateComplaint: React.FC = () => {
     }));
   };
 
+  // Search users for co-complainants
+  const handleUserSearch = async () => {
+    if (!userSearchQuery.trim() || userSearchQuery.trim().length < 2) return;
+    setSearchingUsers(true);
+    try {
+      const res = await getUsers({ search: userSearchQuery.trim() });
+      const results = (res.results || []).filter((u: any) =>
+        u.id !== currentUser?.id &&
+        !coComplainants.some(c => c.user_id === u.id)
+      );
+      setUserSearchResults(results);
+    } catch {
+      setUserSearchResults([]);
+    } finally {
+      setSearchingUsers(false);
+    }
+  };
+
+  const handleAddCoComplainant = () => {
+    if (!selectedUserId || !newCoStatement.trim() || newCoStatement.trim().length < 10) {
+      showNotification('Select a user and provide a statement (min 10 chars)', 'error');
+      return;
+    }
+    const found = userSearchResults.find((u: any) => u.id === selectedUserId);
+    if (!found) return;
+    setCoComplainants(prev => [...prev, {
+      user_id: found.id,
+      username: found.username || found.full_name || `User #${found.id}`,
+      statement: newCoStatement.trim(),
+    }]);
+    setSelectedUserId(null);
+    setNewCoStatement('');
+    setUserSearchResults([]);
+    setUserSearchQuery('');
+  };
+
+  const handleRemoveCoComplainant = (userId: number) => {
+    setCoComplainants(prev => prev.filter(c => c.user_id !== userId));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -71,7 +128,13 @@ const CreateComplaint: React.FC = () => {
 
     try {
       setLoading(true);
-      await createComplaintCase(formData);
+      const payload: CaseCreateComplaintData = {
+        ...formData,
+        additional_complainants: coComplainants.length > 0
+          ? coComplainants.map(c => ({ user_id: c.user_id, statement: c.statement }))
+          : undefined,
+      };
+      await createComplaintCase(payload);
       showNotification('Complaint filed successfully', 'success');
       navigate('/cases');
     } catch (err) {
@@ -198,6 +261,95 @@ const CreateComplaint: React.FC = () => {
           <span className="form-hint">
             This is your official statement. Be as accurate and detailed as possible.
           </span>
+        </div>
+
+        {/* Co-Complainants Section */}
+        <div className="form-group co-complainant-section">
+          <label className="form-label">Add Other Complainants (Optional)</label>
+          <p className="form-hint" style={{ marginBottom: '0.75rem' }}>
+            You can add other persons who are also affected by this incident.
+          </p>
+
+          {/* List existing co-complainants */}
+          {coComplainants.length > 0 && (
+            <div className="co-complainant-list" data-testid="co-complainant-list">
+              {coComplainants.map(c => (
+                <div key={c.user_id} className="co-complainant-card" data-testid={`co-complainant-${c.user_id}`}>
+                  <div className="co-complainant-info">
+                    <strong>{c.username}</strong>
+                    <p>{c.statement}</p>
+                  </div>
+                  <button
+                    type="button"
+                    className="btn btn-danger btn-sm"
+                    onClick={() => handleRemoveCoComplainant(c.user_id)}
+                  >
+                    ✕
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Search and add */}
+          <div className="co-complainant-add">
+            <div className="search-row">
+              <input
+                type="text"
+                id="co-complainant-search"
+                className="form-input"
+                placeholder="Search by username, name, or national ID..."
+                value={userSearchQuery}
+                onChange={e => setUserSearchQuery(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleUserSearch(); } }}
+              />
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={handleUserSearch}
+                disabled={searchingUsers}
+              >
+                {searchingUsers ? 'Searching...' : '🔍 Search'}
+              </button>
+            </div>
+
+            {userSearchResults.length > 0 && (
+              <div className="user-search-results" data-testid="user-search-results">
+                {userSearchResults.map((u: any) => (
+                  <label key={u.id} className={`user-result${selectedUserId === u.id ? ' selected' : ''}`}>
+                    <input
+                      type="radio"
+                      name="co-user"
+                      value={u.id}
+                      checked={selectedUserId === u.id}
+                      onChange={() => setSelectedUserId(u.id)}
+                    />
+                    <span>{u.username} — {u.first_name} {u.last_name}</span>
+                  </label>
+                ))}
+              </div>
+            )}
+
+            {selectedUserId && (
+              <div className="co-statement-row">
+                <textarea
+                  id="co-complainant-statement"
+                  className="form-textarea"
+                  placeholder="Their statement about the incident (min 10 chars)..."
+                  value={newCoStatement}
+                  onChange={e => setNewCoStatement(e.target.value)}
+                  rows={3}
+                />
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  onClick={handleAddCoComplainant}
+                >
+                  + Add Person
+                </button>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Form Actions */}

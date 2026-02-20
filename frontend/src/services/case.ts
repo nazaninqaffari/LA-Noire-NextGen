@@ -127,3 +127,19 @@ export const resubmitCase = async (id: number): Promise<Case> => {
   const response = await api.post<Case>(`${CASES_BASE_URL}/${id}/resubmit/`);
   return response.data;
 };
+
+/**
+ * Get public cases (crime-scene-based cases citizens can browse/join)
+ */
+export const getPublicCases = async (): Promise<Case[]> => {
+  const response = await api.get<Case[]>(`${CASES_BASE_URL}/public/`);
+  return response.data;
+};
+
+/**
+ * Join a public case as a complainant
+ */
+export const joinPublicCase = async (caseId: number, statement: string): Promise<any> => {
+  const response = await api.post(`${CASES_BASE_URL}/${caseId}/join_case/`, { statement });
+  return response.data;
+};
