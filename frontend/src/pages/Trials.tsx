@@ -24,7 +24,7 @@ import { getCases } from '../services/case';
 import { useAuth } from '../contexts/AuthContext';
 import { extractErrorMessage } from '../utils/errorHandler';
 import type { AxiosError } from 'axios';
-import type { Trial, BailPayment as BailType } from '../types';
+import type { Trial } from '../types';
 import { SkeletonTable } from '../components/LoadingSkeleton';
 import './Trials.css';
 
