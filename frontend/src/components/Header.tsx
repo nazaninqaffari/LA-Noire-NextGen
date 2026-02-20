@@ -10,11 +10,14 @@ import { useNotification } from '../contexts/NotificationContext';
 import NotificationBell from './NotificationBell';
 import './Header.css';
 
-/** Check if user has a specific role */
-const hasRole = (user: any, roleName: string): boolean =>
-  user?.roles?.some((r: any) =>
-    (typeof r === 'string' ? r : r.name).toLowerCase() === roleName.toLowerCase()
+/** Check if user has a specific role (compares case-insensitively, treats _ and space as equal) */
+const hasRole = (user: any, roleName: string): boolean => {
+  const normalize = (s: string) => s.toLowerCase().replace(/_/g, ' ');
+  const target = normalize(roleName);
+  return user?.roles?.some((r: any) =>
+    normalize(typeof r === 'string' ? r : r.name) === target
   ) ?? false;
+};
 
 const Header: React.FC = () => {
   const { user, isAuthenticated, logout } = useAuth();
@@ -58,10 +61,19 @@ const Header: React.FC = () => {
     }
 
     // Tip reviews – officer reviews pending, detective reviews officer-approved
-    if (hasRole(user, 'police_officer') || hasRole(user, 'detective') || hasRole(user, 'senior_detective')
+    if (hasRole(user, 'cadet') || hasRole(user, 'patrol_officer') || hasRole(user, 'police_officer')
+      || hasRole(user, 'detective') || hasRole(user, 'senior_detective')
       || hasRole(user, 'sergeant') || hasRole(user, 'captain') || hasRole(user, 'police_chief')) {
       items.push({ to: '/tip-reviews', label: 'Tip Reviews' });
     }
+
+    // Bail management – sergeant approves, suspects/citizens pay
+    if (hasRole(user, 'sergeant') || hasRole(user, 'captain') || hasRole(user, 'police_chief')) {
+      items.push({ to: '/bail-approvals', label: 'Bail Approvals' });
+    }
+    
+    // Bail payments – available for all authenticated users (citizens, suspects)
+    items.push({ to: '/bail', label: 'Bail' });
 
     // Reports – leadership
     if (hasRole(user, 'captain') || hasRole(user, 'police_chief') || hasRole(user, 'judge')) {

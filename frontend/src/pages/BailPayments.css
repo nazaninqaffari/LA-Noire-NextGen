@@ -1,0 +1,66 @@
+/* Bail Payments Page Styles */
+.bail-page .page-header {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.bail-page .page-header h1 {
+  flex: 1;
+}
+
+.bail-form-card {
+  margin-bottom: 2rem;
+}
+
+.bail-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.bail-card {
+  border-left: 4px solid var(--color-border, #333);
+}
+
+.bail-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.bail-id {
+  font-weight: bold;
+  font-size: 1.1rem;
+}
+
+.bail-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.bail-detail {
+  font-size: 0.95rem;
+}
+
+.bail-detail code {
+  background: var(--color-code-bg, #222);
+  padding: 0.15rem 0.4rem;
+  border-radius: 3px;
+}
+
+.bail-card-actions {
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--color-border, #333);
+}
+
+.skeleton-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}

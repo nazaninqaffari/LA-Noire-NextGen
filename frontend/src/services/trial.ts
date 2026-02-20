@@ -114,7 +114,23 @@ export const approveBailPayment = async (id: number): Promise<BailPayment> => {
   return response.data;
 };
 
-/** Process bail payment */
+/** Initiate bail payment via Zarinpal - returns redirect URL */
+export const initiateBailPayment = async (
+  id: number
+): Promise<{ redirect_url: string; authority: string }> => {
+  const response = await api.post<{ redirect_url: string; authority: string }>(`${BAIL_URL}/${id}/pay/`);
+  return response.data;
+};
+
+/** Verify Zarinpal payment after return from gateway */
+export const verifyBailPayment = async (
+  data: { authority: string; status: string }
+): Promise<{ detail: string; ref_id?: string; bail?: BailPayment; status: string }> => {
+  const response = await api.post(`${BAIL_URL}/verify_payment/`, data);
+  return response.data;
+};
+
+/** @deprecated Use initiateBailPayment for Zarinpal flow */
 export const payBail = async (
   id: number,
   data: { payment_reference: string }

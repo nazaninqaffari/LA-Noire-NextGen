@@ -650,13 +650,13 @@ class TipOffViewSet(viewsets.ModelViewSet):
                           'officer_review', 'detective_review']:
             # For regular users, still only show their own tips
             if not any(user_has_role(user, rank) for rank in 
-                      ['Police Officer', 'Detective', 'Sergeant', 'Lieutenant', 'Captain', 'Chief']):
+                      ['Cadet', 'Patrol Officer', 'Police Officer', 'Detective', 'Sergeant', 'Lieutenant', 'Captain', 'Police Chief']):
                 return queryset.filter(submitted_by=user)
             return queryset
         
         # For list views, filter by role
-        # Police Officers see pending tips
-        if user_has_role(user, 'Police Officer') and not user_has_role(user, 'Detective'):
+        # Cadets, Patrol Officers and Police Officers see pending tips
+        if any(user_has_role(user, rank) for rank in ['Cadet', 'Patrol Officer', 'Police Officer']) and not user_has_role(user, 'Detective'):
             return queryset.filter(status=TipOff.STATUS_PENDING)
         
         # Detectives see officer-approved tips
@@ -667,7 +667,7 @@ class TipOffViewSet(viewsets.ModelViewSet):
             )
         
         # Police ranks (for verification) see all
-        elif any(user_has_role(user, rank) for rank in ['Sergeant', 'Lieutenant', 'Captain', 'Chief']):
+        elif any(user_has_role(user, rank) for rank in ['Sergeant', 'Lieutenant', 'Captain', 'Police Chief']):
             return queryset
         
         # Regular users see only their own tips
@@ -724,8 +724,8 @@ class TipOffViewSet(viewsets.ModelViewSet):
         """Officer reviews and approves/rejects tip."""
         tip = self.get_object()
         
-        # Only police officers (not higher ranks) can review
-        if not user_has_role(request.user, 'Police Officer'):
+        # Cadets, Patrol Officers and Police Officers can perform initial review
+        if not any(user_has_role(request.user, rank) for rank in ['Cadet', 'Patrol Officer', 'Police Officer']):
             return Response(
                 {'error': 'Only police officers can perform initial review'},
                 status=status.HTTP_403_FORBIDDEN

@@ -32,6 +32,9 @@ import Trials from './pages/Trials';
 import Interrogations from './pages/Interrogations';
 import Reports from './pages/Reports';
 import TipReview from './pages/TipReview';
+import BailPayments from './pages/BailPayments';
+import BailApprovals from './pages/BailApprovals';
+import PaymentReturn from './pages/PaymentReturn';
 import AdminPanel from './pages/AdminPanel';
 import StyleGuide from './pages/StyleGuide';
 import NotFound from './pages/NotFound';
@@ -70,6 +73,9 @@ const App: React.FC = () => {
                 <Route path="/trials" element={<Trials />} />
                 <Route path="/reports" element={<Reports />} />
                 <Route path="/tip-reviews" element={<TipReview />} />
+                <Route path="/bail" element={<BailPayments />} />
+                <Route path="/bail/return" element={<PaymentReturn />} />
+                <Route path="/bail-approvals" element={<BailApprovals />} />
                 <Route path="/admin" element={<AdminPanel />} />
 
                 {/* Utility routes */}
