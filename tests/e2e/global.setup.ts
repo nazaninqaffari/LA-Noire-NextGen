@@ -9,7 +9,7 @@ const REGULAR_AUTH_FILE = path.join(__dirname, '.auth/regular.json');
  * This runs before any test to create reusable auth sessions.
  */
 setup('authenticate as admin', async ({ page }) => {
-  await page.goto('/login');
+  await page.goto('/login', { waitUntil: 'domcontentloaded' });
   await page.fill('#username', 'admin');
   await page.fill('#password', 'admin123');
   await page.click('button[type="submit"]');

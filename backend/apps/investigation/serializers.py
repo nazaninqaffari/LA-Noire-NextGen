@@ -42,11 +42,15 @@ class SuspectSerializer(serializers.ModelSerializer):
     """Serializer for Suspects."""
     danger_score = serializers.IntegerField(source='get_danger_score', read_only=True)
     reward_amount = serializers.IntegerField(source='get_reward_amount', read_only=True)
+    person_first_name = serializers.CharField(source='person.first_name', read_only=True)
+    person_last_name = serializers.CharField(source='person.last_name', read_only=True)
+    person_full_name = serializers.CharField(source='person.get_full_name', read_only=True)
     
     class Meta:
         model = Suspect
         fields = [
-            'id', 'case', 'person', 'status', 'reason',
+            'id', 'case', 'person', 'person_first_name', 'person_last_name', 'person_full_name',
+            'status', 'reason',
             'identified_by_detective', 'approved_by_sergeant', 'sergeant_approval_message',
             'arrest_warrant_issued', 'photo', 'danger_score', 'reward_amount',
             'identified_at', 'arrested_at'

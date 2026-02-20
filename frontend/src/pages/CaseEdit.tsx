@@ -5,7 +5,7 @@
  */
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { getCase, updateCase, resubmitCase } from '../services/case';
+import { getCase, updateCase, resubmitCase, getCrimeLevels } from '../services/case';
 import type { Case } from '../types';
 import type { AxiosError } from 'axios';
 import { useNotification } from '../contexts/NotificationContext';
@@ -25,15 +25,19 @@ const CaseEdit: React.FC = () => {
   // Editable fields
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [crimeLevel, setCrimeLevel] = useState<number>(3);
+  const [crimeLevel, setCrimeLevel] = useState<number>(0); // FK PK from API
   const [statement, setStatement] = useState('');
+  const [crimeLevels, setCrimeLevels] = useState<any[]>([]);
 
   useEffect(() => {
     const fetchCase = async () => {
       if (!id) return;
       try {
         setLoading(true);
-        const fetched = await getCase(parseInt(id));
+        const [fetched, levels] = await Promise.all([
+          getCase(parseInt(id)),
+          getCrimeLevels(),
+        ]);
 
         // Only allow editing draft cases
         if (fetched.status !== 'draft') {
@@ -42,9 +46,11 @@ const CaseEdit: React.FC = () => {
           return;
         }
 
+        setCrimeLevels(levels);
         setCaseData(fetched);
         setTitle(fetched.title);
         setDescription(fetched.description);
+        // crime_level from API is FK PK — use it directly
         setCrimeLevel(fetched.crime_level);
         setStatement(fetched.complainant_statement || '');
       } catch (err) {
@@ -66,6 +72,7 @@ const CaseEdit: React.FC = () => {
         title,
         description,
         crime_level: crimeLevel as any,
+        complainant_statement: statement,
       });
       showNotification('Case updated successfully.', 'success');
     } catch (err) {
@@ -85,6 +92,7 @@ const CaseEdit: React.FC = () => {
         title,
         description,
         crime_level: crimeLevel as any,
+        complainant_statement: statement,
       });
       // Then resubmit
       await resubmitCase(parseInt(id));
@@ -207,10 +215,11 @@ const CaseEdit: React.FC = () => {
                   onChange={(e) => setCrimeLevel(Number(e.target.value))}
                   disabled={saving}
                 >
-                  <option value={3}>Level 3 - Minor</option>
-                  <option value={2}>Level 2 - Medium</option>
-                  <option value={1}>Level 1 - Major</option>
-                  <option value={0}>Critical</option>
+                  {crimeLevels.map((cl: any) => (
+                    <option key={cl.id} value={cl.id}>
+                      {cl.name}
+                    </option>
+                  ))}
                 </select>
               </div>
 

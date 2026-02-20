@@ -341,8 +341,13 @@ test.describe.serial('Parkview Burglary — Full Scenario (UI)', () => {
     const testimonyBtn = page.locator('.type-btn').filter({ hasText: 'Testimony' });
     await testimonyBtn.click();
 
-    // Fill the form
-    await page.fill('#case-id', String(caseId));
+    // Select case from dropdown (wait for options to load)
+    await page.waitForFunction(
+      (id) => document.querySelector(`#case-id option[value="${id}"]`) !== null,
+      caseId,
+      { timeout: 10000 }
+    );
+    await page.selectOption('#case-id', String(caseId));
     await page.fill('#title', 'Neighbor Eyewitness Statement');
     await page.fill('#description', 'Witness saw a dark sedan parked near the victim residence around 7:30 PM');
     await page.fill('#transcript', 'I was walking my dog when I noticed a dark sedan parked outside 742 Parkview Lane. A man in a hoodie was carrying a bag from the house.');
@@ -593,9 +598,19 @@ test.describe.serial('Parkview Burglary — Full Scenario (UI)', () => {
     // Wait for form
     await page.waitForSelector('.trial-create-form', { timeout: 10000 });
 
-    // Fill form
-    await page.fill('#trial-case-id', String(caseId));
-    await page.fill('#trial-suspect-id', String(suspectId));
+    // Select case and suspect from dropdowns
+    await page.waitForFunction(
+      (id) => document.querySelector(`#trial-case-id option[value="${id}"]`) !== null,
+      caseId,
+      { timeout: 10000 }
+    );
+    await page.selectOption('#trial-case-id', String(caseId));
+    await page.waitForFunction(
+      (id) => document.querySelector(`#trial-suspect-id option[value="${id}"]`) !== null,
+      suspectId,
+      { timeout: 10000 }
+    );
+    await page.selectOption('#trial-suspect-id', String(suspectId));
 
     // Select judge
     const judgeSelect = page.locator('#trial-judge');

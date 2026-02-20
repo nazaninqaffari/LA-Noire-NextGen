@@ -56,7 +56,7 @@ const Interrogations: React.FC = () => {
 
   // Captain decision form state
   const [decisionId, setDecisionId] = useState<number | null>(null);
-  const [decision, setDecision] = useState<'guilty' | 'not_guilty' | 'needs_more_investigation'>('guilty');
+  const [decision, setDecision] = useState<'guilty' | 'not_guilty' | 'needs_more'>('guilty');
   const [reasoning, setReasoning] = useState('');
   const [decisionSubmitting, setDecisionSubmitting] = useState(false);
 
@@ -226,7 +226,7 @@ const Interrogations: React.FC = () => {
               <option value={0} disabled>Select suspect...</option>
               {caseSuspects.map((s) => (
                 <option key={s.id} value={s.id}>
-                  {s.person?.first_name} {s.person?.last_name} — {s.status}
+                  {(s as any).person_full_name || `${(s as any).person_first_name || ''} ${(s as any).person_last_name || ''}`.trim() || `Suspect #${s.id}`} — {s.status}
                 </option>
               ))}
             </select>
@@ -418,9 +418,9 @@ const Interrogations: React.FC = () => {
                             <input
                               type="radio"
                               name={`decision-${intg.id}`}
-                              value="needs_more_investigation"
-                              checked={decision === 'needs_more_investigation'}
-                              onChange={() => setDecision('needs_more_investigation')}
+                              value="needs_more"
+                              checked={decision === 'needs_more'}
+                              onChange={() => setDecision('needs_more')}
                             />
                             Needs More Investigation
                           </label>

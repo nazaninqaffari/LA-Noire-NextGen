@@ -8,6 +8,7 @@ import type {
   BoardItem,
   EvidenceConnection,
   Suspect,
+  SuspectStatus,
   SuspectSubmission,
   Interrogation,
   CaptainDecision,
@@ -114,6 +115,22 @@ export const createSuspect = async (data: FormData): Promise<Suspect> => {
 
 export const updateSuspect = async (id: number, data: Partial<Suspect>): Promise<Suspect> => {
   const response = await api.patch<Suspect>(`${SUSPECTS_URL}/${id}/`, data);
+  return response.data;
+};
+
+/**
+ * Change the status of a suspect.
+ * All police roles except Cadet can use this endpoint.
+ * Allows manual escalation to intensive_pursuit (most wanted).
+ */
+export const changeSuspectStatus = async (
+  id: number,
+  newStatus: SuspectStatus,
+): Promise<Suspect> => {
+  const response = await api.post<Suspect>(
+    `${SUSPECTS_URL}/${id}/change-status/`,
+    { status: newStatus },
+  );
   return response.data;
 };
 

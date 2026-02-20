@@ -2,7 +2,7 @@
  * Evidence Registration Page
  * Multi-type evidence registration form
  */
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useNotification } from '../contexts/NotificationContext';
 import { extractErrorMessage } from '../utils/errorHandler';
@@ -14,6 +14,7 @@ import {
   createIDDocument,
   createGenericEvidence,
 } from '../services/evidence';
+import { getCases } from '../services/case';
 import type { EvidenceType } from '../types';
 import './EvidenceRegister.css';
 
@@ -47,6 +48,19 @@ const EvidenceRegister: React.FC = () => {
 
   // File upload
   const [files, setFiles] = useState<FileList | null>(null);
+
+  // Case list for dropdown
+  const [caseList, setCaseList] = useState<any[]>([]);
+
+  useEffect(() => {
+    const loadCases = async () => {
+      try {
+        const res = await getCases({ page_size: 100 } as any);
+        setCaseList(res.results || []);
+      } catch { /* ignore */ }
+    };
+    loadCases();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -154,15 +168,20 @@ const EvidenceRegister: React.FC = () => {
 
         {/* Common Fields */}
         <div className="form-group">
-          <label htmlFor="case-id">Case ID</label>
-          <input
+          <label htmlFor="case-id">Case</label>
+          <select
             id="case-id"
-            type="number"
             value={caseId}
             onChange={(e) => setCaseId(e.target.value)}
-            placeholder="Enter case ID"
             required
-          />
+          >
+            <option value="" disabled>Select case...</option>
+            {caseList.map((c: any) => (
+              <option key={c.id} value={c.id}>
+                {c.title} ({c.case_number})
+              </option>
+            ))}
+          </select>
         </div>
 
         <div className="form-group">

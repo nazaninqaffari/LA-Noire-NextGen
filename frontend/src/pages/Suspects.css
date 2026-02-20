@@ -248,3 +248,42 @@
   gap: var(--spacing-sm);
   margin-top: var(--spacing-md);
 }
+
+/* Status change section */
+.status-change-section {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs, 0.4rem);
+  margin-top: var(--spacing-xs, 0.4rem);
+}
+
+.status-change-select {
+  padding: 0.3rem 0.5rem;
+  font-size: 0.8rem;
+  border-radius: var(--border-radius, 6px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.08);
+  color: inherit;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+
+.status-change-select:hover {
+  border-color: var(--accent-primary, #42a5f5);
+}
+
+.status-change-select:disabled {
+  opacity: 0.5;
+  cursor: wait;
+}
+
+.status-changing-indicator {
+  font-size: 0.75rem;
+  color: var(--text-secondary, #aaa);
+  animation: pulse 1s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
