@@ -24,6 +24,96 @@
   max-width: 300px;
 }
 
+.admin-filter {
+  max-width: 200px;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  background: var(--color-noir-charcoal);
+  color: var(--color-noir-silver);
+  border: 1px solid var(--color-noir-gray);
+  border-radius: var(--border-radius);
+  font-family: var(--font-primary);
+  font-size: 0.85rem;
+}
+
+.admin-loading {
+  text-align: center;
+  padding: var(--spacing-xl);
+  color: var(--color-noir-silver);
+  font-family: var(--font-primary);
+}
+
+/* ─── Dashboard Stat Cards ────────────────────────────────────────── */
+
+.stat-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: var(--spacing-md);
+}
+
+.stat-card {
+  background: linear-gradient(135deg, var(--color-noir-charcoal), var(--color-noir-dark-gray));
+  border: 1px solid var(--color-noir-gray);
+  border-radius: var(--border-radius);
+  padding: var(--spacing-lg);
+  position: relative;
+  transition: all var(--transition-normal);
+}
+
+.stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--color-gold), var(--color-brass));
+}
+
+.stat-card:hover {
+  border-color: var(--color-gold);
+}
+
+.stat-card h3 {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-brass);
+  margin: 0 0 var(--spacing-sm) 0;
+  border-bottom: none;
+}
+
+.stat-number {
+  font-family: var(--font-primary);
+  font-size: 2rem;
+  color: var(--color-gold);
+  margin-bottom: var(--spacing-sm);
+}
+
+.stat-details {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-xs);
+}
+
+.stat-detail {
+  font-family: var(--font-primary);
+  font-size: 0.75rem;
+  color: var(--color-noir-silver);
+  padding: 2px 6px;
+  border: 1px solid var(--color-noir-gray);
+  border-radius: 2px;
+}
+
+.stat-detail.active {
+  color: #4caf50;
+  border-color: #4caf50;
+}
+
+.stat-detail.inactive {
+  color: var(--color-crimson);
+  border-color: var(--color-crimson);
+}
+
 /* ─── Users Table ───────────────────────────────────────────────── */
 
 .admin-table {
@@ -60,6 +150,25 @@
   color: var(--color-gold) !important;
 }
 
+/* ─── Action Buttons ───────────────────────────────────────────── */
+
+.action-buttons {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.btn-sm.danger,
+.btn.btn-sm.danger {
+  border-color: var(--color-crimson);
+  color: var(--color-crimson);
+}
+
+.btn-sm.danger:hover,
+.btn.btn-sm.danger:hover {
+  background: rgba(139, 26, 26, 0.2);
+}
+
 /* ─── Role Tags ─────────────────────────────────────────────────── */
 
 .role-tags {
@@ -92,6 +201,28 @@
 
 .user-status.active { color: #4caf50; }
 .user-status.inactive { color: var(--color-crimson); }
+
+/* ─── Case Status Badge ────────────────────────────────────────── */
+
+.case-status-badge {
+  font-family: var(--font-primary);
+  font-size: 0.7rem;
+  padding: 2px 6px;
+  border: 1px solid var(--color-brass);
+  color: var(--color-brass);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.case-status-badge.status-closed {
+  border-color: var(--color-noir-light-gray);
+  color: var(--color-noir-light-gray);
+}
+
+.case-status-badge.status-open {
+  border-color: #4caf50;
+  color: #4caf50;
+}
 
 /* ─── Role Assignment ───────────────────────────────────────────── */
 
@@ -137,6 +268,20 @@
   font-size: 0.75rem;
   color: var(--color-noir-light-gray);
   margin-left: auto;
+}
+
+/* ─── Create/Edit User Form ────────────────────────────────────── */
+
+.admin-create-form {
+  max-width: 700px;
+  margin-bottom: var(--spacing-lg);
+  padding: var(--spacing-lg);
+}
+
+.admin-create-form h3 {
+  font-size: 1rem;
+  margin-bottom: var(--spacing-md);
+  border-bottom: none;
 }
 
 /* ─── Roles Grid ────────────────────────────────────────────────── */
@@ -247,5 +392,13 @@
 
   .role-checkboxes {
     grid-template-columns: 1fr;
+  }
+
+  .stat-cards {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .action-buttons {
+    flex-direction: column;
   }
 }
