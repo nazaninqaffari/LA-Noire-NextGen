@@ -146,3 +146,19 @@ CSRF_TRUSTED_ORIGINS = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
 ]
+
+# Zarinpal Payment Gateway (sandbox mode)
+ZARINPAL_MERCHANT_ID = config(
+    'ZARINPAL_MERCHANT_ID',
+    default='xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx'
+)
+ZARINPAL_SANDBOX = config('ZARINPAL_SANDBOX', default='True', cast=bool)
+ZARINPAL_BASE_URL = (
+    'https://sandbox.zarinpal.com' if ZARINPAL_SANDBOX
+    else 'https://payment.zarinpal.com'
+)
+ZARINPAL_REQUEST_URL = f'{ZARINPAL_BASE_URL}/pg/v4/payment/request.json'
+ZARINPAL_VERIFY_URL = f'{ZARINPAL_BASE_URL}/pg/v4/payment/verify.json'
+ZARINPAL_STARTPAY_URL = f'{ZARINPAL_BASE_URL}/pg/StartPay/'
+FRONTEND_URL = config('FRONTEND_URL', default='http://localhost:3000')
+ZARINPAL_CALLBACK_URL = f'{FRONTEND_URL}/bail/return'

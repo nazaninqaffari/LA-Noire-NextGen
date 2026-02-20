@@ -258,18 +258,20 @@ class PunishmentViewSet(viewsets.ReadOnlyModelViewSet):
 class BailPaymentViewSet(viewsets.ModelViewSet):
     """
     ViewSet for Bail Payments (level 2 and 3 crimes only).
-    Suspects can request bail, sergeant approves, then payment is processed.
+    Suspects can request bail, sergeant approves (required for level 3),
+    then payment is processed via Zarinpal payment gateway.
     
     Workflow:
     1. Suspect requests bail
-    2. Sergeant reviews and approves amount
-    3. Suspect pays through payment gateway
-    4. Upon payment, suspect is released
+    2. Level 2: auto-approved / Level 3: sergeant must approve
+    3. Suspect pays through Zarinpal payment gateway
+    4. Upon payment, suspect status changes to cleared (released)
     
     Persian: پرداخت وثیقه
     """
     queryset = BailPayment.objects.select_related(
-        'suspect', 'suspect__person', 'approved_by_sergeant'
+        'suspect', 'suspect__person', 'suspect__case',
+        'suspect__case__crime_level', 'approved_by_sergeant'
     ).all()
     serializer_class = BailPaymentSerializer
     permission_classes = [IsAuthenticated]
@@ -282,17 +284,30 @@ class BailPaymentViewSet(viewsets.ModelViewSet):
         user = self.request.user
         queryset = super().get_queryset()
         
-        if user.roles.filter(name='Sergeant').exists():
-            # Sergeants see all bail requests
+        if user.roles.filter(name__in=['Sergeant', 'Captain', 'Police Chief', 'Administrator']).exists():
+            # Sergeants and higher see all bail requests
             return queryset
         else:
-            # Others see only their own requests
+            # Others see only their own requests (as suspect)
             return queryset.filter(suspect__person=user)
+    
+    def perform_create(self, serializer):
+        """
+        Auto-approve level 2 bail requests.
+        Level 3 requires sergeant approval.
+        """
+        bail = serializer.save()
+        crime_level = bail.suspect.case.crime_level.level
+        if crime_level == 2:
+            # Level 2: auto-approve, no sergeant needed
+            bail.status = BailPayment.STATUS_APPROVED
+            bail.approved_at = timezone.now()
+            bail.save(update_fields=['status', 'approved_at'])
     
     @extend_schema(
         description="""
         Sergeant approves bail amount for suspect.
-        Only for level 2 and 3 crimes.
+        Only for level 3 crimes (level 2 is auto-approved).
         
         Persian: تایید مبلغ وثیقه توسط گروهبان
         """,
@@ -331,25 +346,31 @@ class BailPaymentViewSet(viewsets.ModelViewSet):
     
     @extend_schema(
         description="""
-        Process bail payment (payment gateway integration).
-        When payment is confirmed, suspect is released.
+        Initiate bail payment via Zarinpal payment gateway.
+        Returns a redirect URL to send the user to Zarinpal for payment.
         
-        Persian: پرداخت وثیقه
+        Persian: شروع پرداخت وثیقه از طریق زرین‌پال
         """,
         tags=['Bail Payment']
     )
     @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
     def pay(self, request, pk=None):
         """
-        Process bail payment.
-        Persian: پرداخت وثیقه
+        Initiate bail payment via Zarinpal.
+        Returns redirect URL for payment gateway.
         """
+        import requests as http_requests
+        from django.conf import settings as django_settings
+        
         bail = self.get_object()
         
-        # Check permission - suspect themselves
-        if request.user != bail.suspect.person:
+        # Check permission - suspect themselves or any authenticated user
+        # (a citizen/family member paying on behalf)
+        if request.user != bail.suspect.person and not request.user.roles.filter(
+            name__in=['Sergeant', 'Captain', 'Police Chief']
+        ).exists():
             return Response(
-                {"detail": "فقط خود مظنون می‌تواند وثیقه را پرداخت کند."},
+                {"detail": "فقط خود مظنون یا خانواده ایشان می‌توانند وثیقه را پرداخت کنند."},
                 status=status.HTTP_403_FORBIDDEN
             )
         
@@ -360,14 +381,154 @@ class BailPaymentViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
         
-        # Simulate payment processing (in real app, integrate with payment gateway)
-        payment_reference = f"PAY-{bail.id}-{timezone.now().timestamp()}"
+        # Call Zarinpal payment request API
+        callback_url = f"{django_settings.ZARINPAL_CALLBACK_URL}?bail_id={bail.id}"
+        payload = {
+            "merchant_id": django_settings.ZARINPAL_MERCHANT_ID,
+            "amount": int(bail.amount),
+            "callback_url": callback_url,
+            "description": f"Bail payment for suspect in case {bail.suspect.case.case_number}",
+            "metadata": {
+                "mobile": "09999813456",
+                "email": "alef@gmail.com",
+                "order_id": str(bail.id),
+            }
+        }
         
-        bail.status = BailPayment.STATUS_PAID
-        bail.payment_reference = payment_reference
-        bail.paid_at = timezone.now()
-        bail.save()
+        try:
+            response = http_requests.post(
+                django_settings.ZARINPAL_REQUEST_URL,
+                json=payload,
+                headers={'accept': 'application/json', 'content-type': 'application/json'},
+                timeout=30
+            )
+            result = response.json()
+            
+            if result.get('data', {}).get('code') == 100:
+                authority = result['data']['authority']
+                # Store authority in payment_reference for later verification
+                bail.payment_reference = authority
+                bail.save(update_fields=['payment_reference'])
+                
+                redirect_url = f"{django_settings.ZARINPAL_STARTPAY_URL}{authority}"
+                return Response({
+                    "redirect_url": redirect_url,
+                    "authority": authority,
+                })
+            else:
+                errors = result.get('errors', [])
+                return Response(
+                    {"detail": f"Payment gateway error: {errors}"},
+                    status=status.HTTP_502_BAD_GATEWAY
+                )
+        except http_requests.RequestException as e:
+            return Response(
+                {"detail": f"Payment gateway connection failed: {str(e)}"},
+                status=status.HTTP_502_BAD_GATEWAY
+            )
+    
+    @extend_schema(
+        description="""
+        Verify Zarinpal payment after user returns from gateway.
+        Called by frontend with Authority from URL query params.
         
-        serializer = self.get_serializer(bail)
-        return Response(serializer.data)
+        Persian: تایید پرداخت زرین‌پال
+        """,
+        tags=['Bail Payment']
+    )
+    @action(detail=False, methods=['post'], permission_classes=[IsAuthenticated])
+    def verify_payment(self, request):
+        """
+        Verify Zarinpal payment callback.
+        Expects: { authority: string, status: string ('OK'|'NOK') }
+        """
+        import requests as http_requests
+        from django.conf import settings as django_settings
+        
+        authority = request.data.get('authority')
+        payment_status = request.data.get('status', '')  # 'OK' or 'NOK'
+        
+        if not authority:
+            return Response(
+                {"detail": "authority is required"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Find the bail payment by stored authority
+        try:
+            bail = BailPayment.objects.select_related(
+                'suspect', 'suspect__person', 'suspect__case'
+            ).get(payment_reference=authority)
+        except BailPayment.DoesNotExist:
+            return Response(
+                {"detail": "Invalid authority code"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
+        if payment_status != 'OK':
+            return Response({
+                "detail": "Payment was cancelled or failed",
+                "bail_id": bail.id,
+                "status": "failed"
+            })
+        
+        # Already paid? (idempotency)
+        if bail.status == BailPayment.STATUS_PAID:
+            serializer = self.get_serializer(bail)
+            return Response({
+                "detail": "Payment already verified",
+                "bail": serializer.data,
+                "status": "already_paid"
+            })
+        
+        # Call Zarinpal verify API
+        payload = {
+            "merchant_id": django_settings.ZARINPAL_MERCHANT_ID,
+            "amount": int(bail.amount),
+            "authority": authority,
+        }
+        
+        try:
+            response = http_requests.post(
+                django_settings.ZARINPAL_VERIFY_URL,
+                json=payload,
+                headers={'accept': 'application/json', 'content-type': 'application/json'},
+                timeout=30
+            )
+            result = response.json()
+            
+            code = result.get('data', {}).get('code')
+            if code in (100, 101):
+                ref_id = result['data'].get('ref_id', '')
+                
+                # Mark bail as paid
+                bail.status = BailPayment.STATUS_PAID
+                bail.payment_reference = f"ZP-{ref_id}"
+                bail.paid_at = timezone.now()
+                bail.save(update_fields=['status', 'payment_reference', 'paid_at'])
+                
+                # Release suspect - change status to cleared
+                suspect = bail.suspect
+                suspect.status = 'cleared'
+                suspect.save(update_fields=['status'])
+                
+                serializer = self.get_serializer(bail)
+                return Response({
+                    "detail": "Payment verified successfully. Suspect released.",
+                    "ref_id": ref_id,
+                    "bail": serializer.data,
+                    "status": "success"
+                })
+            else:
+                return Response({
+                    "detail": "Payment verification failed",
+                    "bail_id": bail.id,
+                    "status": "failed"
+                })
+        except http_requests.RequestException as e:
+            return Response(
+                {"detail": f"Verification connection failed: {str(e)}"},
+                status=status.HTTP_502_BAD_GATEWAY
+            )
+
 

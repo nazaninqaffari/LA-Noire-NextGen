@@ -202,7 +202,7 @@ const MostWanted: React.FC = () => {
                   <option value="">-- Select a Suspect --</option>
                   {suspects.map((s) => (
                     <option key={s.id} value={s.id}>
-                      {s.person?.first_name} {s.person?.last_name} — {s.case_title || 'Unknown Case'}
+                      {(s as any).person_full_name || `${s.person?.first_name || ''} ${s.person?.last_name || ''}`.trim() || 'Unknown'} — {s.case_title || 'Unknown Case'}
                     </option>
                   ))}
                 </select>
@@ -312,7 +312,7 @@ const MostWanted: React.FC = () => {
                 </div>
                 <div className="wanted-info">
                   <h3 className="wanted-name">
-                    {suspect.person?.first_name} {suspect.person?.last_name}
+                    {(suspect as any).person_full_name || `${suspect.person?.first_name || ''} ${suspect.person?.last_name || ''}`.trim() || 'Unknown'}
                   </h3>
                   {suspect.case_title && (
                     <div className="wanted-case">Case: {suspect.case_title}</div>

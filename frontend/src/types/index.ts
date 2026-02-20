@@ -373,13 +373,16 @@ export interface Punishment {
 
 export interface BailPayment {
   id: number;
-  verdict: number;
+  suspect: number;
+  suspect_name?: string;
   amount: number;
   status: 'pending' | 'approved' | 'paid' | 'rejected';
-  requester?: User;
-  approved_by?: User;
+  approved_by_sergeant?: number;
+  sergeant_name?: string;
   payment_reference?: string;
-  created_at: string;
+  requested_at: string;
+  approved_at?: string;
+  paid_at?: string;
 }
 
 export interface Trial {
