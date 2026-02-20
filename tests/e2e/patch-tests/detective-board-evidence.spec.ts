@@ -87,7 +87,7 @@ test.describe('Patch: Detective Board Evidence Panel', () => {
   });
 
   test('should show "Show Evidence" button when case ID is present', async ({ page }) => {
-    await page.goto(`/detective-board?case=${CASE_ID}`);
+    await page.goto(`/detective-board?case=${CASE_ID}`, { waitUntil: 'domcontentloaded' });
     await page.waitForTimeout(2000);
 
     const evidenceBtn = page.locator('button:has-text("Show Evidence")');
@@ -95,7 +95,7 @@ test.describe('Patch: Detective Board Evidence Panel', () => {
   });
 
   test('clicking "Show Evidence" should open evidence panel', async ({ page }) => {
-    await page.goto(`/detective-board?case=${CASE_ID}`);
+    await page.goto(`/detective-board?case=${CASE_ID}`, { waitUntil: 'domcontentloaded' });
     await page.waitForTimeout(2000);
 
     // Initially no evidence panel
@@ -112,7 +112,7 @@ test.describe('Patch: Detective Board Evidence Panel', () => {
   });
 
   test('evidence panel should display evidence items with types', async ({ page }) => {
-    await page.goto(`/detective-board?case=${CASE_ID}`);
+    await page.goto(`/detective-board?case=${CASE_ID}`, { waitUntil: 'domcontentloaded' });
     await page.waitForTimeout(2000);
 
     const evidenceBtn = page.locator('button:has-text("Show Evidence")');
@@ -131,7 +131,7 @@ test.describe('Patch: Detective Board Evidence Panel', () => {
   });
 
   test('evidence panel should have "Add" buttons', async ({ page }) => {
-    await page.goto(`/detective-board?case=${CASE_ID}`);
+    await page.goto(`/detective-board?case=${CASE_ID}`, { waitUntil: 'domcontentloaded' });
     await page.waitForTimeout(2000);
 
     const evidenceBtn = page.locator('button:has-text("Show Evidence")');
@@ -145,7 +145,7 @@ test.describe('Patch: Detective Board Evidence Panel', () => {
   });
 
   test('toggling evidence button should hide the panel', async ({ page }) => {
-    await page.goto(`/detective-board?case=${CASE_ID}`);
+    await page.goto(`/detective-board?case=${CASE_ID}`, { waitUntil: 'domcontentloaded' });
     await page.waitForTimeout(2000);
 
     const evidenceBtn = page.locator('button:has-text("Evidence")');

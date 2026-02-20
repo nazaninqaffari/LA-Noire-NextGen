@@ -267,6 +267,80 @@ class SuspectViewSet(viewsets.ModelViewSet):
         serializer = IntensivePursuitSuspectSerializer(suspects_sorted, many=True)
         return Response(serializer.data)
 
+    @extend_schema(
+        summary="Change suspect status",
+        description="""
+        تغییر وضعیت مظنون
+        
+        تمام نقش‌های پلیسی به جز دانشجو (Cadet) می‌توانند وضعیت مظنون را تغییر دهند.
+        
+        وضعیت‌های مجاز:
+        - under_pursuit: تحت تعقیب
+        - intensive_pursuit: تحت تعقیب شدید (معمولاً بعد از ۱ ماه، اما قابل تنظیم دستی)
+        - arrested: دستگیر شده
+        - cleared: تبرئه شده
+        
+        All police roles except Cadet can change suspect status.
+        This allows manual escalation to intensive_pursuit (most wanted)
+        without waiting for the automatic 30-day threshold.
+        """,
+        request={
+            'application/json': {
+                'type': 'object',
+                'properties': {
+                    'status': {
+                        'type': 'string',
+                        'enum': ['under_pursuit', 'intensive_pursuit', 'arrested', 'cleared'],
+                    }
+                },
+                'required': ['status'],
+            }
+        },
+        responses={200: SuspectSerializer},
+    )
+    @action(detail=True, methods=['post'], url_path='change-status')
+    def change_status(self, request, pk=None):
+        """
+        Change the status of a suspect.
+        
+        Only police roles (Detective, Sergeant, Lieutenant, Captain,
+        Police Chief, Administrator) can use this. Cadets are excluded.
+        
+        Persian: تغییر وضعیت مظنون
+        """
+        ALLOWED_ROLES = [
+            'Detective', 'Sergeant', 'Lieutenant', 'Captain',
+            'Police Chief', 'Administrator',
+        ]
+        user = request.user
+        has_permission = any(user_has_role(user, role) for role in ALLOWED_ROLES)
+        if not has_permission:
+            return Response(
+                {'detail': 'شما مجوز تغییر وضعیت مظنون را ندارید. (Permission denied: Cadets cannot change suspect status.)'},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        new_status = request.data.get('status')
+        valid_statuses = [choice[0] for choice in Suspect.STATUS_CHOICES]
+        if new_status not in valid_statuses:
+            return Response(
+                {'detail': f'وضعیت نامعتبر. مقادیر مجاز: {", ".join(valid_statuses)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        suspect = self.get_object()
+        old_status = suspect.status
+        suspect.status = new_status
+
+        # If being arrested, record the arrest timestamp
+        if new_status == Suspect.STATUS_ARRESTED and old_status != Suspect.STATUS_ARRESTED:
+            suspect.arrested_at = timezone.now()
+
+        suspect.save()
+
+        serializer = self.get_serializer(suspect)
+        return Response(serializer.data)
+
 
 class InterrogationViewSet(viewsets.ModelViewSet):
     """

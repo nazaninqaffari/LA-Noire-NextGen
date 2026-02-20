@@ -39,6 +39,12 @@ const Header: React.FC = () => {
       items.push({ to: '/detective-board', label: 'Detective Board' });
     }
 
+    // Suspect submissions – detective creates, sergeant reviews
+    if (hasRole(user, 'detective') || hasRole(user, 'senior_detective')
+      || hasRole(user, 'sergeant')) {
+      items.push({ to: '/suspect-submissions', label: 'Suspect Submissions' });
+    }
+
     // Interrogations – detective, sergeant, captain
     if (hasRole(user, 'detective') || hasRole(user, 'senior_detective')
       || hasRole(user, 'sergeant') || hasRole(user, 'captain') || hasRole(user, 'police_chief')) {

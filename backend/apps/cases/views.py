@@ -111,6 +111,10 @@ class CaseViewSet(viewsets.ModelViewSet):
         if user_has_role(user, 'Police Chief'):
             return queryset
         
+        # Captain sees all cases (oversees interrogations, creates trials)
+        if user_has_role(user, 'Captain'):
+            return queryset
+        
         # Cadets see cases in cadet review, cases they've been assigned to, and reviewed cases
         if user_has_role(user, 'Cadet'):
             return (queryset.filter(

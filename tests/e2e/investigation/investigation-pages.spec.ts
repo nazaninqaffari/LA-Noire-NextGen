@@ -212,7 +212,7 @@ test.describe('Trials Page', () => {
 test.describe('Reports Page', () => {
   test.beforeEach(async ({ page }) => {
     await loginAs(page, TEST_ADMIN.username, TEST_ADMIN.password);
-    await page.goto('/reports');
+    await page.goto('/reports', { waitUntil: 'domcontentloaded' });
     await waitForLoading(page);
   });
 
@@ -225,7 +225,7 @@ test.describe('Reports Page', () => {
     await page.route('**/api/v1/**', (route) => {
       route.fulfill({ status: 500, body: JSON.stringify({ detail: 'Error' }) });
     });
-    await page.goto('/reports');
+    await page.goto('/reports', { waitUntil: 'domcontentloaded' });
     await waitForLoading(page);
 
     await expect(page.locator('body')).toBeVisible();

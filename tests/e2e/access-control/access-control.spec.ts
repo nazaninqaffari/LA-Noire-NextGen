@@ -105,11 +105,12 @@ test.describe('Unauthenticated Access Control', () => {
   });
 
   test('should handle unauthenticated access to admin panel', async ({ page }) => {
-    await page.goto('/admin');
+    await page.goto('/admin', { waitUntil: 'domcontentloaded' });
     await page.waitForTimeout(3000);
     
     const url = page.url();
-    expect(url.includes('login') || url.includes('admin')).toBeTruthy();
+    // Unauthenticated users are redirected to /login or /dashboard (AdminPanel guard)
+    expect(url.includes('login') || url.includes('admin') || url.includes('dashboard')).toBeTruthy();
   });
 
   test('should handle unauthenticated access to create complaint', async ({ page }) => {

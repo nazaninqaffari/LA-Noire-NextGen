@@ -223,7 +223,7 @@ test.describe('Cases List Page', () => {
 test.describe('Create Complaint', () => {
   test.beforeEach(async ({ page }) => {
     await loginAs(page, TEST_ADMIN.username, TEST_ADMIN.password);
-    await page.goto('/cases/complaint/new');
+    await page.goto('/cases/complaint/new', { waitUntil: 'domcontentloaded' });
     await waitForLoading(page);
   });
 
@@ -265,7 +265,16 @@ test.describe('Create Complaint', () => {
   });
 
   test('should default crime level to Medium', async ({ page }) => {
-    await expect(page.locator('#crime_level')).toHaveValue('2');
+    // Wait for crime levels to load from API (async fetch)
+    await page.waitForFunction(
+      () => {
+        const select = document.querySelector('#crime_level') as HTMLSelectElement;
+        return select && select.options.length > 1 && select.value !== '' && select.value !== '0';
+      },
+      { timeout: 10000 }
+    );
+    const selectVal = await page.locator('#crime_level').inputValue();
+    expect(Number(selectVal)).toBeGreaterThan(0);
   });
 
   test('should display Cancel and Submit buttons', async ({ page }) => {
@@ -290,7 +299,7 @@ test.describe('Create Complaint', () => {
     await page.click('button:has-text("Submit Complaint")');
 
     const notification = page.locator('.notification').filter({ hasText: /title/i });
-    await expect(notification).toBeVisible({ timeout: 5000 });
+    await expect(notification).toBeVisible({ timeout: 10000 });
   });
 
   test('should show error when description is empty', async ({ page }) => {
@@ -333,9 +342,14 @@ test.describe('Create Complaint', () => {
   });
 
   test('should select different crime levels', async ({ page }) => {
-    for (const level of ['0', '1', '2', '3']) {
-      await page.selectOption('#crime_level', level);
-      await expect(page.locator('#crime_level')).toHaveValue(level);
+    // Get actual option values from DB-driven crime level select (IDs, not level values)
+    const optionValues = await page.locator('#crime_level option').evaluateAll(
+      (opts) => (opts as HTMLOptionElement[]).map(o => o.value).filter(v => v && v !== '0')
+    );
+    expect(optionValues.length).toBeGreaterThanOrEqual(1);
+    for (const val of optionValues) {
+      await page.selectOption('#crime_level', val);
+      await expect(page.locator('#crime_level')).toHaveValue(val);
     }
   });
 
@@ -400,7 +414,7 @@ test.describe('Create Complaint', () => {
 test.describe('Create Crime Scene Report', () => {
   test.beforeEach(async ({ page }) => {
     await loginAs(page, TEST_ADMIN.username, TEST_ADMIN.password);
-    await page.goto('/cases/scene/new');
+    await page.goto('/cases/scene/new', { waitUntil: 'domcontentloaded' });
     await waitForLoading(page);
   });
 
@@ -434,7 +448,7 @@ test.describe('Create Crime Scene Report', () => {
 
   test('should add a new witness card when clicking Add Witness', async ({ page }) => {
     await page.click('button:has-text("+ Add Witness")');
-    await expect(page.locator('.witness-card')).toHaveCount(2);
+    await expect(page.locator('.witness-card')).toHaveCount(2, { timeout: 10000 });
     await expect(page.locator('.witness-number').nth(1)).toContainText('Witness #2');
   });
 

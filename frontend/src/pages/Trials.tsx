@@ -20,6 +20,7 @@ import {
 } from '../services/trial';
 import { getSuspects } from '../services/investigation';
 import { getUsers } from '../services/admin';
+import { getCases } from '../services/case';
 import { useAuth } from '../contexts/AuthContext';
 import { extractErrorMessage } from '../utils/errorHandler';
 import type { AxiosError } from 'axios';
@@ -50,6 +51,9 @@ const Trials: React.FC = () => {
   const [createJudgeId, setCreateJudgeId] = useState('');
   const [createCaptainNotes, setCreateCaptainNotes] = useState('');
   const [judgeList, setJudgeList] = useState<any[]>([]);
+  const [caseList, setCaseList] = useState<any[]>([]);
+  const [caseSuspectList, setCaseSuspectList] = useState<any[]>([]);
+  const [loadingSuspects, setLoadingSuspects] = useState(false);
   const [createSubmitting, setCreateSubmitting] = useState(false);
 
   // Bail state
@@ -59,11 +63,12 @@ const Trials: React.FC = () => {
   const [bailAmount, setBailAmount] = useState('');
   const [bailSubmitting, setBailSubmitting] = useState(false);
   const [payRef, setPayRef] = useState('');
+  const [allSuspects, setAllSuspects] = useState<any[]>([]);
 
   // Role helpers
   const userRoles = (user?.roles || []).map((r: any) => r.name.toLowerCase());
   const isJudge = userRoles.includes('judge');
-  const isCaptain = userRoles.includes('captain') || userRoles.includes('police chief');
+  const isCaptain = userRoles.includes('captain') || userRoles.includes('police chief') || userRoles.includes('administrator');
   const isSergeant = userRoles.includes('sergeant');
 
   const fetchTrials = useCallback(async () => {
@@ -90,19 +95,57 @@ const Trials: React.FC = () => {
     fetchBail();
   }, [fetchTrials, fetchBail]);
 
-  // Fetch judges when create form opens
+  // Fetch judges and cases when create form opens
   useEffect(() => {
     if (!showCreateForm) return;
-    const loadJudges = async () => {
+    const loadFormData = async () => {
       try {
         const res = await getUsers({ search: '' });
         setJudgeList((res.results || []).filter((u: any) =>
           u.roles?.some((r: any) => r.name?.toLowerCase() === 'judge')
         ));
       } catch { /* ignore */ }
+      try {
+        const res = await getCases({ page_size: 100 } as any);
+        setCaseList(res.results || []);
+      } catch { /* ignore */ }
     };
-    loadJudges();
+    loadFormData();
   }, [showCreateForm]);
+
+  // Fetch suspects for bail form
+  useEffect(() => {
+    if (!showBailForm) return;
+    const loadAllSuspects = async () => {
+      try {
+        const res = await getSuspects({});
+        setAllSuspects(res.results || []);
+      } catch { /* ignore */ }
+    };
+    loadAllSuspects();
+  }, [showBailForm]);
+
+  // Fetch suspects when case ID changes in create form
+  useEffect(() => {
+    if (!createCaseId) {
+      setCaseSuspectList([]);
+      setCreateSuspectId('');
+      return;
+    }
+    const loadSuspects = async () => {
+      setLoadingSuspects(true);
+      try {
+        const res = await getSuspects({ case: Number(createCaseId) });
+        setCaseSuspectList(res.results || []);
+        setCreateSuspectId('');
+      } catch {
+        setCaseSuspectList([]);
+      } finally {
+        setLoadingSuspects(false);
+      }
+    };
+    loadSuspects();
+  }, [createCaseId]);
 
   const handleViewSummary = async (trial: Trial) => {
     setSelectedTrial(trial);
@@ -271,26 +314,47 @@ const Trials: React.FC = () => {
           <h3>Create New Trial</h3>
           <div className="form-row">
             <div className="form-group">
-              <label htmlFor="trial-case-id">Case ID</label>
-              <input
+              <label htmlFor="trial-case-id">Case</label>
+              <select
                 id="trial-case-id"
-                type="number"
                 value={createCaseId}
                 onChange={(e) => setCreateCaseId(e.target.value)}
-                placeholder="Case ID"
                 required
-              />
+              >
+                <option value="" disabled>Select case...</option>
+                {caseList.map((c: any) => (
+                  <option key={c.id} value={c.id}>
+                    {c.title} ({c.case_number})
+                  </option>
+                ))}
+              </select>
             </div>
             <div className="form-group">
-              <label htmlFor="trial-suspect-id">Suspect ID</label>
-              <input
+              <label htmlFor="trial-suspect-id">Suspect</label>
+              <select
                 id="trial-suspect-id"
-                type="number"
                 value={createSuspectId}
                 onChange={(e) => setCreateSuspectId(e.target.value)}
-                placeholder="Suspect ID"
                 required
-              />
+                disabled={!createCaseId || loadingSuspects}
+              >
+                <option value="" disabled>
+                  {!createCaseId
+                    ? 'Select a case first...'
+                    : loadingSuspects
+                    ? 'Loading suspects...'
+                    : caseSuspectList.length === 0
+                    ? 'No suspects for this case'
+                    : 'Select suspect...'}
+                </option>
+                {caseSuspectList.map((s: any) => (
+                  <option key={s.id} value={s.id}>
+                    {s.person_full_name || s.person_first_name
+                      ? `${s.person_first_name || ''} ${s.person_last_name || ''}`.trim()
+                      : `Suspect #${s.id}`} — {s.status}
+                  </option>
+                ))}
+              </select>
             </div>
             <div className="form-group">
               <label htmlFor="trial-judge">Judge</label>
@@ -374,11 +438,165 @@ const Trials: React.FC = () => {
                 {caseSummary && (
                   <div className="summary-section">
                     <h4>Case Summary</h4>
-                    <pre className="summary-content">
-                      {typeof caseSummary === 'string'
-                        ? caseSummary
-                        : JSON.stringify(caseSummary, null, 2)}
-                    </pre>
+
+                    {/* Case Info */}
+                    {caseSummary.case && (
+                      <div className="summary-block">
+                        <h5>Case Information</h5>
+                        <div className="summary-grid">
+                          <div className="summary-item"><span className="label">Case #</span><span className="value">{caseSummary.case.case_number}</span></div>
+                          <div className="summary-item"><span className="label">Title</span><span className="value">{caseSummary.case.title}</span></div>
+                          <div className="summary-item"><span className="label">Status</span><span className="value">{caseSummary.case.status?.replace(/_/g, ' ')}</span></div>
+                          <div className="summary-item"><span className="label">Crime Level</span><span className="value">{caseSummary.case.crime_level_details?.name || `Level ${caseSummary.case.crime_level}`}</span></div>
+                          <div className="summary-item"><span className="label">Type</span><span className="value">{caseSummary.case.formation_type}</span></div>
+                          {caseSummary.case.description && (
+                            <div className="summary-item full-width"><span className="label">Description</span><span className="value">{caseSummary.case.description}</span></div>
+                          )}
+                          {caseSummary.case.created_by_details && (
+                            <div className="summary-item"><span className="label">Filed By</span><span className="value">{caseSummary.case.created_by_details.full_name}</span></div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Suspect Info */}
+                    {caseSummary.suspect && (
+                      <div className="summary-block">
+                        <h5>Suspect</h5>
+                        <div className="summary-grid">
+                          <div className="summary-item"><span className="label">Name</span><span className="value">{caseSummary.suspect.person_full_name || `Person #${caseSummary.suspect.person}`}</span></div>
+                          <div className="summary-item"><span className="label">Status</span><span className="value">{caseSummary.suspect.status?.replace(/_/g, ' ')}</span></div>
+                          {caseSummary.suspect.reason && (
+                            <div className="summary-item full-width"><span className="label">Reason</span><span className="value">{caseSummary.suspect.reason}</span></div>
+                          )}
+                          {caseSummary.suspect.sergeant_approval_message && (
+                            <div className="summary-item full-width"><span className="label">Sergeant Notes</span><span className="value">{caseSummary.suspect.sergeant_approval_message}</span></div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Police Members */}
+                    {caseSummary.police_members && caseSummary.police_members.length > 0 && (
+                      <div className="summary-block">
+                        <h5>Police Members ({caseSummary.police_members.length})</h5>
+                        <div className="summary-list">
+                          {caseSummary.police_members.map((m: any, idx: number) => (
+                            <div key={idx} className="summary-list-item">
+                              <strong>{m.full_name}</strong> — {(m.roles || []).join(', ')}
+                              {m.email && <span className="secondary"> ({m.email})</span>}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Interrogations */}
+                    {caseSummary.interrogations && caseSummary.interrogations.length > 0 && (
+                      <div className="summary-block">
+                        <h5>Interrogations ({caseSummary.interrogations.length})</h5>
+                        {caseSummary.interrogations.map((intg: any, idx: number) => (
+                          <div key={idx} className="summary-subcard">
+                            <div className="summary-grid">
+                              <div className="summary-item"><span className="label">Suspect</span><span className="value">{intg.suspect_name}</span></div>
+                              <div className="summary-item"><span className="label">Detective</span><span className="value">{intg.detective_name}</span></div>
+                              <div className="summary-item"><span className="label">Sergeant</span><span className="value">{intg.sergeant_name}</span></div>
+                              <div className="summary-item"><span className="label">Status</span><span className="value">{intg.status}</span></div>
+                              {intg.detective_guilt_rating != null && (
+                                <div className="summary-item"><span className="label">Detective Rating</span><span className="value">{intg.detective_guilt_rating}/10</span></div>
+                              )}
+                              {intg.sergeant_guilt_rating != null && (
+                                <div className="summary-item"><span className="label">Sergeant Rating</span><span className="value">{intg.sergeant_guilt_rating}/10</span></div>
+                              )}
+                              {intg.average_rating != null && (
+                                <div className="summary-item"><span className="label">Average</span><span className="value highlight">{intg.average_rating.toFixed(1)}/10</span></div>
+                              )}
+                            </div>
+                            {intg.detective_notes && <p className="summary-notes"><strong>Detective:</strong> {intg.detective_notes}</p>}
+                            {intg.sergeant_notes && <p className="summary-notes"><strong>Sergeant:</strong> {intg.sergeant_notes}</p>}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Testimonies */}
+                    {caseSummary.testimonies && caseSummary.testimonies.length > 0 && (
+                      <div className="summary-block">
+                        <h5>Testimonies ({caseSummary.testimonies.length})</h5>
+                        {caseSummary.testimonies.map((t: any, idx: number) => (
+                          <div key={idx} className="summary-subcard">
+                            <div className="summary-grid">
+                              <div className="summary-item"><span className="label">Title</span><span className="value">{t.title}</span></div>
+                              <div className="summary-item"><span className="label">Witness</span><span className="value">{t.witness_full_name || t.witness_name || 'Unknown'}</span></div>
+                              <div className="summary-item"><span className="label">Recorded By</span><span className="value">{t.recorded_by_name}</span></div>
+                            </div>
+                            {t.description && <p className="summary-notes">{t.description}</p>}
+                            {t.transcript && <p className="summary-notes"><strong>Transcript:</strong> {t.transcript}</p>}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Biological Evidence */}
+                    {caseSummary.biological_evidence && caseSummary.biological_evidence.length > 0 && (
+                      <div className="summary-block">
+                        <h5>Biological Evidence ({caseSummary.biological_evidence.length})</h5>
+                        {caseSummary.biological_evidence.map((e: any, idx: number) => (
+                          <div key={idx} className="summary-subcard">
+                            <div className="summary-grid">
+                              <div className="summary-item"><span className="label">Title</span><span className="value">{e.title}</span></div>
+                              <div className="summary-item"><span className="label">Type</span><span className="value">{e.evidence_type || 'N/A'}</span></div>
+                              <div className="summary-item"><span className="label">Recorded By</span><span className="value">{e.recorded_by_name}</span></div>
+                            </div>
+                            {e.description && <p className="summary-notes">{e.description}</p>}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Vehicle Evidence */}
+                    {caseSummary.vehicle_evidence && caseSummary.vehicle_evidence.length > 0 && (
+                      <div className="summary-block">
+                        <h5>Vehicle Evidence ({caseSummary.vehicle_evidence.length})</h5>
+                        {caseSummary.vehicle_evidence.map((v: any, idx: number) => (
+                          <div key={idx} className="summary-subcard">
+                            <div className="summary-grid">
+                              <div className="summary-item"><span className="label">Title</span><span className="value">{v.title}</span></div>
+                              <div className="summary-item"><span className="label">Model</span><span className="value">{v.model}</span></div>
+                              <div className="summary-item"><span className="label">Color</span><span className="value">{v.color}</span></div>
+                              <div className="summary-item"><span className="label">License Plate</span><span className="value">{v.license_plate}</span></div>
+                            </div>
+                            {v.description && <p className="summary-notes">{v.description}</p>}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Captain Decision */}
+                    {caseSummary.captain_decision && (
+                      <div className="summary-block">
+                        <h5>Captain Decision</h5>
+                        <div className="summary-grid">
+                          <div className="summary-item"><span className="label">Captain</span><span className="value">{caseSummary.captain_decision.captain_name}</span></div>
+                          {caseSummary.captain_decision.notes && (
+                            <div className="summary-item full-width"><span className="label">Notes</span><span className="value">{caseSummary.captain_decision.notes}</span></div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Chief Decision */}
+                    {caseSummary.chief_decision && (
+                      <div className="summary-block">
+                        <h5>Chief Decision</h5>
+                        <div className="summary-grid">
+                          <div className="summary-item"><span className="label">Chief</span><span className="value">{caseSummary.chief_decision.chief_name}</span></div>
+                          {caseSummary.chief_decision.notes && (
+                            <div className="summary-item full-width"><span className="label">Notes</span><span className="value">{caseSummary.chief_decision.notes}</span></div>
+                          )}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
 
@@ -523,15 +741,20 @@ const Trials: React.FC = () => {
             <h3>Request Bail Payment</h3>
             <div className="form-row">
               <div className="form-group">
-                <label htmlFor="bail-suspect">Suspect ID</label>
-                <input
+                <label htmlFor="bail-suspect">Suspect</label>
+                <select
                   id="bail-suspect"
-                  type="number"
                   value={bailSuspectId}
                   onChange={(e) => setBailSuspectId(e.target.value)}
-                  placeholder="Suspect ID"
                   required
-                />
+                >
+                  <option value="" disabled>Select suspect...</option>
+                  {allSuspects.map((s: any) => (
+                    <option key={s.id} value={s.id}>
+                      {s.person_full_name || `${s.person_first_name || ''} ${s.person_last_name || ''}`.trim() || `Suspect #${s.id}`} — {s.status?.replace(/_/g, ' ')}
+                    </option>
+                  ))}
+                </select>
               </div>
               <div className="form-group">
                 <label htmlFor="bail-amount">Amount (Rials, min 1,000,000)</label>

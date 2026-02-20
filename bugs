@@ -1,4 +1,14 @@
-level 4 can be only created by ...
+1- when i change someones status to most wanted, he will not appear in the mostwanted page
+sednding tip dosnt work in frontend, first see the full requirements and implement every thing
+ﻚ ﻛﺎﺭﺑﺮ ﻋﺎﺩﻱ ﺑﻪ ﺳﺎﻣﺎﻧﻪ ﻭﺍﺭﺩ ﺷﺪﻩ ﻭ ﺩﺭ ﻣﻮﺭﺩ ﻳﻚ پﺮﻭﻧﺪﻩ ﻳﺎ ﻣﻈﻨﻮﻥ ﺍﻃﻼﻋﺎﺗﻲ ﺛﺒﺖ ﻣﻲﻛﻨﺪ. ﻳﻚ ﺍﻓﺴﺮ پﻠﻴﺲ ﺍﻳﻦ ﺍﻃﻼﻋﺎﺕ ﺭﺍ ﺑﺮﺭﺳﻲ ﺍﻭﻟﻴﻪ
+ﻣﻲﻛﻨﺪ. ﺩﺭ ﺻﻮﺭﺗﻲ ﻛﻪ ﺍﻃﻼﻋﺎﺕ ﻣﺮﺑﻮﻃﻪ ﻛﺎﻣﻼ ﻧﺎﻣﻌﺘﺒﺮ ﺑﺎﺷﺪ ﺁﻥ ﺭﺍ ﺭﺩ ﻣﻲﻛﻨﺪ ﻭ ﺩﺭ ﻏﻴﺮ ﺍﻳﻦ ﺻﻮﺭﺕ ﺍﻃﻼﻋﺎﺕ ﺑﺮﺍﻱ ﻛﺎﺭﺁگﺎﻩ ﻣﺴﺌﻮﻝ پﺮﻭﻧﺪﻩ ﺍﺭﺳﺎﻝ
+ﺑﻪ ﺍﻳﺸﺎﻥ ﺩﺍﺩﻩ ۶ﻣﻲﺷﻮﺩ. ﺍگﺮ ﻛﺎﺭﺁگﺎﻩ ﺍﻳﻦ ﺍﻃﻼﻋﺎﺕ ﺭﺍ ﺗﺎﻳﻴﺪ ﻛﺮﺩ ﺑﻪ ﻛﺎﺭﺑﺮ ﺍﻃﻼﻉ ﺩﺍﺩﻩ ﻣﻲﺷﻮﺩ ﻛﻪ ﺍﻃﻼﻋﺎﺕ ﺍﻳﺸﺎﻥ ﻣﻔﻴﺪ ﺑﻮﺩﻩ ﻭ ﻳﻚ ﺷﻨﺎﺳﻪ ﻳﻜﺘﺎ
+ﻣﻲﺷﻮﺩ ﺗﺎ ﺑﻪ ﺍﺩﺍﺭﻩ پﻠﻴﺲ ﺑﺮﻭﺩ ﻭ ﺑﺎ ﺍﺭﺍﺋﻪﻱ ﻛﺪ پﺎﺩﺍﺵ ﺧﻮﺩ ﺭﺍ ﺩﺭﻳﺎﻓﺖ ﻛﻨﺪ. ﻫﻤچﻨﻴﻦ ﺗﻤﺎﻡ ﺭﺩﻩﻫﺎﻱ پﻠﻴﺲ، ﺑﺎﻳﺪ ﺑﺎ ﻭﺍﺭﺩ ﻛﺮﺩﻥ ﻛﺪ ﻣﻠﻲ ﺷﺨﺺ
+ﻭ ﻛﺪ ﻳﻜﺘﺎ، ﻣﺒﻠﻎ پﺎﺩﺍﺵ ﺭﺍ ﺑﻪ ﻫﻤﺮﺍﻩ ﺍﻃﻼﻋﺎﺕ ﻛﺎﺭﺑﺮ ﻣﺮﺑﻮﻃﻪ ﺑﺒﻴﻨﻨﺪ
 
-[on edit and resubmit ](http://localhost:3000/cases/x/edit) the pk levels dont match i think 
+2- you should implement the description exactly, sending tip for case / suspect, the mechanism that first a cadet confirms it in his page, then the detective confirms it, and when the detective confirms it, a reward prize should be created for him, also test the ability to enter code, finding out prize money and ... from ui as i think you did a bad job on that, test it in playwright, for example, currenty when sending tip, the dropdown dosnt show anything, the first step might be to first select if you want to send tip for a suspect or a case, and then send it, you are also allowed to add backend endpoints if not implemented
 
+3- when the case comes back from capton, detective dosnt see it on its cases to open a interogation easily, i think there is no ui for showing cases on state where interogation can be opened for them :)
+
+
+------

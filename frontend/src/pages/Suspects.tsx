@@ -7,7 +7,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useNotification } from '../contexts/NotificationContext';
 import { useAuth } from '../contexts/AuthContext';
-import { getSuspects, createSuspect } from '../services/investigation';
+import { getSuspects, createSuspect, changeSuspectStatus } from '../services/investigation';
 import { getUsers } from '../services/admin';
 import { extractErrorMessage } from '../utils/errorHandler';
 import type { AxiosError } from 'axios';
@@ -39,6 +39,28 @@ const Suspects: React.FC = () => {
   const canAddSuspect = user?.roles?.some(
     (r) => ['detective', 'sergeant', 'lieutenant', 'captain', 'police chief', 'administrator'].includes(r.name.toLowerCase())
   );
+
+  // Check if user can change suspect status (all police roles except cadet)
+  const canChangeStatus = user?.roles?.some(
+    (r) => ['detective', 'sergeant', 'lieutenant', 'captain', 'police chief', 'administrator'].includes(r.name.toLowerCase())
+  );
+
+  // Track which suspect is being status-changed
+  const [changingStatusId, setChangingStatusId] = useState<number | null>(null);
+
+  const handleStatusChange = async (suspectId: number, newStatus: SuspectStatus) => {
+    setChangingStatusId(suspectId);
+    try {
+      await changeSuspectStatus(suspectId, newStatus);
+      showNotification('Suspect status updated successfully', 'success');
+      fetchSuspects();
+    } catch (err) {
+      const errorMessage = extractErrorMessage(err as AxiosError, 'Failed to change suspect status');
+      showNotification(errorMessage, 'error');
+    } finally {
+      setChangingStatusId(null);
+    }
+  };
 
   const fetchSuspects = useCallback(async () => {
     setLoading(true);
@@ -256,6 +278,26 @@ const Suspects: React.FC = () => {
                   {suspect.person?.first_name} {suspect.person?.last_name}
                 </h3>
                 {getStatusBadge(suspect.status)}
+                {/* Status change dropdown for authorized police roles */}
+                {canChangeStatus && (
+                  <div className="status-change-section">
+                    <select
+                      className="status-change-select"
+                      value={suspect.status}
+                      disabled={changingStatusId === suspect.id}
+                      onChange={(e) => handleStatusChange(suspect.id, e.target.value as SuspectStatus)}
+                      data-testid={`status-select-${suspect.id}`}
+                    >
+                      <option value="under_pursuit">Under Pursuit</option>
+                      <option value="intensive_pursuit">Intensive Pursuit (Most Wanted)</option>
+                      <option value="arrested">Arrested</option>
+                      <option value="cleared">Cleared</option>
+                    </select>
+                    {changingStatusId === suspect.id && (
+                      <span className="status-changing-indicator">Updating…</span>
+                    )}
+                  </div>
+                )}
                 {suspect.case_title && (
                   <div className="suspect-meta">Case: {suspect.case_title}</div>
                 )}
