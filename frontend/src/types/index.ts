@@ -242,6 +242,7 @@ export interface SuspectSubmission {
   reasoning: string;
   status: 'pending' | 'approved' | 'rejected';
   sergeant_feedback?: string;
+  submitted_at?: string;
   created_at: string;
 }
 
