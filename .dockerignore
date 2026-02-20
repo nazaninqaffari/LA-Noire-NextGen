@@ -1,0 +1,11 @@
+node_modules
+logs
+test-results
+.env
+*.md
+bugs
+tests
+playwright.config.ts
+__pycache__
+*.pyc
+.git
