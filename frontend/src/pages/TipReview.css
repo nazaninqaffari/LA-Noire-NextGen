@@ -1,0 +1,114 @@
+/* Tip Review Page Styles */
+.tip-review-page .page-header {
+  margin-bottom: 2rem;
+}
+
+.tip-review-page .page-subtitle {
+  color: var(--color-text-secondary, #888);
+  margin-top: 0.5rem;
+}
+
+.tip-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.tip-card {
+  border-left: 4px solid var(--color-border, #333);
+}
+
+.tip-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.tip-meta {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.tip-case,
+.tip-suspect {
+  font-size: 0.9rem;
+  color: var(--color-text-secondary, #888);
+}
+
+.tip-card-body {
+  margin-bottom: 1rem;
+}
+
+.tip-info-section {
+  margin-bottom: 0.75rem;
+}
+
+.tip-information {
+  margin: 0.25rem 0 0;
+  white-space: pre-wrap;
+  line-height: 1.5;
+}
+
+.tip-details {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  font-size: 0.85rem;
+  color: var(--color-text-secondary, #888);
+  margin-top: 0.75rem;
+}
+
+.rejection-reason {
+  background: var(--color-danger-bg, rgba(220, 38, 38, 0.1));
+  padding: 0.5rem 0.75rem;
+  border-radius: 4px;
+  margin-top: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.reward-code {
+  background: var(--color-success-bg, rgba(22, 163, 74, 0.1));
+  padding: 0.5rem 0.75rem;
+  border-radius: 4px;
+  margin-top: 0.5rem;
+}
+
+.reward-code code {
+  font-weight: bold;
+  font-size: 1rem;
+}
+
+.tip-card-actions {
+  display: flex;
+  gap: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--color-border, #333);
+}
+
+.reject-form {
+  width: 100%;
+}
+
+.rejection-input {
+  width: 100%;
+  padding: 0.5rem;
+  margin-bottom: 0.5rem;
+  border-radius: 4px;
+  border: 1px solid var(--color-border, #333);
+  background: var(--color-input-bg, #1a1a1a);
+  color: var(--color-text, #eee);
+  resize: vertical;
+}
+
+.reject-buttons {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.skeleton-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}

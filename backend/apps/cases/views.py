@@ -121,6 +121,31 @@ class CaseViewSet(viewsets.ModelViewSet):
                 status__in=[Case.STATUS_CADET_REVIEW, Case.STATUS_OFFICER_REVIEW, Case.STATUS_DRAFT]
             ) | queryset.filter(assigned_cadet=user) | queryset.filter(created_by=user)).distinct()
         
+        # Detectives see cases assigned to them at any stage, plus open cases
+        if user_has_role(user, 'Detective'):
+            return (queryset.filter(
+                status__in=[
+                    Case.STATUS_OPEN,
+                    Case.STATUS_UNDER_INVESTIGATION,
+                    Case.STATUS_SUSPECTS_IDENTIFIED,
+                    Case.STATUS_ARREST_APPROVED,
+                    Case.STATUS_INTERROGATION,
+                    Case.STATUS_TRIAL_PENDING,
+                ]
+            ) | queryset.filter(assigned_detective=user) | queryset.filter(created_by=user)).distinct()
+        
+        # Sergeants see cases they're assigned to plus relevant statuses
+        if user_has_role(user, 'Sergeant'):
+            return (queryset.filter(
+                status__in=[
+                    Case.STATUS_OPEN,
+                    Case.STATUS_UNDER_INVESTIGATION,
+                    Case.STATUS_SUSPECTS_IDENTIFIED,
+                    Case.STATUS_ARREST_APPROVED,
+                    Case.STATUS_INTERROGATION,
+                ]
+            ) | queryset.filter(assigned_sergeant=user) | queryset.filter(created_by=user)).distinct()
+        
         # Officers see cases in officer review, assigned to them, or that they created
         police_roles = user.roles.filter(is_police_rank=True).exclude(name='Cadet')
         if police_roles.exists():

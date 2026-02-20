@@ -231,31 +231,30 @@ class SuspectViewSet(viewsets.ModelViewSet):
     def intensive_pursuit(self, request):
         """
         Public endpoint for intensive pursuit wanted list.
-        Shows suspects who have been at large for > 30 days.
+        Shows suspects already marked as intensive_pursuit (manually or auto)
+        AND auto-upgrades under_pursuit suspects who have been at large > 30 days.
         Ordered by danger score (days × crime_level).
         
         Persian: لیست عمومی تحت تعقیب شدید
         """
         from datetime import timedelta
         
-        # Get suspects in intensive pursuit
         thirty_days_ago = timezone.now() - timedelta(days=30)
-        suspects = Suspect.objects.filter(
-            status__in=[Suspect.STATUS_UNDER_PURSUIT, Suspect.STATUS_INTENSIVE_PURSUIT],
+        
+        # Auto-upgrade: under_pursuit suspects identified > 30 days ago
+        auto_upgrade = Suspect.objects.filter(
+            status=Suspect.STATUS_UNDER_PURSUIT,
             identified_at__lte=thirty_days_ago
+        )
+        if auto_upgrade.exists():
+            auto_upgrade.update(status=Suspect.STATUS_INTENSIVE_PURSUIT)
+        
+        # Return ALL suspects currently marked as intensive_pursuit
+        suspects = Suspect.objects.filter(
+            status=Suspect.STATUS_INTENSIVE_PURSUIT
         ).select_related(
             'person', 'case', 'case__crime_level'
         )
-        
-        # Update status to intensive pursuit if needed
-        suspects_to_update = []
-        for suspect in suspects:
-            if suspect.status == Suspect.STATUS_UNDER_PURSUIT:
-                suspect.status = Suspect.STATUS_INTENSIVE_PURSUIT
-                suspects_to_update.append(suspect)
-        
-        if suspects_to_update:
-            Suspect.objects.bulk_update(suspects_to_update, ['status'])
         
         # Sort by danger score (descending)
         suspects_sorted = sorted(

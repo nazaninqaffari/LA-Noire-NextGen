@@ -322,16 +322,31 @@ export interface AppNotification {
 // TipOff types
 export interface TipOff {
   id: number;
-  case?: number;
+  case: number;
+  case_number?: string;
+  case_title?: string;
   suspect?: number;
-  submitted_by: User;
+  suspect_name?: string;
+  submitted_by: number;
+  submitted_by_name?: string;
+  submitted_by_national_id?: string;
   information: string;
   status: string;
-  officer_reviewed: boolean;
-  detective_reviewed: boolean;
-  reward_amount?: number;
+  reviewed_by_officer?: number;
+  reviewed_by_officer_name?: string;
+  officer_rejection_reason?: string;
+  officer_reviewed_at?: string;
+  reviewed_by_detective?: number;
+  reviewed_by_detective_name?: string;
+  detective_rejection_reason?: string;
+  detective_reviewed_at?: string;
   redemption_code?: string;
-  created_at: string;
+  reward_amount?: number;
+  redeemed_by_officer?: number;
+  redeemed_by_officer_name?: string;
+  submitted_at: string;
+  approved_at?: string;
+  redeemed_at?: string;
 }
 
 // Trial types
