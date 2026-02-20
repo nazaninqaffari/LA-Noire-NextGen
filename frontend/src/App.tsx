@@ -35,6 +35,7 @@ import TipReview from './pages/TipReview';
 import BailPayments from './pages/BailPayments';
 import BailApprovals from './pages/BailApprovals';
 import PaymentReturn from './pages/PaymentReturn';
+import PublicCases from './pages/PublicCases';
 import AdminPanel from './pages/AdminPanel';
 import StyleGuide from './pages/StyleGuide';
 import NotFound from './pages/NotFound';
@@ -76,6 +77,7 @@ const App: React.FC = () => {
                 <Route path="/bail" element={<BailPayments />} />
                 <Route path="/bail/return" element={<PaymentReturn />} />
                 <Route path="/bail-approvals" element={<BailApprovals />} />
+                <Route path="/public-cases" element={<PublicCases />} />
                 <Route path="/admin" element={<AdminPanel />} />
 
                 {/* Utility routes */}

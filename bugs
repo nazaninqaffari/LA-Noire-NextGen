@@ -40,4 +40,11 @@ and use the test to keep debugging front and back until it passes
 
 
 ---
-only police officers should issue a bail request, currently a normal citizen can do that
+1- only police officers from cadet to above should issue a bail request, currently a normal citizen can do that
+2- improve nav bar, the related topics should come in one drop down option, like many other sites
+3- add the option so when person x is creating a complaint, he can add other persons to it, i mean having a colab complaint created by 1 person
+4- the complaint created by a police from the scene has empty complaints, but this complaints are public, and people can add themselves to it somehow(make it an option for citizens to add themselves to this public cases,  for example there should be a tab public cases and you can add yourself to it)
+5- create another comprehansive full scenario real life test, this time the same as before, but instead create the test from the scene and add some complaints to it, notice that the same rules,  from login, creating a  complaint from scene, add people to complaint, adding some evidence, changing state to mostwanted, sending tips from citizens, reviewing the tips from cadet and detective, reviewing tip status, solving the case from detective, sending suspects, accepting suspects from seargent, interogation and sending scores from detective, creation of trial, guilty, and paying the bail(except the last step of paying it, leave it there  because it will go to a zarinpal website where you dont know shit about it), i want the test to be from a real life example fun example also, but it should be comprehansive, and also, no mocking data or api call, everything in test should be done from frontend, you can only use api calls to confirm something has been done,
+also the navigations should be done really on the page, so if you have missed anything, you add it
+
+also if youve added anythig backend reltead right backend tests for it too

@@ -153,8 +153,16 @@ class CaseViewSet(viewsets.ModelViewSet):
                 status__in=[Case.STATUS_OFFICER_REVIEW, Case.STATUS_OPEN]
             ) | queryset.filter(assigned_officer=user) | queryset.filter(created_by=user)).distinct()
         
-        # Regular users see their own cases
-        return queryset.filter(created_by=user)
+        # Regular users see their own cases + public crime scene cases
+        public_scene_qs = queryset.filter(
+            formation_type=Case.FORMATION_CRIME_SCENE,
+            status__in=[
+                Case.STATUS_CADET_REVIEW, Case.STATUS_OFFICER_REVIEW,
+                Case.STATUS_OPEN, Case.STATUS_UNDER_INVESTIGATION,
+                Case.STATUS_SUSPECTS_IDENTIFIED,
+            ],
+        )
+        return (queryset.filter(created_by=user) | public_scene_qs).distinct()
     
     def get_serializer_class(self):
         """Use different serializers for different actions."""
@@ -595,6 +603,98 @@ class CaseViewSet(viewsets.ModelViewSet):
         
         complainant_serializer = ComplainantSerializer(complainant)
         return Response(complainant_serializer.data)
+
+    @extend_schema(
+        summary="List public cases (crime scene reports)",
+        description="""Return crime-scene-based cases that are public.
+        Citizens can browse these and join as complainants.
+        Only cases in review or open statuses are listed.""",
+        responses={200: CaseSerializer(many=True)},
+    )
+    @action(detail=False, methods=['get'], url_path='public')
+    def public_cases(self, request):
+        """List public crime scene cases that any authenticated user can browse."""
+        public_statuses = [
+            Case.STATUS_CADET_REVIEW,
+            Case.STATUS_OFFICER_REVIEW,
+            Case.STATUS_OPEN,
+            Case.STATUS_UNDER_INVESTIGATION,
+            Case.STATUS_SUSPECTS_IDENTIFIED,
+        ]
+        qs = Case.objects.filter(
+            formation_type=Case.FORMATION_CRIME_SCENE,
+            status__in=public_statuses,
+        ).select_related(
+            'crime_level', 'created_by',
+        ).prefetch_related('complainants__user').order_by('-created_at')
+
+        serializer = CaseSerializer(qs, many=True, context={'request': request})
+        return Response(serializer.data)
+
+    @extend_schema(
+        summary="Join a public case as complainant",
+        description="""Citizen joins a crime-scene-based public case as an additional
+        complainant by providing their statement.""",
+        request=OpenApiExample(
+            'Join Case',
+            value={"statement": "I was also a victim of this incident."},
+            request_only=True,
+        ),
+        responses={
+            201: ComplainantSerializer,
+            400: {"description": "Already joined or case not public"},
+        },
+    )
+    @action(detail=True, methods=['post'])
+    def join_case(self, request, pk=None):
+        """Allow a citizen to join a public crime scene case as complainant."""
+        case = self.get_object()
+        user = request.user
+
+        # Only crime scene cases are public
+        if case.formation_type != Case.FORMATION_CRIME_SCENE:
+            return Response(
+                {'error': 'Only crime scene cases are public and joinable.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Check allowed statuses
+        joinable_statuses = [
+            Case.STATUS_CADET_REVIEW,
+            Case.STATUS_OFFICER_REVIEW,
+            Case.STATUS_OPEN,
+            Case.STATUS_UNDER_INVESTIGATION,
+            Case.STATUS_SUSPECTS_IDENTIFIED,
+        ]
+        if case.status not in joinable_statuses:
+            return Response(
+                {'error': 'This case is no longer accepting new complainants.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Check duplicate
+        if case.complainants.filter(user=user).exists():
+            return Response(
+                {'error': 'You have already joined this case.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        statement = request.data.get('statement', '').strip()
+        if len(statement) < 10:
+            return Response(
+                {'error': 'Statement must be at least 10 characters.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        complainant = Complainant.objects.create(
+            case=case,
+            user=user,
+            statement=statement,
+            is_primary=False,
+            verified_by_cadet=False,
+        )
+        serializer = ComplainantSerializer(complainant)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
 class ComplainantViewSet(viewsets.ModelViewSet):

@@ -22,6 +22,14 @@ const BailPayments: React.FC = () => {
   const { user } = useAuth();
   const { showNotification } = useNotification();
 
+  // Check if user is a police officer (Cadet and above) — only they can issue bail requests
+  const normalizeRole = (s: string) => s.toLowerCase().replace(/_/g, ' ');
+  const policeRoles = ['cadet', 'patrol officer', 'police officer', 'detective', 'sergeant', 'captain', 'police chief', 'administrator'];
+  const canIssueBail = user?.roles?.some((r: any) => {
+    const name = normalizeRole(typeof r === 'string' ? r : r.name);
+    return policeRoles.includes(name);
+  }) ?? false;
+
   const [bailPayments, setBailPayments] = useState<BailPayment[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -115,9 +123,11 @@ const BailPayments: React.FC = () => {
       <div className="page-header">
         <h1>Bail Payments</h1>
         <p className="page-subtitle">Request and pay bail for eligible suspects (crime level 2 & 3)</p>
-        <button className="btn btn-primary" onClick={() => setShowForm(!showForm)}>
-          {showForm ? '✕ Cancel' : '+ Request Bail'}
-        </button>
+        {canIssueBail && (
+          <button className="btn btn-primary" onClick={() => setShowForm(!showForm)}>
+            {showForm ? '✕ Cancel' : '+ Request Bail'}
+          </button>
+        )}
       </div>
 
       {showForm && (

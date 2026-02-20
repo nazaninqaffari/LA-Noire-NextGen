@@ -113,6 +113,88 @@
   border-radius: var(--border-radius);
 }
 
+/* ── Nav Dropdown ────────────────────────────────────────── */
+.nav-dropdown {
+  position: relative;
+}
+
+.nav-dropdown-toggle {
+  font-family: var(--font-primary);
+  font-size: 0.8rem;
+  color: var(--color-gold);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  background: transparent;
+  border: 1px solid transparent;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.nav-dropdown-toggle:hover,
+.nav-dropdown-toggle.active {
+  color: var(--color-brass);
+  border-bottom-color: var(--color-brass);
+}
+
+.nav-dropdown.open .nav-dropdown-toggle {
+  color: var(--color-brass);
+  border-bottom-color: var(--color-gold);
+}
+
+.dropdown-arrow {
+  font-size: 0.65rem;
+  transition: transform var(--transition-fast);
+}
+
+.nav-dropdown.open .dropdown-arrow {
+  transform: rotate(180deg);
+}
+
+.nav-dropdown-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  min-width: 200px;
+  background: var(--color-noir-charcoal);
+  border: 1px solid var(--color-brass);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow-lg);
+  z-index: 200;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.nav-dropdown-item {
+  font-family: var(--font-primary);
+  font-size: 0.8rem;
+  color: var(--color-gold);
+  text-decoration: none;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: var(--spacing-sm) var(--spacing-md);
+  transition: all var(--transition-fast);
+  border-left: 3px solid transparent;
+}
+
+.nav-dropdown-item:hover {
+  background: rgba(212, 175, 55, 0.15);
+  color: var(--color-brass);
+  border-left-color: var(--color-brass);
+}
+
+.nav-dropdown-item.active {
+  background: rgba(212, 175, 55, 0.1);
+  color: var(--color-brass);
+  border-left-color: var(--color-gold);
+}
+
 .user-name {
   font-family: var(--font-primary);
   font-size: 0.9rem;
@@ -164,6 +246,19 @@
   .nav-link {
     font-size: 0.8rem;
     padding: var(--spacing-xs) var(--spacing-sm);
+  }
+
+  .nav-dropdown-toggle {
+    font-size: 0.8rem;
+    padding: var(--spacing-xs) var(--spacing-sm);
+  }
+
+  .nav-dropdown-menu {
+    position: fixed;
+    left: 50%;
+    transform: translateX(-50%);
+    top: auto;
+    min-width: 220px;
   }
 
   .header-user {
