@@ -216,13 +216,19 @@ class CaseViewSet(viewsets.ModelViewSet):
         return Response(response_serializer.data, status=status.HTTP_201_CREATED, headers=headers)
     
     def perform_update(self, serializer):
-        """Only allow updates to cases in draft status by the original creator."""
+        """Only allow updates to cases in draft status by the original creator.
+        Administrators can update any case regardless of status (e.g., assign detective).
+        """
         case = self.get_object()
         user = self.request.user
+        # Admins can always update (e.g., to assign detective/sergeant)
+        if user_has_role(user, 'Administrator'):
+            serializer.save()
+            return
         if case.status != Case.STATUS_DRAFT:
             from rest_framework.exceptions import PermissionDenied
             raise PermissionDenied('Only cases in draft status can be edited.')
-        if case.created_by != user and not user_has_role(user, 'Administrator'):
+        if case.created_by != user:
             from rest_framework.exceptions import PermissionDenied
             raise PermissionDenied('Only the case creator can edit this case.')
         serializer.save()
