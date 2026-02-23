@@ -85,7 +85,7 @@ async function uiLogin(page: Page, username: string, password: string): Promise<
   await page.fill('#username', username);
   await page.fill('#password', password);
   await page.click('button[type="submit"]');
-  await page.waitForURL('**/dashboard', { timeout: 15000 });
+  await page.waitForURL('**/dashboard', { timeout: 15000, waitUntil: 'domcontentloaded' });
 }
 
 async function getCsrfToken(page: Page): Promise<string> {
@@ -359,32 +359,61 @@ test.describe.serial('The Midnight Heist — Full Scenario (UI)', () => {
   });
 
   // ──────────────────────────────────────────────────────────────────────────
-  //  STEP 5 — Detective Adds Suspect (API hybrid)
+  //  STEP 5 — Detective Adds Suspect (UI)
   // ──────────────────────────────────────────────────────────────────────────
-  test('Step 5: Detective adds a suspect', async ({ page }) => {
+  test('Step 5: Detective adds a suspect via UI', async ({ page }) => {
     await uiLogin(page, USERS.detective.username, USERS.detective.password);
 
-    const result = await apiPost(page, '/investigation/suspects/', {
-      case: caseId,
-      person: userIds['citizen'],
-      reason: 'Matches build and gait pattern from CCTV footage. Was seen near the bazaar at 2 AM by the night guard.',
-    });
-    expect(result.ok, `Create suspect failed: ${result.status} — ${JSON.stringify(result.data)}`).toBeTruthy();
-    suspectId = result.data.id;
+    await page.goto(`/suspects?case=${caseId}`, { waitUntil: 'domcontentloaded' });
+
+    // Click "Add Suspect" button
+    const addBtn = page.locator('.add-suspect-btn');
+    await addBtn.click();
+    await page.waitForSelector('.add-suspect-form', { timeout: 10000 });
+
+    // Search for the person (citizen user)
+    await page.fill('#person-search', USERS.citizen.username);
+    await page.waitForSelector('.person-results-dropdown', { timeout: 8000 });
+
+    // Click the first matching person result
+    const personItem = page.locator('.person-result-item').first();
+    await personItem.click();
+    await page.waitForSelector('.selected-person-badge', { timeout: 3000 });
+
+    // Fill reason
+    await page.fill('#suspect-reason', 'Matches build and gait pattern from CCTV footage. Was seen near the bazaar at 2 AM by the night guard.');
+
+    // Submit
+    await page.click('.add-suspect-form button[type="submit"]');
+    await page.waitForTimeout(3000);
+
+    // Verify via API
+    const res = await apiGet(page, '/investigation/suspects/', { case: String(caseId) });
+    expect(res.ok).toBeTruthy();
+    const results = res.data.results || res.data;
+    expect(results.length).toBeGreaterThanOrEqual(1);
+    suspectId = results[results.length - 1].id;
     expect(suspectId).toBeGreaterThan(0);
   });
 
   // ──────────────────────────────────────────────────────────────────────────
-  //  STEP 6 — Detective Escalates Suspect to Most-Wanted (API)
+  //  STEP 6 — Detective Escalates Suspect to Most-Wanted (UI)
   // ──────────────────────────────────────────────────────────────────────────
-  test('Step 6: Detective escalates suspect to intensive_pursuit', async ({ page }) => {
+  test('Step 6: Detective escalates suspect to intensive_pursuit via UI', async ({ page }) => {
     await uiLogin(page, USERS.detective.username, USERS.detective.password);
 
-    const result = await apiPost(page, `/investigation/suspects/${suspectId}/change-status/`, {
-      status: 'intensive_pursuit',
-    });
-    expect(result.ok, `Change status failed: ${result.status}`).toBeTruthy();
-    expect(result.data.status).toBe('intensive_pursuit');
+    await page.goto(`/suspects?case=${caseId}`, { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('.suspect-card', { timeout: 10000 });
+
+    // Find the status dropdown for our suspect and change it
+    const statusSelect = page.locator(`[data-testid="status-select-${suspectId}"]`);
+    await statusSelect.selectOption('intensive_pursuit');
+    await page.waitForTimeout(2000);
+
+    // Verify via API
+    const res = await apiGet(page, `/investigation/suspects/${suspectId}/`);
+    expect(res.ok).toBeTruthy();
+    expect(res.data.status).toBe('intensive_pursuit');
   });
 
   // ──────────────────────────────────────────────────────────────────────────
@@ -464,20 +493,18 @@ test.describe.serial('The Midnight Heist — Full Scenario (UI)', () => {
   });
 
   // ──────────────────────────────────────────────────────────────────────────
-  //  STEP 8 — Officer Reviews Tip (approve) via API
+  //  STEP 8 — Officer Reviews Tip (approve) via UI
   // ──────────────────────────────────────────────────────────────────────────
-  test('Step 8: Officer reviews and approves the tip', async ({ page }) => {
+  test('Step 8: Officer reviews and approves the tip via UI', async ({ page }) => {
     await uiLogin(page, USERS.officer.username, USERS.officer.password);
 
-    // Navigate to tip-reviews page to verify it's visible
     await page.goto('/tip-reviews', { waitUntil: 'domcontentloaded' });
-    await page.waitForTimeout(2000);
+    await page.waitForSelector(`[data-testid="tip-card-${tipId}"]`, { timeout: 10000 });
 
-    // Approve via API (UI approve button uses officerReviewTipOff under the hood)
-    const result = await apiPost(page, `/investigation/tipoffs/${tipId}/officer_review/`, {
-      approved: true,
-    });
-    expect(result.ok, `Officer review failed: ${result.status} — ${JSON.stringify(result.data)}`).toBeTruthy();
+    // Click Approve button on our tip card
+    const approveBtn = page.locator(`[data-testid="approve-tip-${tipId}"]`);
+    await approveBtn.click();
+    await page.waitForTimeout(2000);
 
     // Verify status changed
     const tipRes = await apiGet(page, `/investigation/tipoffs/${tipId}/`);
@@ -486,18 +513,20 @@ test.describe.serial('The Midnight Heist — Full Scenario (UI)', () => {
   });
 
   // ──────────────────────────────────────────────────────────────────────────
-  //  STEP 9 — Detective Reviews Tip (approve) via API
+  //  STEP 9 — Detective Reviews Tip (approve) via UI
   // ──────────────────────────────────────────────────────────────────────────
-  test('Step 9: Detective reviews and approves the tip', async ({ page }) => {
+  test('Step 9: Detective reviews and approves the tip via UI', async ({ page }) => {
     await uiLogin(page, USERS.detective.username, USERS.detective.password);
 
-    // Approve via API
-    const result = await apiPost(page, `/investigation/tipoffs/${tipId}/detective_review/`, {
-      approved: true,
-    });
-    expect(result.ok, `Detective review failed: ${result.status} — ${JSON.stringify(result.data)}`).toBeTruthy();
+    await page.goto('/tip-reviews', { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector(`[data-testid="tip-card-${tipId}"]`, { timeout: 10000 });
 
-    // Verify
+    // Click Approve button on our tip card
+    const approveBtn = page.locator(`[data-testid="approve-tip-${tipId}"]`);
+    await approveBtn.click();
+    await page.waitForTimeout(2000);
+
+    // Verify status changed
     const tipRes = await apiGet(page, `/investigation/tipoffs/${tipId}/`);
     expect(tipRes.ok).toBeTruthy();
     expect(tipRes.data.status).toBe('approved');
@@ -698,9 +727,9 @@ test.describe.serial('The Midnight Heist — Full Scenario (UI)', () => {
     );
     await page.selectOption('#trial-suspect-id', String(suspectId));
 
-    // Select judge
+    // Select judge — pick the mh_judge created in Step 0
     const judgeSelect = page.locator('#trial-judge');
-    await judgeSelect.selectOption({ index: 1 });
+    await judgeSelect.selectOption(String(userIds['judge']));
 
     await page.fill('#trial-captain-notes', 'Guilty decision confirmed. All evidence reviewed. The midnight heist suspect is to face trial for grand larceny.');
 
@@ -709,8 +738,10 @@ test.describe.serial('The Midnight Heist — Full Scenario (UI)', () => {
 
     await page.waitForTimeout(2000);
 
-    // Verify
-    const res = await apiGet(page, '/trial/trials/');
+    // Verify — query as admin to avoid queryset restrictions
+    await page.context().clearCookies();
+    await uiLogin(page, 'admin', 'admin123');
+    const res = await apiGet(page, '/trial/trials/', { case: caseId });
     expect(res.ok).toBeTruthy();
     const results = res.data.results || res.data;
     const ourTrial = results.find(
@@ -784,13 +815,14 @@ test.describe.serial('The Midnight Heist — Full Scenario (UI)', () => {
     // Wait for form
     await page.waitForSelector('.bail-form-card', { timeout: 5000 });
 
-    // Select suspect
+    // Select suspect — use the suspect ID from previous steps
     const suspectDropdown = page.locator('#bail-suspect');
-    await page.waitForTimeout(500);
-    const opts = await suspectDropdown.locator('option').all();
-    if (opts.length > 1) {
-      await suspectDropdown.selectOption({ index: 1 });
-    }
+    await page.waitForFunction(
+      (id) => document.querySelector(`#bail-suspect option[value="${id}"]`) !== null,
+      suspectId,
+      { timeout: 10000 }
+    );
+    await suspectDropdown.selectOption(String(suspectId));
 
     // Fill amount (in rials)
     await page.fill('#bail-amount', '500000000');

@@ -21,7 +21,7 @@ const TipReview: React.FC = () => {
   const { showNotification } = useNotification();
 
   const userRoles = (user?.roles || []).map((r: any) => r.name?.toLowerCase?.() || r.toLowerCase?.() || '');
-  const isOfficer = userRoles.includes('police officer');
+  const isOfficer = userRoles.some((r: string) => ['police officer', 'patrol officer', 'officer'].includes(r));
   const isDetective = userRoles.includes('detective');
   const isSupervisor = userRoles.some((r: string) =>
     ['sergeant', 'lieutenant', 'captain', 'chief', 'administrator'].includes(r)

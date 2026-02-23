@@ -22,13 +22,8 @@ const BailPayments: React.FC = () => {
   const { user } = useAuth();
   const { showNotification } = useNotification();
 
-  // Check if user is a police officer (Cadet and above) — only they can issue bail requests
-  const normalizeRole = (s: string) => s.toLowerCase().replace(/_/g, ' ');
-  const policeRoles = ['cadet', 'patrol officer', 'police officer', 'detective', 'sergeant', 'captain', 'police chief', 'administrator'];
-  const canIssueBail = user?.roles?.some((r: any) => {
-    const name = normalizeRole(typeof r === 'string' ? r : r.name);
-    return policeRoles.includes(name);
-  }) ?? false;
+  // Any authenticated user can request bail (police or citizen)
+  const canIssueBail = !!user;
 
   const [bailPayments, setBailPayments] = useState<BailPayment[]>([]);
   const [loading, setLoading] = useState(true);
