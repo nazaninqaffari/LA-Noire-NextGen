@@ -110,3 +110,22 @@ Thumbs.db
 commit_helper.txt
 tmp/
 backend/media/
+
+
+# Dependencies
+node_modules/
+
+# Logs
+logs/
+
+# Folders
+bugs/
+sample_case/
+to\ check/
+
+# Files
+doc.txt
+prompt.txt
+zarinpaldoc.txt
+game.txt
+playwright.txt
