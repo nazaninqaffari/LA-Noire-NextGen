@@ -119,9 +119,9 @@ node_modules/
 logs/
 
 # Folders
-bugs/
-sample_case/
-to\ check/
+bugs
+sample_case
+to\ check
 
 # Files
 doc.txt
@@ -129,3 +129,6 @@ prompt.txt
 zarinpaldoc.txt
 game.txt
 playwright.txt
+
+# prompts
+debugprompt.txt
