@@ -1,0 +1,93 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e3]:
+  - banner [ref=e4]:
+    - generic [ref=e5]:
+      - link "LA Noire NextGen Los Angeles Police Department" [ref=e7] [cursor=pointer]:
+        - /url: /dashboard
+        - img [ref=e9]:
+          - generic [ref=e12]: LAPD
+        - generic [ref=e13]:
+          - heading "LA Noire NextGen" [level=1] [ref=e14]
+          - paragraph [ref=e15]: Los Angeles Police Department
+      - navigation [ref=e16]:
+        - link "Most Wanted" [ref=e17] [cursor=pointer]:
+          - /url: /most-wanted
+        - link "Dashboard" [ref=e18] [cursor=pointer]:
+          - /url: /dashboard
+        - button "Cases & Evidence ▾" [ref=e20] [cursor=pointer]:
+          - text: Cases & Evidence
+          - generic [ref=e21]: ▾
+        - button "Admin ▾" [ref=e23] [cursor=pointer]:
+          - text: Admin
+          - generic [ref=e24]: ▾
+        - generic [ref=e25]:
+          - button "Notifications" [ref=e27] [cursor=pointer]:
+            - img [ref=e28]
+          - generic [ref=e31]: admin
+          - button "Logout" [ref=e32] [cursor=pointer]
+  - main [ref=e33]:
+    - generic [ref=e34]:
+      - generic [ref=e35]:
+        - button "← Back to Cases" [ref=e36] [cursor=pointer]
+        - generic [ref=e37]:
+          - generic [ref=e38]:
+            - heading "Active Investigation Case" [level=1] [ref=e39]
+            - generic [ref=e40]:
+              - generic [ref=e41]: Major
+              - generic [ref=e42]: Investigating
+          - generic [ref=e43]:
+            - generic [ref=e44]:
+              - strong [ref=e45]: "Case ID:"
+              - text: LA-2024-050
+            - generic [ref=e46]:
+              - strong [ref=e47]: "Created:"
+              - text: January 10, 2024 at 01:30 PM
+            - generic [ref=e48]:
+              - strong [ref=e49]: "Formation:"
+              - text: 🚨 Crime Scene
+      - generic [ref=e50]:
+        - generic [ref=e51]:
+          - generic [ref=e52]:
+            - heading "Case Information" [level=2] [ref=e53]
+            - generic [ref=e54]:
+              - generic [ref=e55]:
+                - generic [ref=e56]: Description
+                - paragraph [ref=e57]: Case currently under investigation
+              - generic [ref=e59]:
+                - generic [ref=e60]: Created By
+                - paragraph [ref=e61]
+          - heading "Crime Scene Details" [level=2] [ref=e63]
+        - generic [ref=e64]:
+          - generic [ref=e65]:
+            - heading "Review History" [level=2] [ref=e66]
+            - paragraph [ref=e69]: No review history available
+          - generic [ref=e70]:
+            - button "🔍 Detective Board" [ref=e71] [cursor=pointer]
+            - button "👤 Suspects" [ref=e72] [cursor=pointer]
+            - button "📋 Suspect Submissions" [ref=e73] [cursor=pointer]
+            - button "📂 Evidence" [ref=e74] [cursor=pointer]
+  - contentinfo [ref=e75]:
+    - generic [ref=e76]:
+      - generic [ref=e77]:
+        - heading "LA Noire NextGen" [level=4] [ref=e78]
+        - paragraph [ref=e79]:
+          - text: Police Case Management System
+          - text: Inspired by the 1940s era detective operations
+      - generic [ref=e80]:
+        - heading "System Information" [level=4] [ref=e81]
+        - paragraph [ref=e82]:
+          - text: Version 1.0.0
+          - text: © 2026 Los Angeles Police Department
+      - generic [ref=e83]:
+        - heading "Quick Links" [level=4] [ref=e84]
+        - list [ref=e85]:
+          - listitem [ref=e86]:
+            - link "API Documentation" [ref=e87] [cursor=pointer]:
+              - /url: /api/docs
+          - listitem [ref=e88]:
+            - link "API Reference" [ref=e89] [cursor=pointer]:
+              - /url: /api/redoc
+    - paragraph [ref=e91]: "\"Every story has a beginning, every crime has a truth\" - LAPD"
+```

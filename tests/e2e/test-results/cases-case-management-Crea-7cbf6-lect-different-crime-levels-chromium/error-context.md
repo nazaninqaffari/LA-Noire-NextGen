@@ -1,0 +1,115 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e3]:
+  - banner [ref=e4]:
+    - generic [ref=e5]:
+      - link "LA Noire NextGen Los Angeles Police Department" [ref=e7] [cursor=pointer]:
+        - /url: /dashboard
+        - img [ref=e9]:
+          - generic [ref=e12]: LAPD
+        - generic [ref=e13]:
+          - heading "LA Noire NextGen" [level=1] [ref=e14]
+          - paragraph [ref=e15]: Los Angeles Police Department
+      - navigation [ref=e16]:
+        - link "Most Wanted" [ref=e17] [cursor=pointer]:
+          - /url: /most-wanted
+        - link "Dashboard" [ref=e18] [cursor=pointer]:
+          - /url: /dashboard
+        - button "Cases & Evidence ▾" [ref=e20] [cursor=pointer]:
+          - text: Cases & Evidence
+          - generic [ref=e21]: ▾
+        - button "Admin ▾" [ref=e23] [cursor=pointer]:
+          - text: Admin
+          - generic [ref=e24]: ▾
+        - generic [ref=e25]:
+          - button "Notifications" [ref=e27] [cursor=pointer]:
+            - img [ref=e28]
+          - generic [ref=e31]: admin
+          - button "Logout" [ref=e32] [cursor=pointer]
+  - main [ref=e33]:
+    - generic [ref=e34]:
+      - generic [ref=e35]:
+        - generic [ref=e36]:
+          - heading "File a Complaint" [level=1] [ref=e37]
+          - paragraph [ref=e38]: Report a crime or suspicious activity. A cadet will review your complaint.
+        - generic [ref=e39]: 📜
+      - generic [ref=e40]:
+        - generic [ref=e41]:
+          - generic [ref=e42]: Case Title *
+          - textbox "Case Title *" [ref=e43]:
+            - /placeholder: Brief summary of the incident
+          - generic [ref=e44]: Maximum 200 characters
+        - generic [ref=e45]:
+          - generic [ref=e46]: Crime Severity *
+          - combobox "Crime Severity *" [ref=e47] [cursor=pointer]:
+            - option "Critical - Severe Crimes — Serial murder, terrorism, assassination of public figures" [selected]
+            - option "Level 1 - Major Crimes — Murder, armed robbery, kidnapping"
+            - option "Level 2 - Medium Crimes — Car theft, burglary, assault"
+            - option "Level 3 - Minor Crimes — Petty theft, minor fraud, shoplifting"
+          - generic [ref=e48]:
+            - generic [ref=e49]: ℹ️
+            - generic [ref=e50]: Serial murder, terrorism, assassination of public figures
+        - generic [ref=e51]:
+          - generic [ref=e52]: Incident Description *
+          - textbox "Incident Description *" [ref=e53]:
+            - /placeholder: Provide a detailed description of what happened...
+          - generic [ref=e54]: "Include relevant details: date, time, location, witnesses"
+        - generic [ref=e55]:
+          - generic [ref=e56]: Your Statement *
+          - textbox "Your Statement *" [ref=e57]:
+            - /placeholder: Your personal account of the incident...
+          - generic [ref=e58]: This is your official statement. Be as accurate and detailed as possible.
+        - generic [ref=e59]:
+          - generic [ref=e60]: Add Other Complainants (Optional)
+          - paragraph [ref=e61]: You can add other persons who are also affected by this incident.
+          - generic [ref=e63]:
+            - textbox "Search by username, name, or national ID..." [ref=e64]
+            - button "🔍 Search" [ref=e65] [cursor=pointer]
+        - generic [ref=e66]:
+          - button "Cancel" [ref=e67] [cursor=pointer]
+          - button "Submit Complaint" [ref=e68] [cursor=pointer]
+      - generic [ref=e69]:
+        - heading "What happens next?" [level=3] [ref=e70]
+        - list [ref=e71]:
+          - listitem [ref=e72]:
+            - generic [ref=e73]: "1"
+            - generic [ref=e74]:
+              - strong [ref=e75]: Cadet Review
+              - paragraph [ref=e76]: A cadet officer will review your complaint and can approve or request changes
+          - listitem [ref=e77]:
+            - generic [ref=e78]: "2"
+            - generic [ref=e79]:
+              - strong [ref=e80]: Officer Review
+              - paragraph [ref=e81]: If approved by cadet, a senior officer will make the final decision
+          - listitem [ref=e82]:
+            - generic [ref=e83]: "3"
+            - generic [ref=e84]:
+              - strong [ref=e85]: Investigation
+              - paragraph [ref=e86]: Once approved, the case will be opened and assigned to an investigator
+        - generic [ref=e87]:
+          - strong [ref=e88]: "Note:"
+          - text: If your complaint is rejected 3 times by a cadet, it will be permanently closed.
+  - contentinfo [ref=e89]:
+    - generic [ref=e90]:
+      - generic [ref=e91]:
+        - heading "LA Noire NextGen" [level=4] [ref=e92]
+        - paragraph [ref=e93]:
+          - text: Police Case Management System
+          - text: Inspired by the 1940s era detective operations
+      - generic [ref=e94]:
+        - heading "System Information" [level=4] [ref=e95]
+        - paragraph [ref=e96]:
+          - text: Version 1.0.0
+          - text: © 2026 Los Angeles Police Department
+      - generic [ref=e97]:
+        - heading "Quick Links" [level=4] [ref=e98]
+        - list [ref=e99]:
+          - listitem [ref=e100]:
+            - link "API Documentation" [ref=e101] [cursor=pointer]:
+              - /url: /api/docs
+          - listitem [ref=e102]:
+            - link "API Reference" [ref=e103] [cursor=pointer]:
+              - /url: /api/redoc
+    - paragraph [ref=e105]: "\"Every story has a beginning, every crime has a truth\" - LAPD"
+```
