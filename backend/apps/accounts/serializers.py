@@ -72,6 +72,36 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         return user
 
 
+class AdminUserCreateSerializer(serializers.ModelSerializer):
+    """Serializer for admin user creation (no password_confirm needed)."""
+    password = serializers.CharField(write_only=True, min_length=8)
+    role_ids = serializers.PrimaryKeyRelatedField(
+        many=True,
+        queryset=Role.objects.all(),
+        required=False,
+        write_only=True,
+    )
+
+    class Meta:
+        model = User
+        fields = [
+            'id', 'username', 'email', 'phone_number', 'national_id',
+            'first_name', 'last_name', 'password', 'role_ids', 'is_active'
+        ]
+        read_only_fields = ['id']
+
+    def create(self, validated_data):
+        role_objects = validated_data.pop('role_ids', [])
+        password = validated_data.pop('password')
+        user = User.objects.create_user(**validated_data, password=password)
+        if role_objects:
+            user.roles.set(role_objects)
+        return user
+
+    def to_representation(self, instance):
+        return UserSerializer(instance).data
+
+
 class LoginSerializer(serializers.Serializer):
     """Serializer for user login."""
     username = serializers.CharField()

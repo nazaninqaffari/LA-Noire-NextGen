@@ -419,6 +419,35 @@ export interface PaginatedResponse<T> {
   results: T[];
 }
 
+// Admin panel types
+export interface AdminStats {
+  users: { total: number; active: number; inactive: number };
+  roles: number;
+  cases: { total: number; open: number; closed: number; under_investigation: number };
+  evidence: {
+    total: number;
+    testimonies: number;
+    biological: number;
+    vehicle: number;
+    id_documents: number;
+    generic: number;
+  };
+  suspects: number;
+  trials: number;
+}
+
+export interface AdminCreateUserData {
+  username: string;
+  email: string;
+  phone_number: string;
+  national_id: string;
+  first_name: string;
+  last_name: string;
+  password: string;
+  role_ids?: number[];
+  is_active?: boolean;
+}
+
 // Dashboard types
 export interface DashboardStats {
   totalCases: number;
