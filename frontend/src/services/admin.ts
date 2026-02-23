@@ -1,12 +1,19 @@
 /**
  * Admin Service
- * API functions for user management and role assignment
+ * API functions for user management, role assignment, and admin dashboard
  */
 import { api } from './api';
-import type { User, Role, PaginatedResponse } from '../types';
+import type { User, Role, Case, PaginatedResponse, AdminStats, AdminCreateUserData } from '../types';
 
 const USERS_URL = '/accounts/users';
 const ROLES_URL = '/accounts/roles';
+
+/* ─── Dashboard ────────────────────────────────────────────────────── */
+
+export const getAdminStats = async (): Promise<AdminStats> => {
+  const response = await api.get<AdminStats>('/accounts/admin-stats/');
+  return response.data;
+};
 
 /* ─── Users ─────────────────────────────────────────────────────── */
 
@@ -25,6 +32,20 @@ export const getUser = async (id: number): Promise<User> => {
 
 export const updateUser = async (id: number, data: Partial<User>): Promise<User> => {
   const response = await api.patch<User>(`${USERS_URL}/${id}/`, data);
+  return response.data;
+};
+
+export const createUser = async (data: AdminCreateUserData): Promise<User> => {
+  const response = await api.post<User>(`${USERS_URL}/admin_create/`, data);
+  return response.data;
+};
+
+export const deleteUser = async (id: number): Promise<void> => {
+  await api.delete(`${USERS_URL}/${id}/`);
+};
+
+export const toggleUserActive = async (id: number): Promise<User> => {
+  const response = await api.post<User>(`${USERS_URL}/${id}/toggle_active/`);
   return response.data;
 };
 
@@ -63,4 +84,15 @@ export const updateRole = async (id: number, data: Partial<Role>): Promise<Role>
 
 export const deleteRole = async (id: number): Promise<void> => {
   await api.delete(`${ROLES_URL}/${id}/`);
+};
+
+/* ─── Cases (admin view) ───────────────────────────────────────── */
+
+export const getAdminCases = async (params?: {
+  page?: number;
+  search?: string;
+  status?: string;
+}): Promise<PaginatedResponse<Case>> => {
+  const response = await api.get<PaginatedResponse<Case>>('/cases/cases/', { params });
+  return response.data;
 };

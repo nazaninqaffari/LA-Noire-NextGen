@@ -7,10 +7,13 @@ from rest_framework.filters import SearchFilter, OrderingFilter
 from drf_spectacular.utils import extend_schema, OpenApiExample, OpenApiParameter
 from drf_spectacular.types import OpenApiTypes
 from django.contrib.auth import login, logout
+from django.db.models import ProtectedError
 from .models import User, Role
+from .permissions import IsAdminUser
 from .serializers import (
-    UserSerializer, 
-    UserRegistrationSerializer, 
+    UserSerializer,
+    UserRegistrationSerializer,
+    AdminUserCreateSerializer,
     RoleSerializer,
     LoginSerializer
 )
@@ -43,25 +46,29 @@ class UserViewSet(viewsets.ModelViewSet):
     search_fields = ['username', 'email', 'first_name', 'last_name', 'national_id', 'phone_number']
     ordering_fields = ['username', 'date_joined']
     ordering = ['-date_joined']
-    
+
     def get_permissions(self):
         """Allow registration without authentication."""
         if self.action == 'create':
             return [AllowAny()]
+        if self.action in ('assign_roles', 'destroy', 'toggle_active', 'admin_create'):
+            return [IsAuthenticated(), IsAdminUser()]
         return [IsAuthenticated()]
-    
+
     def get_serializer_class(self):
         """Use different serializer for registration."""
         if self.action == 'create':
             return UserRegistrationSerializer
+        if self.action == 'admin_create':
+            return AdminUserCreateSerializer
         return UserSerializer
-    
+
     @extend_schema(
         summary="Register a new user (Signup)",
         description="""Register a new user account in the system. This is the signup endpoint.
-        
+
         **Authentication**: Not required (public endpoint)
-        
+
         **Validation Rules**:
         - Username must be unique
         - Email must be unique and valid
@@ -69,7 +76,7 @@ class UserViewSet(viewsets.ModelViewSet):
         - National ID must be unique
         - Password must be at least 8 characters
         - Password and password_confirm must match
-        
+
         **Automatic Behavior**:
         - User is assigned the 'Base User' role by default
         - User account is active immediately
@@ -122,7 +129,24 @@ class UserViewSet(viewsets.ModelViewSet):
     def create(self, request, *args, **kwargs):
         """Handle user registration (signup)."""
         return super().create(request, *args, **kwargs)
-    
+
+    def destroy(self, request, *args, **kwargs):
+        """Delete a user (admin only). Prevents self-deletion."""
+        user = self.get_object()
+        if user.id == request.user.id:
+            return Response(
+                {'detail': 'You cannot delete your own account.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        try:
+            user.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        except ProtectedError:
+            return Response(
+                {'detail': 'Cannot delete this user because they have related records.'},
+                status=status.HTTP_409_CONFLICT
+            )
+
     @extend_schema(
         summary="Get current user profile",
         description="Returns the profile information of the currently authenticated user",
@@ -160,18 +184,102 @@ class UserViewSet(viewsets.ModelViewSet):
         """Get current user's profile."""
         serializer = self.get_serializer(request.user)
         return Response(serializer.data)
-    
+
     @action(detail=True, methods=['post'])
     def assign_roles(self, request, pk=None):
         """Assign roles to a user (admin only)."""
         user = self.get_object()
         role_ids = request.data.get('role_ids', [])
-        
+
         roles = Role.objects.filter(id__in=role_ids)
         user.roles.set(roles)
-        
+
         serializer = self.get_serializer(user)
         return Response(serializer.data)
+
+    @action(detail=True, methods=['post'])
+    def toggle_active(self, request, pk=None):
+        """Toggle a user's is_active status (admin only). Prevents self-deactivation."""
+        user = self.get_object()
+        if user.id == request.user.id:
+            return Response(
+                {'detail': 'You cannot deactivate your own account.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        user.is_active = not user.is_active
+        user.save(update_fields=['is_active'])
+        serializer = self.get_serializer(user)
+        return Response(serializer.data)
+
+    @action(detail=False, methods=['post'])
+    def admin_create(self, request):
+        """Admin creates a user with roles directly (admin only)."""
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+
+class AdminStatsView(views.APIView):
+    """Dashboard statistics for the admin panel."""
+    permission_classes = [IsAuthenticated, IsAdminUser]
+
+    def get(self, request):
+        from apps.cases.models import Case
+        from apps.evidence.models import Testimony, BiologicalEvidence, VehicleEvidence, IDDocument, GenericEvidence
+        from apps.investigation.models import Suspect
+        from apps.trial.models import Trial
+
+        # User counts
+        total_users = User.objects.count()
+        active_users = User.objects.filter(is_active=True).count()
+        inactive_users = total_users - active_users
+
+        # Role count
+        total_roles = Role.objects.count()
+
+        # Case counts by status
+        total_cases = Case.objects.count()
+        cases_open = Case.objects.filter(status='open').count()
+        cases_closed = Case.objects.filter(status='closed').count()
+        cases_under_investigation = Case.objects.filter(status='under_investigation').count()
+
+        # Evidence counts
+        total_testimonies = Testimony.objects.count()
+        total_biological = BiologicalEvidence.objects.count()
+        total_vehicle = VehicleEvidence.objects.count()
+        total_id_documents = IDDocument.objects.count()
+        total_generic = GenericEvidence.objects.count()
+        total_evidence = total_testimonies + total_biological + total_vehicle + total_id_documents + total_generic
+
+        # Suspect and trial counts
+        total_suspects = Suspect.objects.count()
+        total_trials = Trial.objects.count()
+
+        return Response({
+            'users': {
+                'total': total_users,
+                'active': active_users,
+                'inactive': inactive_users,
+            },
+            'roles': total_roles,
+            'cases': {
+                'total': total_cases,
+                'open': cases_open,
+                'closed': cases_closed,
+                'under_investigation': cases_under_investigation,
+            },
+            'evidence': {
+                'total': total_evidence,
+                'testimonies': total_testimonies,
+                'biological': total_biological,
+                'vehicle': total_vehicle,
+                'id_documents': total_id_documents,
+                'generic': total_generic,
+            },
+            'suspects': total_suspects,
+            'trials': total_trials,
+        })
 
 
 class LoginView(views.APIView):
@@ -181,25 +289,25 @@ class LoginView(views.APIView):
     """
     permission_classes = [AllowAny]
     serializer_class = LoginSerializer
-    
+
     @extend_schema(
         summary="User login",
         description="""Authenticate user credentials and create a session.
-        
+
         **Authentication**: Not required (public endpoint)
-        
+
         **Cookie-Based Authentication**:
         Upon successful login, a session cookie named 'sessionid' is automatically set in the response.
         This cookie must be included in all subsequent requests to authenticated endpoints.
-        
+
         **Response Headers**:
         - Set-Cookie: sessionid=<session_id>; HttpOnly; Path=/; SameSite=Lax
-        
+
         **Client Usage**:
         - JavaScript: Use `credentials: 'include'` in fetch/axios
         - Python requests: Use `session = requests.Session()`
         - cURL: Use `-c cookies.txt` to save and `-b cookies.txt` to send cookies
-        
+
         **Session Lifetime**:
         - Default: 2 weeks
         - Sessions are stored server-side
@@ -296,19 +404,19 @@ class LogoutView(views.APIView):
     Destroys the session and clears the session cookie.
     """
     permission_classes = [IsAuthenticated]
-    
+
     @extend_schema(
         summary="User logout",
         description="""Logout the current user and destroy their session.
-        
+
         **Authentication**: Required (must be logged in)
         **Cookie Required**: sessionid cookie must be present
-        
+
         **Behavior**:
         - Destroys server-side session
         - Clears the sessionid cookie
         - Requires re-login for subsequent authenticated requests
-        
+
         **Note**: You must include the session cookie in the request.
         """,
         responses={
