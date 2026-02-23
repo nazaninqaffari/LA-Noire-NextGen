@@ -1,0 +1,79 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e3]:
+  - banner [ref=e4]:
+    - generic [ref=e5]:
+      - link "LA Noire NextGen Los Angeles Police Department" [ref=e7] [cursor=pointer]:
+        - /url: /dashboard
+        - img [ref=e9]:
+          - generic [ref=e12]: LAPD
+        - generic [ref=e13]:
+          - heading "LA Noire NextGen" [level=1] [ref=e14]
+          - paragraph [ref=e15]: Los Angeles Police Department
+      - navigation [ref=e16]:
+        - link "Most Wanted" [ref=e17] [cursor=pointer]:
+          - /url: /most-wanted
+        - link "Dashboard" [ref=e18] [cursor=pointer]:
+          - /url: /dashboard
+        - button "Cases & Evidence ▾" [ref=e20] [cursor=pointer]:
+          - text: Cases & Evidence
+          - generic [ref=e21]: ▾
+        - button "Investigation ▾" [ref=e23] [cursor=pointer]:
+          - text: Investigation
+          - generic [ref=e24]: ▾
+        - button "Justice ▾" [ref=e26] [cursor=pointer]:
+          - text: Justice
+          - generic [ref=e27]: ▾
+        - generic [ref=e28]:
+          - button "Notifications" [ref=e30] [cursor=pointer]:
+            - img [ref=e31]
+          - generic [ref=e34]: detective1
+          - button "Logout" [ref=e35] [cursor=pointer]
+  - main [ref=e36]:
+    - generic [ref=e37]:
+      - generic [ref=e38]:
+        - generic [ref=e39]:
+          - heading "Detective Board" [level=1] [ref=e40]
+          - paragraph [ref=e41]:
+            - text: Visual investigation map
+            - generic [ref=e42]: "— Case #42"
+        - generic [ref=e43]:
+          - button "🔗 Connect Items" [ref=e44] [cursor=pointer]
+          - button "+ Add Item" [ref=e45] [cursor=pointer]
+          - button "🔍 Show Evidence" [ref=e46] [cursor=pointer]
+          - button "📸 Export" [ref=e47] [cursor=pointer]
+      - generic [ref=e48]:
+        - generic [ref=e50]: "Item #1"
+        - generic [ref=e52]: "Item #2"
+      - generic [ref=e53]:
+        - heading "Connections" [level=3] [ref=e54]
+        - list [ref=e55]:
+          - listitem [ref=e56]:
+            - generic [ref=e57]: "#1"
+            - generic [ref=e58]: →
+            - generic [ref=e59]: "#2"
+            - button "✕" [ref=e60] [cursor=pointer]
+  - contentinfo [ref=e61]:
+    - generic [ref=e62]:
+      - generic [ref=e63]:
+        - heading "LA Noire NextGen" [level=4] [ref=e64]
+        - paragraph [ref=e65]:
+          - text: Police Case Management System
+          - text: Inspired by the 1940s era detective operations
+      - generic [ref=e66]:
+        - heading "System Information" [level=4] [ref=e67]
+        - paragraph [ref=e68]:
+          - text: Version 1.0.0
+          - text: © 2026 Los Angeles Police Department
+      - generic [ref=e69]:
+        - heading "Quick Links" [level=4] [ref=e70]
+        - list [ref=e71]:
+          - listitem [ref=e72]:
+            - link "API Documentation" [ref=e73] [cursor=pointer]:
+              - /url: /api/docs
+          - listitem [ref=e74]:
+            - link "API Reference" [ref=e75] [cursor=pointer]:
+              - /url: /api/redoc
+    - paragraph [ref=e77]: "\"Every story has a beginning, every crime has a truth\" - LAPD"
+```
