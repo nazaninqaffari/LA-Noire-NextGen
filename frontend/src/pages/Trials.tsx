@@ -100,7 +100,7 @@ const Trials: React.FC = () => {
     if (!showCreateForm) return;
     const loadFormData = async () => {
       try {
-        const res = await getUsers({ search: '' });
+        const res = await getUsers({ search: '', page_size: 200 });
         setJudgeList((res.results || []).filter((u: any) =>
           u.roles?.some((r: any) => r.name?.toLowerCase() === 'judge')
         ));
