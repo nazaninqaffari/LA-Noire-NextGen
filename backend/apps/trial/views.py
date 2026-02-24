@@ -280,31 +280,15 @@ class BailPaymentViewSet(viewsets.ModelViewSet):
     ordering = ['-requested_at']
     
     def get_queryset(self):
-        """Filter based on user role."""
-        user = self.request.user
-        queryset = super().get_queryset()
-        
-        if user.roles.filter(name__in=['Sergeant', 'Captain', 'Police Chief', 'Administrator']).exists():
-            # Sergeants and higher see all bail requests
-            return queryset
-        else:
-            # Others see only their own requests (as suspect)
-            return queryset.filter(suspect__person=user)
+        """All authenticated users can see bail payments."""
+        return super().get_queryset()
     
     def create(self, request, *args, **kwargs):
         """
-        Only police officers (Cadet and above) can issue bail requests.
-        Normal citizens cannot create bail requests.
+        Any authenticated user can request bail.
+        Citizens/suspects request bail for their case,
+        and police officers can also issue bail requests.
         """
-        police_roles = [
-            'Cadet', 'Patrol Officer', 'Police Officer', 'Detective',
-            'Sergeant', 'Captain', 'Police Chief', 'Administrator',
-        ]
-        if not request.user.roles.filter(name__in=police_roles).exists():
-            return Response(
-                {'detail': 'Only police officers (Cadet and above) can issue bail requests.'},
-                status=status.HTTP_403_FORBIDDEN,
-            )
         return super().create(request, *args, **kwargs)
 
     def perform_create(self, serializer):

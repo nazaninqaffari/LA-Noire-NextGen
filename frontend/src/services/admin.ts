@@ -20,6 +20,7 @@ export const getAdminStats = async (): Promise<AdminStats> => {
 export const getUsers = async (params?: {
   page?: number;
   search?: string;
+  page_size?: number;
 }): Promise<PaginatedResponse<User>> => {
   const response = await api.get<PaginatedResponse<User>>(`${USERS_URL}/`, { params });
   return response.data;

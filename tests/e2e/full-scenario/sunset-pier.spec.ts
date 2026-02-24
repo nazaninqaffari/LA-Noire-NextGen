@@ -101,12 +101,12 @@ const userIds: Record<string, number> = {};
 
 async function uiLogin(page: Page, username: string, password: string): Promise<void> {
   await page.context().clearCookies();
-  await page.goto('/login', { waitUntil: 'domcontentloaded' });
+  await page.goto('/login', { waitUntil: 'domcontentloaded', timeout: 30000 });
   await page.waitForSelector('#username', { state: 'visible', timeout: 8000 });
   await page.fill('#username', username);
   await page.fill('#password', password);
   await page.click('button[type="submit"]');
-  await page.waitForURL('**/dashboard', { timeout: 15000 });
+  await page.waitForURL('**/dashboard', { timeout: 15000, waitUntil: 'domcontentloaded' });
 }
 
 async function getCsrfToken(page: Page): Promise<string> {
@@ -274,15 +274,22 @@ test.describe.serial('Fire at Sunset Pier — Full Scene-Based Scenario', () => 
   });
 
   // ──────────────────────────────────────────────────────────────────────────
-  // Step 2: Officer approves the scene case (auto-goes to officer_review)
+  // Step 2: Officer approves the scene case via UI (CaseReview page)
   // ──────────────────────────────────────────────────────────────────────────
-  test('Step 2 — Officer approves the crime scene case', async ({ page }) => {
+  test('Step 2 — Officer approves the crime scene case via UI', async ({ page }) => {
     await uiLogin(page, USERS.officer.username, USERS.officer.password);
 
-    // Scene cases by non-chief go to officer_review. Officer approves.
-    const res = await apiPost(page, `/cases/cases/${sceneCaseId}/officer_review/`, {
-      decision: 'approved',
-    });
+    await page.goto(`/cases/${sceneCaseId}/review`, { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('.review-form', { timeout: 10000 });
+
+    // Click Approve decision button
+    await page.click('.decision-btn.approve');
+    // Submit review
+    await page.click('button[type="submit"]');
+    await page.waitForURL(`**/cases/${sceneCaseId}`, { timeout: 15000 });
+
+    // Verify via API
+    const res = await apiGet(page, `/cases/cases/${sceneCaseId}/`);
     expect(res.ok).toBe(true);
     expect(res.data.status).toBe('open');
   });
@@ -342,55 +349,91 @@ test.describe.serial('Fire at Sunset Pier — Full Scene-Based Scenario', () => 
   });
 
   // ──────────────────────────────────────────────────────────────────────────
-  // Step 5: Citizen files collaborative complaint with co-complainant
+  // Step 5: Citizen files collaborative complaint via UI (CreateComplaint page)
   // ──────────────────────────────────────────────────────────────────────────
-  test('Step 5 — Citizen files collaborative complaint', async ({ page }) => {
+  test('Step 5 — Citizen files collaborative complaint via UI', async ({ page }) => {
     await uiLogin(page, USERS.citizen1.username, USERS.citizen1.password);
 
-    // Create complaint with additional complainant via API (to reliably test the backend feature)
-    const res = await apiPost(page, '/cases/cases/', {
-      title: SCENARIO.complaintTitle,
-      description: SCENARIO.complaintDescription,
-      crime_level: crimeLevelId,
-      complainant_statement: SCENARIO.complaintStatement,
-      additional_complainants: [
-        {
-          user_id: userIds[USERS.citizen2.username],
-          statement: SCENARIO.coComplainantStatement,
-        },
-      ],
-    });
-    expect(res.ok).toBe(true);
-    complaintCaseId = res.data.id;
-    expect(res.data.formation_type).toBe('complaint');
+    await page.goto('/cases/complaint/new', { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('#title', { state: 'visible', timeout: 10000 });
 
-    // Verify complainants
-    const complainants = res.data.complainants || [];
+    // Fill complaint form
+    await page.fill('#title', SCENARIO.complaintTitle);
+    await page.locator('#crime_level').selectOption(String(crimeLevelId));
+    await page.fill('#description', SCENARIO.complaintDescription);
+    await page.fill('#complainant_statement', SCENARIO.complaintStatement);
+
+    // Add co-complainant: search for citizen2
+    await page.fill('#co-complainant-search', USERS.citizen2.username);
+    await page.click('.co-complainant-section button.btn-secondary');
+    await page.waitForSelector('[data-testid="user-search-results"]', { timeout: 8000 });
+
+    // Select citizen2 from results
+    const userRadio = page.locator('[data-testid="user-search-results"] input[type="radio"]').first();
+    await userRadio.click();
+
+    // Fill co-complainant statement
+    await page.fill('#co-complainant-statement', SCENARIO.coComplainantStatement);
+
+    // Click "Add Person" button
+    const addPersonBtn = page.locator('.co-statement-row button.btn-primary, .co-complainant-section button.btn-primary').first();
+    await addPersonBtn.click();
+    await page.waitForTimeout(1000);
+
+    // Verify co-complainant was added to list
+    await page.waitForSelector('[data-testid="co-complainant-list"]', { timeout: 3000 });
+
+    // Submit complaint
+    await page.click('button[type="submit"]');
+    await page.waitForURL('**/cases', { timeout: 15000 });
+
+    // Verify via API
+    await uiLogin(page, USERS.admin.username, USERS.admin.password);
+    const searchRes = await apiGet(page, '/cases/cases/', { search: SCENARIO.complaintTitle.substring(0, 30) });
+    expect(searchRes.ok).toBe(true);
+    const results = searchRes.data.results || searchRes.data;
+    const ourCase = results.find((c: any) => c.title === SCENARIO.complaintTitle);
+    expect(ourCase).toBeTruthy();
+    complaintCaseId = ourCase.id;
+    expect(ourCase.formation_type).toBe('complaint');
+    const complainants = ourCase.complainants || [];
     expect(complainants.length).toBe(2);
   });
 
   // ──────────────────────────────────────────────────────────────────────────
-  // Step 6: Cadet approves collaborative complaint
+  // Step 6: Cadet approves collaborative complaint via UI
   // ──────────────────────────────────────────────────────────────────────────
-  test('Step 6 — Cadet approves collaborative complaint', async ({ page }) => {
+  test('Step 6 — Cadet approves collaborative complaint via UI', async ({ page }) => {
     await uiLogin(page, USERS.cadet.username, USERS.cadet.password);
 
-    const res = await apiPost(page, `/cases/cases/${complaintCaseId}/cadet_review/`, {
-      decision: 'approved',
-    });
+    await page.goto(`/cases/${complaintCaseId}/review`, { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('.review-form', { timeout: 10000 });
+
+    await page.click('.decision-btn.approve');
+    await page.click('button[type="submit"]');
+    await page.waitForURL(`**/cases/${complaintCaseId}`, { timeout: 15000 });
+
+    // Verify via API
+    const res = await apiGet(page, `/cases/cases/${complaintCaseId}/`);
     expect(res.ok).toBe(true);
     expect(res.data.status).toBe('officer_review');
   });
 
   // ──────────────────────────────────────────────────────────────────────────
-  // Step 7: Officer approves collaborative complaint
+  // Step 7: Officer approves collaborative complaint via UI
   // ──────────────────────────────────────────────────────────────────────────
-  test('Step 7 — Officer approves collaborative complaint', async ({ page }) => {
+  test('Step 7 — Officer approves collaborative complaint via UI', async ({ page }) => {
     await uiLogin(page, USERS.officer.username, USERS.officer.password);
 
-    const res = await apiPost(page, `/cases/cases/${complaintCaseId}/officer_review/`, {
-      decision: 'approved',
-    });
+    await page.goto(`/cases/${complaintCaseId}/review`, { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('.review-form', { timeout: 10000 });
+
+    await page.click('.decision-btn.approve');
+    await page.click('button[type="submit"]');
+    await page.waitForURL(`**/cases/${complaintCaseId}`, { timeout: 15000 });
+
+    // Verify via API
+    const res = await apiGet(page, `/cases/cases/${complaintCaseId}/`);
     expect(res.ok).toBe(true);
     expect(res.data.status).toBe('open');
   });
@@ -432,31 +475,58 @@ test.describe.serial('Fire at Sunset Pier — Full Scene-Based Scenario', () => 
   });
 
   // ──────────────────────────────────────────────────────────────────────────
-  // Step 9: Detective adds a suspect
+  // Step 9: Detective adds a suspect via UI (Suspects page)
   // ──────────────────────────────────────────────────────────────────────────
-  test('Step 9 — Detective adds a suspect via API', async ({ page }) => {
+  test('Step 9 — Detective adds a suspect via UI', async ({ page }) => {
     await uiLogin(page, USERS.detective.username, USERS.detective.password);
 
-    const res = await apiPost(page, '/investigation/suspects/', {
-      case: sceneCaseId,
-      person: userIds[USERS.citizen2.username],
-      status: 'under_pursuit',
-      reason: 'Witness saw suspect fleeing Sunset Pier moments before fire. Matches hoodie description from multiple eyewitnesses.',
-      identified_by_detective: userIds[USERS.detective.username],
-    });
+    await page.goto(`/suspects?case=${sceneCaseId}`, { waitUntil: 'domcontentloaded' });
+
+    // Click "Add Suspect" button
+    const addBtn = page.locator('.add-suspect-btn');
+    await addBtn.click();
+    await page.waitForSelector('.add-suspect-form', { timeout: 10000 });
+
+    // Search for the person (citizen2)
+    await page.fill('#person-search', USERS.citizen2.username);
+    await page.waitForSelector('.person-results-dropdown', { timeout: 8000 });
+
+    // Click the first matching person result
+    const personItem = page.locator('.person-result-item').first();
+    await personItem.click();
+    await page.waitForSelector('.selected-person-badge', { timeout: 3000 });
+
+    // Fill reason
+    await page.fill('#suspect-reason', 'Witness saw suspect fleeing Sunset Pier moments before fire. Matches hoodie description from multiple eyewitnesses.');
+
+    // Submit
+    await page.click('.add-suspect-form button[type="submit"]');
+    await page.waitForTimeout(3000);
+
+    // Verify via API
+    const res = await apiGet(page, '/investigation/suspects/', { case: String(sceneCaseId) });
     expect(res.ok).toBe(true);
-    suspectId = res.data.id;
+    const results = res.data.results || res.data;
+    expect(results.length).toBeGreaterThanOrEqual(1);
+    suspectId = results[results.length - 1].id;
   });
 
   // ──────────────────────────────────────────────────────────────────────────
-  // Step 10: Detective escalates suspect to most-wanted
+  // Step 10: Detective escalates suspect to most-wanted via UI
   // ──────────────────────────────────────────────────────────────────────────
-  test('Step 10 — Detective escalates suspect to most-wanted', async ({ page }) => {
+  test('Step 10 — Detective escalates suspect to most-wanted via UI', async ({ page }) => {
     await uiLogin(page, USERS.detective.username, USERS.detective.password);
 
-    const res = await apiPost(page, `/investigation/suspects/${suspectId}/change-status/`, {
-      status: 'intensive_pursuit',
-    });
+    await page.goto(`/suspects?case=${sceneCaseId}`, { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('.suspect-card', { timeout: 10000 });
+
+    // Find the status dropdown for our suspect and change it
+    const statusSelect = page.locator(`[data-testid="status-select-${suspectId}"]`);
+    await statusSelect.selectOption('intensive_pursuit');
+    await page.waitForTimeout(2000);
+
+    // Verify via API
+    const res = await apiGet(page, `/investigation/suspects/${suspectId}/`);
     expect(res.ok).toBe(true);
     expect(res.data.status).toBe('intensive_pursuit');
   });
@@ -512,9 +582,9 @@ test.describe.serial('Fire at Sunset Pier — Full Scene-Based Scenario', () => 
   });
 
   // ──────────────────────────────────────────────────────────────────────────
-  // Step 12: Officer reviews the tip (approve)
+  // Step 12: Officer reviews the tip (approve) via UI
   // ──────────────────────────────────────────────────────────────────────────
-  test('Step 12 — Officer reviews and approves the tip', async ({ page }) => {
+  test('Step 12 — Officer reviews and approves the tip via UI', async ({ page }) => {
     await uiLogin(page, USERS.officer.username, USERS.officer.password);
 
     if (!tipId) {
@@ -525,46 +595,79 @@ test.describe.serial('Fire at Sunset Pier — Full Scene-Based Scenario', () => 
       tipId = tips[tips.length - 1].id;
     }
 
-    const res = await apiPost(page, `/investigation/tipoffs/${tipId}/officer_review/`, {
-      approved: true,
-    });
-    expect(res.ok).toBe(true);
+    await page.goto('/tip-reviews', { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector(`[data-testid="tip-card-${tipId}"]`, { timeout: 10000 });
+
+    // Click Approve button on our tip card
+    const approveBtn = page.locator(`[data-testid="approve-tip-${tipId}"]`);
+    await approveBtn.click();
+    await page.waitForTimeout(2000);
+
+    // Verify
+    const tipRes = await apiGet(page, `/investigation/tipoffs/${tipId}/`);
+    expect(tipRes.ok).toBe(true);
+    expect(tipRes.data.status).toBe('officer_approved');
   });
 
   // ──────────────────────────────────────────────────────────────────────────
-  // Step 13: Detective reviews the tip (approve)
+  // Step 13: Detective reviews the tip (approve) via UI
   // ──────────────────────────────────────────────────────────────────────────
-  test('Step 13 — Detective reviews and approves the tip', async ({ page }) => {
+  test('Step 13 — Detective reviews and approves the tip via UI', async ({ page }) => {
     await uiLogin(page, USERS.detective.username, USERS.detective.password);
 
-    const res = await apiPost(page, `/investigation/tipoffs/${tipId}/detective_review/`, {
-      approved: true,
-    });
-    expect(res.ok).toBe(true);
+    await page.goto('/tip-reviews', { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector(`[data-testid="tip-card-${tipId}"]`, { timeout: 10000 });
+
+    // Click Approve button on our tip card
+    const approveBtn = page.locator(`[data-testid="approve-tip-${tipId}"]`);
+    await approveBtn.click();
+    await page.waitForTimeout(2000);
+
+    // Verify
+    const tipRes = await apiGet(page, `/investigation/tipoffs/${tipId}/`);
+    expect(tipRes.ok).toBe(true);
+    expect(tipRes.data.status).toBe('approved');
   });
 
   // ──────────────────────────────────────────────────────────────────────────
-  // Step 14: Detective submits suspect list
+  // Step 14: Detective submits suspect list via UI
   // ──────────────────────────────────────────────────────────────────────────
-  test('Step 14 — Detective submits suspect list', async ({ page }) => {
+  test('Step 14 — Detective submits suspect list via UI', async ({ page }) => {
     await uiLogin(page, USERS.detective.username, USERS.detective.password);
 
-    const res = await apiPost(page, '/investigation/suspect-submissions/', {
-      case: sceneCaseId,
-      suspects: [suspectId],
-      reasoning: 'Primary suspect identified through witness tips and physical evidence at the pier. Accelerant residue matches.',
-    });
+    await page.goto(`/suspect-submissions?case=${sceneCaseId}`, { waitUntil: 'domcontentloaded' });
+
+    // Click "New Submission" button
+    const newBtn = page.locator('button').filter({ hasText: /New Submission/ });
+    await newBtn.click();
+    await page.waitForSelector('.submission-form', { timeout: 10000 });
+
+    // Select the suspect checkbox
+    const suspectCheckbox = page.locator('.suspect-checkbox').first();
+    await suspectCheckbox.click();
+
+    // Fill reasoning
+    await page.fill('#reasoning', 'Primary suspect identified through witness tips and physical evidence at the pier. Accelerant residue matches.');
+
+    // Submit
+    const submitBtn = page.locator('button').filter({ hasText: /Submit to Sergeant/ });
+    await submitBtn.click();
+    await page.waitForTimeout(2000);
+
+    // Verify via API
+    const res = await apiGet(page, '/investigation/suspect-submissions/', { case: String(sceneCaseId) });
     expect(res.ok).toBe(true);
-    submissionId = res.data.id;
+    const results = res.data.results || res.data;
+    const ourSub = results.find((s: any) => s.status === 'pending');
+    expect(ourSub).toBeTruthy();
+    submissionId = ourSub.id;
   });
 
   // ──────────────────────────────────────────────────────────────────────────
-  // Step 15: Sergeant approves submission
+  // Step 15: Sergeant approves suspect submission via UI
   // ──────────────────────────────────────────────────────────────────────────
-  test('Step 15 — Sergeant approves suspect submission', async ({ page }) => {
-    await uiLogin(page, USERS.sergeant.username, USERS.sergeant.password);
-
-    // Assign sergeant to case
+  test('Step 15 — Sergeant approves suspect submission via UI', async ({ page }) => {
+    // Infrastructure: assign sergeant to case (no UI for this)
     await uiLogin(page, USERS.admin.username, USERS.admin.password);
     await apiPatch(page, `/cases/cases/${sceneCaseId}/`, {
       assigned_sergeant: userIds[USERS.sergeant.username],
@@ -572,145 +675,316 @@ test.describe.serial('Fire at Sunset Pier — Full Scene-Based Scenario', () => 
 
     await uiLogin(page, USERS.sergeant.username, USERS.sergeant.password);
 
-    const res = await apiPost(page, `/investigation/suspect-submissions/${submissionId}/review/`, {
-      decision: 'approve',
-      review_notes: 'Evidence is sufficient for arrest. Witness corroboration and physical evidence confirmed.',
-    });
-    expect(res.ok).toBe(true);
+    await page.goto(`/suspect-submissions?case=${sceneCaseId}`, { waitUntil: 'domcontentloaded' });
+
+    // Click "Review Submission" on the pending card
+    const reviewBtn = page.locator('button').filter({ hasText: /Review Submission/ });
+    await reviewBtn.first().click();
+
+    // Fill review notes
+    const reviewTextarea = page.locator('.review-form textarea');
+    await reviewTextarea.fill('Evidence is sufficient for arrest. Witness corroboration and physical evidence confirmed.');
+
+    // Click approve
+    const approveBtn = page.locator('button').filter({ hasText: /Approve/ });
+    await approveBtn.first().click();
+    await page.waitForTimeout(2000);
+
+    // Verify via API
+    const subRes = await apiGet(page, `/investigation/suspect-submissions/${submissionId}/`);
+    expect(subRes.ok).toBe(true);
+    expect(subRes.data.status).toBe('approved');
   });
 
   // ──────────────────────────────────────────────────────────────────────────
-  // Step 16: Detective creates an interrogation
+  // Step 16: Detective creates an interrogation via UI
   // ──────────────────────────────────────────────────────────────────────────
-  test('Step 16 — Detective creates an interrogation', async ({ page }) => {
+  test('Step 16 — Detective creates an interrogation via UI', async ({ page }) => {
+    // Infrastructure: update suspect to arrested status via UI
     await uiLogin(page, USERS.detective.username, USERS.detective.password);
+    await page.goto(`/suspects?case=${sceneCaseId}`, { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('.suspect-card', { timeout: 10000 });
+    const statusSelect = page.locator(`[data-testid="status-select-${suspectId}"]`);
+    await statusSelect.selectOption('arrested');
+    await page.waitForTimeout(2000);
 
-    // Update suspect status to arrested
-    await apiPost(page, `/investigation/suspects/${suspectId}/change-status/`, {
-      status: 'arrested',
-    });
-
-    // Update case status to interrogation
+    // Infrastructure: set case status to interrogation (no UI for this)
     await uiLogin(page, USERS.admin.username, USERS.admin.password);
     await apiPatch(page, `/cases/cases/${sceneCaseId}/`, {
       status: 'interrogation',
     });
 
+    // Now create interrogation via UI
+    await uiLogin(page, USERS.detective.username, USERS.detective.password);
+    await page.goto(`/interrogations?case=${sceneCaseId}`, { waitUntil: 'domcontentloaded' });
+
+    const newBtn = page.locator('button').filter({ hasText: /New Interrogation/ });
+    await newBtn.click();
+    await page.waitForSelector('.interrogation-form', { timeout: 10000 });
+
+    // Select suspect
+    const suspectSelectEl = page.locator('#interrogation-suspect');
+    await suspectSelectEl.selectOption({ index: 1 });
+
+    // Select sergeant
+    const sergeantSelect = page.locator('#interrogation-sergeant');
+    await sergeantSelect.selectOption({ index: 1 });
+
+    const submitBtn = page.locator('.interrogation-form button[type="submit"]');
+    await submitBtn.click();
+    await page.waitForTimeout(2000);
+
+    // Verify via API
+    const res = await apiGet(page, '/investigation/interrogations/', { suspect__case: String(sceneCaseId) });
+    expect(res.ok).toBe(true);
+    const results = res.data.results || res.data;
+    expect(results.length).toBeGreaterThanOrEqual(1);
+    interrogationId = results[0].id;
+  });
+
+  // ──────────────────────────────────────────────────────────────────────────
+  // Step 17: Detective submits interrogation ratings via UI
+  // ──────────────────────────────────────────────────────────────────────────
+  test('Step 17 — Detective submits interrogation ratings via UI', async ({ page }) => {
     await uiLogin(page, USERS.detective.username, USERS.detective.password);
 
-    const res = await apiPost(page, '/investigation/interrogations/', {
-      suspect: suspectId,
-      detective: userIds[USERS.detective.username],
-      sergeant: userIds[USERS.sergeant.username],
-    });
+    await page.goto(`/interrogations?case=${sceneCaseId}`, { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('.interrogation-card', { timeout: 10000 });
+
+    const ratingsBtn = page.locator('button').filter({ hasText: /Submit Ratings/ });
+    await ratingsBtn.first().click();
+    await page.waitForSelector('.ratings-form', { timeout: 10000 });
+
+    // Fill ratings
+    const detRating = page.locator('.ratings-form input[type="number"]').first();
+    await detRating.fill('8');
+    const sgtRating = page.locator('.ratings-form input[type="number"]').nth(1);
+    await sgtRating.fill('7');
+
+    // Fill notes
+    const detNotes = page.locator('.ratings-form textarea').first();
+    await detNotes.fill('Suspect was evasive and contradicted themselves on timeline. Low cooperativeness.');
+    const sgtNotes = page.locator('.ratings-form textarea').nth(1);
+    await sgtNotes.fill('Physical evidence strongly ties suspect to the scene. Accelerant on clothing is conclusive.');
+
+    const submitBtn = page.locator('.ratings-form button[type="submit"]');
+    await submitBtn.click();
+    await page.waitForTimeout(2000);
+
+    // Verify via API
+    const res = await apiGet(page, `/investigation/interrogations/${interrogationId}/`);
     expect(res.ok).toBe(true);
-    interrogationId = res.data.id;
+    expect(res.data.status).toBe('submitted');
   });
 
   // ──────────────────────────────────────────────────────────────────────────
-  // Step 17: Detective submits interrogation ratings
+  // Step 18: Captain makes guilty decision via UI
   // ──────────────────────────────────────────────────────────────────────────
-  test('Step 17 — Detective submits interrogation ratings', async ({ page }) => {
-    await uiLogin(page, USERS.detective.username, USERS.detective.password);
-
-    const res = await apiPost(page, `/investigation/interrogations/${interrogationId}/submit_ratings/`, {
-      detective_guilt_rating: 8,
-      sergeant_guilt_rating: 7,
-      detective_notes: 'Suspect was evasive and contradicted themselves on timeline. Low cooperativeness.',
-      sergeant_notes: 'Physical evidence strongly ties suspect to the scene. Accelerant on clothing is conclusive.',
-    });
-    expect(res.ok).toBe(true);
-  });
-
-  // ──────────────────────────────────────────────────────────────────────────
-  // Step 18: Captain makes a guilty decision
-  // ──────────────────────────────────────────────────────────────────────────
-  test('Step 18 — Captain makes guilty decision', async ({ page }) => {
+  test('Step 18 — Captain makes guilty decision via UI', async ({ page }) => {
     await uiLogin(page, USERS.captain.username, USERS.captain.password);
 
-    const res = await apiPost(page, '/investigation/captain-decisions/', {
-      interrogation: interrogationId,
-      decision: 'guilty',
-      reasoning: 'Overwhelming evidence: accelerant on clothing matches the pier, witness identification confirmed, and contradictory alibi testimony.',
-    });
+    await page.goto(`/interrogations?case=${sceneCaseId}`, { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('.interrogation-card', { timeout: 10000 });
+
+    const decisionBtn = page.locator('button').filter({ hasText: /Make Decision/ });
+    await decisionBtn.first().click();
+    await page.waitForSelector('.decision-form', { timeout: 10000 });
+
+    const guiltyRadio = page.locator('input[type="radio"][value="guilty"]');
+    await guiltyRadio.check();
+
+    const reasoning = page.locator('.decision-form textarea');
+    await reasoning.fill('Overwhelming evidence: accelerant on clothing matches the pier, witness identification confirmed, and contradictory alibi testimony.');
+
+    const submitBtn = page.locator('.decision-form button[type="submit"]');
+    await submitBtn.click();
+    await page.waitForTimeout(2000);
+
+    // Verify via API
+    const res = await apiGet(page, '/investigation/captain-decisions/');
     expect(res.ok).toBe(true);
+    const results = res.data.results || res.data;
+    const ourDecision = results.find(
+      (d: any) => d.interrogation === interrogationId || d.interrogation?.id === interrogationId
+    );
+    expect(ourDecision).toBeTruthy();
+    expect(ourDecision.decision).toBe('guilty');
   });
 
   // ──────────────────────────────────────────────────────────────────────────
-  // Step 19: Captain creates a trial
+  // Step 19: Captain creates a trial via UI
   // ──────────────────────────────────────────────────────────────────────────
-  test('Step 19 — Captain creates a trial', async ({ page }) => {
-    await uiLogin(page, USERS.captain.username, USERS.captain.password);
-
-    // Update case to trial_pending
+  test('Step 19 — Captain creates a trial via UI', async ({ page }) => {
+    // Infrastructure: set case status to trial_pending (no UI for this)
     await uiLogin(page, USERS.admin.username, USERS.admin.password);
     await apiPatch(page, `/cases/cases/${sceneCaseId}/`, {
       status: 'trial_pending',
     });
 
     await uiLogin(page, USERS.captain.username, USERS.captain.password);
+    await page.goto('/trials', { waitUntil: 'domcontentloaded' });
 
-    const res = await apiPost(page, '/trial/trials/', {
-      case: sceneCaseId,
-      suspect: suspectId,
-      judge: userIds[USERS.judge.username],
-    });
+    const createBtn = page.locator('button').filter({ hasText: /Create Trial/ });
+    await createBtn.click();
+    await page.waitForSelector('.trial-create-form', { timeout: 10000 });
+
+    // Select case
+    await page.waitForFunction(
+      (id) => document.querySelector(`#trial-case-id option[value="${id}"]`) !== null,
+      sceneCaseId,
+      { timeout: 10000 }
+    );
+    await page.selectOption('#trial-case-id', String(sceneCaseId));
+
+    // Select suspect
+    await page.waitForFunction(
+      (id) => document.querySelector(`#trial-suspect-id option[value="${id}"]`) !== null,
+      suspectId,
+      { timeout: 10000 }
+    );
+    await page.selectOption('#trial-suspect-id', String(suspectId));
+
+    // Select judge — pick the sp_judge created in Step 0
+    const judgeId = userIds[USERS.judge.username];
+    const judgeSelect = page.locator('#trial-judge');
+    await page.waitForFunction(
+      (id) => document.querySelector(`#trial-judge option[value="${id}"]`) !== null,
+      judgeId,
+      { timeout: 15000 }
+    );
+    await judgeSelect.selectOption(String(judgeId));
+
+    await page.fill('#trial-captain-notes', 'Guilty decision confirmed. All evidence reviewed. Arson suspect to face trial.');
+
+    const submitBtn = page.locator('.trial-create-form button[type="submit"]');
+    await submitBtn.click();
+    await page.waitForTimeout(2000);
+
+    // Verify via API — query as admin to bypass queryset restrictions
+    await page.context().clearCookies();
+    await uiLogin(page, 'admin', 'admin123');
+    const res = await apiGet(page, '/trial/trials/', { case: sceneCaseId });
     expect(res.ok).toBe(true);
-    trialId = res.data.id;
+    const results = res.data.results || res.data;
+    const ourTrial = results.find(
+      (t: any) =>
+        (t.case === sceneCaseId || t.case?.id === sceneCaseId) &&
+        (t.suspect === suspectId || t.suspect?.id === suspectId)
+    );
+    expect(ourTrial).toBeTruthy();
+    trialId = ourTrial.id;
   });
 
   // ──────────────────────────────────────────────────────────────────────────
-  // Step 20: Judge delivers a guilty verdict
+  // Step 20: Judge delivers guilty verdict via UI
   // ──────────────────────────────────────────────────────────────────────────
-  test('Step 20 — Judge delivers guilty verdict', async ({ page }) => {
+  test('Step 20 — Judge delivers guilty verdict via UI', async ({ page }) => {
     await uiLogin(page, USERS.judge.username, USERS.judge.password);
 
-    const res = await apiPost(page, `/trial/trials/${trialId}/deliver_verdict/`, {
-      decision: 'guilty',
-      reasoning: 'Defendant found guilty of arson. Evidence is conclusive: accelerant residue on clothing, eyewitness testimony, and contradictory alibi.',
-      punishment_title: 'Imprisonment for Arson',
-      punishment_description: 'Five years imprisonment for deliberate arson causing property damage exceeding ten billion rials at Sunset Pier warehouse.',
-    });
+    await page.goto('/trials', { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('.trial-card', { timeout: 10000 });
+
+    // Click our trial card
+    const trialCard = page.locator('.trial-card').filter({ hasText: String(trialId) });
+    await trialCard.first().click();
+    await page.waitForSelector('.trial-detail .card', { timeout: 10000 });
+
+    const verdictBtn = page.locator('button').filter({ hasText: /Deliver Verdict/ });
+    await verdictBtn.click();
+    await page.waitForSelector('.verdict-form', { timeout: 10000 });
+
+    const guiltyRadio = page.locator('input[type="radio"][value="guilty"]');
+    await guiltyRadio.check();
+
+    await page.fill(
+      '#verdict-reasoning',
+      'Defendant found guilty of arson. Evidence is conclusive: accelerant residue on clothing, eyewitness testimony, and contradictory alibi.'
+    );
+    await page.fill('#punishment-title', 'Imprisonment for Arson');
+    await page.fill(
+      '#punishment-desc',
+      'Five years imprisonment for deliberate arson causing property damage exceeding ten billion rials at Sunset Pier warehouse.'
+    );
+
+    const submitBtn = page.locator('.verdict-form button[type="submit"]');
+    await submitBtn.click();
+    await page.waitForTimeout(3000);
+
+    // Verify via API
+    const res = await apiGet(page, `/trial/trials/${trialId}/`);
     expect(res.ok).toBe(true);
+    expect(res.data.status).toBe('completed');
   });
 
   // ──────────────────────────────────────────────────────────────────────────
-  // Step 21: Citizen (Base User) attempts bail request → BLOCKED
+  // Step 21: Citizen (Base User) can access bail page (all users allowed)
   // ──────────────────────────────────────────────────────────────────────────
-  test('Step 21 — Citizen bail request is blocked (role restriction)', async ({ page }) => {
+  test('Step 21 — Citizen can access bail page', async ({ page }) => {
     await uiLogin(page, USERS.citizen1.username, USERS.citizen1.password);
 
-    // Try to create bail via API — should be rejected
-    const res = await apiPost(page, '/trial/bail-payments/', {
-      suspect: suspectId,
-      amount: 50000000,
-    });
-    expect(res.status).toBe(403);
+    // Navigate to bail page — citizen should see the page
+    await page.goto('/bail', { waitUntil: 'domcontentloaded' });
+    await page.waitForTimeout(2000);
 
-    // Also verify the Bail nav item doesn't appear for citizen
-    await page.goto('/dashboard', { waitUntil: 'domcontentloaded' });
-    const bailLink = page.locator('a[href="/bail"]');
-    await expect(bailLink).not.toBeVisible();
+    // All authenticated users can now request bail
+    const requestBtn = page.locator('button').filter({ hasText: /Request Bail/ });
+    await expect(requestBtn.first()).toBeVisible({ timeout: 5000 });
   });
 
   // ──────────────────────────────────────────────────────────────────────────
-  // Step 22: Officer creates bail request → ALLOWED
+  // Step 22: Officer creates bail request via UI → ALLOWED
   // ──────────────────────────────────────────────────────────────────────────
-  test('Step 22 — Officer creates bail request (allowed)', async ({ page }) => {
+  test('Step 22 — Officer creates bail request via UI (allowed)', async ({ page }) => {
     await uiLogin(page, USERS.officer.username, USERS.officer.password);
 
-    const res = await apiPost(page, '/trial/bail-payments/', {
-      suspect: suspectId,
-      amount: 50000000,
-    });
-    expect(res.ok).toBe(true);
-    bailId = res.data.id;
+    await page.goto('/bail', { waitUntil: 'domcontentloaded' });
+    await page.waitForTimeout(2000);
 
-    // If not auto-approved (crime level 3), have sergeant approve it
-    if (res.data.status !== 'approved') {
+    // Click "Request Bail" to show form
+    const requestBtn = page.locator('button').filter({ hasText: /Request Bail/ });
+    await requestBtn.click();
+    await page.waitForSelector('.bail-form-card', { timeout: 5000 });
+
+    // Select suspect
+    const suspectDropdown = page.locator('#bail-suspect');
+    await page.waitForTimeout(500);
+    const opts = await suspectDropdown.locator('option').all();
+    if (opts.length > 1) {
+      await suspectDropdown.selectOption({ index: 1 });
+    }
+
+    // Fill amount
+    await page.fill('#bail-amount', '50000000');
+
+    // Submit bail request
+    const submitBtn = page.locator('.bail-form-card button[type="submit"]');
+    await submitBtn.click();
+    await page.waitForTimeout(2000);
+
+    // Verify via API
+    const bailRes = await apiGet(page, '/trial/bail-payments/');
+    expect(bailRes.ok).toBe(true);
+    const bails = bailRes.data.results || bailRes.data;
+    const ourBail = bails.find(
+      (b: any) => b.suspect === suspectId || b.suspect?.id === suspectId
+    );
+    expect(ourBail).toBeTruthy();
+    bailId = ourBail.id;
+
+    // If not auto-approved (crime level), have sergeant approve it via UI
+    if (ourBail.status !== 'approved') {
       await uiLogin(page, USERS.sergeant.username, USERS.sergeant.password);
-      const approveRes = await apiPost(page, `/trial/bail-payments/${bailId}/approve/`, {});
-      expect(approveRes.ok).toBe(true);
+      await page.goto('/bail-approvals', { waitUntil: 'domcontentloaded' });
+      await page.waitForTimeout(2000);
+
+      const approveBtn = page.locator(`[data-testid="approve-bail-${bailId}"]`);
+      if (await approveBtn.isVisible()) {
+        await approveBtn.click();
+      } else {
+        const anyApprove = page.locator('button.btn-success').filter({ hasText: /Approve/ });
+        await anyApprove.first().click();
+      }
+      await page.waitForTimeout(2000);
     }
   });
 

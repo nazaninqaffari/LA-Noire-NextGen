@@ -17,6 +17,7 @@ const Login: React.FC = () => {
     username: '',
     password: ''
   });
+  const [loginMethod, setLoginMethod] = useState<'username' | 'phone' | 'national_id'>('username');
   const [loading, setLoading] = useState<boolean>(false);
   const navigate = useNavigate();
   const { login, isAuthenticated } = useAuth();
@@ -36,12 +37,34 @@ const Login: React.FC = () => {
     });
   };
 
+  const handleMethodChange = (method: 'username' | 'phone' | 'national_id'): void => {
+    setLoginMethod(method);
+    // Clear the identifier field when switching methods
+    setCredentials({ ...credentials, username: '' });
+  };
+
+  const getIdentifierLabel = (): string => {
+    switch (loginMethod) {
+      case 'phone': return 'Phone Number';
+      case 'national_id': return 'National ID';
+      default: return 'Username';
+    }
+  };
+
+  const getIdentifierPlaceholder = (): string => {
+    switch (loginMethod) {
+      case 'phone': return 'Enter your phone number';
+      case 'national_id': return 'Enter your national ID';
+      default: return 'Enter your username';
+    }
+  };
+
   const handleSubmit = async (e: FormEvent<HTMLFormElement>): Promise<void> => {
     e.preventDefault();
     
     // Basic validation
     if (!credentials.username.trim()) {
-      showNotification('Please enter your username', 'warning', 'Missing Information');
+      showNotification(`Please enter your ${getIdentifierLabel().toLowerCase()}`, 'warning', 'Missing Information');
       return;
     }
 
@@ -109,8 +132,35 @@ const Login: React.FC = () => {
         </div>
 
         <form onSubmit={handleSubmit} className="login-form">
+          <div className="login-method-toggle" data-testid="login-method-toggle">
+            <button
+              type="button"
+              className={`method-btn${loginMethod === 'username' ? ' active' : ''}`}
+              data-testid="method-username"
+              onClick={() => handleMethodChange('username')}
+            >
+              Username
+            </button>
+            <button
+              type="button"
+              className={`method-btn${loginMethod === 'phone' ? ' active' : ''}`}
+              data-testid="method-phone"
+              onClick={() => handleMethodChange('phone')}
+            >
+              Phone
+            </button>
+            <button
+              type="button"
+              className={`method-btn${loginMethod === 'national_id' ? ' active' : ''}`}
+              data-testid="method-national-id"
+              onClick={() => handleMethodChange('national_id')}
+            >
+              National ID
+            </button>
+          </div>
+
           <div className="form-group">
-            <label htmlFor="username">Username</label>
+            <label htmlFor="username">{getIdentifierLabel()}</label>
             <input
               type="text"
               id="username"
@@ -118,7 +168,7 @@ const Login: React.FC = () => {
               value={credentials.username}
               onChange={handleChange}
               disabled={loading}
-              placeholder="Enter your username"
+              placeholder={getIdentifierPlaceholder()}
               autoComplete="username"
               autoFocus
             />
