@@ -1197,3 +1197,155 @@ return config;
   
 
 ---
+
+
+## 13. مدیریت پروژه و تقسیم کار
+
+  
+
+### 13.1 اعضای تیم و مسئولیت‌ها
+
+  
+
+#### نازنین غفاری
+
+- **مسئولیت اصلی**: فرانت‌اند و UI/UX
+
+- طراحی و پیاده‌سازی سیستم طراحی بصری Film Noir (CSS Variables، فونت‌ها، رنگ‌ها)
+
+- پیاده‌سازی صفحات اصلی: Home, Dashboard, Cases, CaseDetail, CreateComplaint, CreateCrimeScene
+
+- پیاده‌سازی AuthContext و NotificationContext
+
+- کامپوننت‌های مشترک: Header با منوهای نقش‌محور، Footer، CaseCard، بج‌ها
+
+- صفحه تخته کارآگاهی (DetectiveBoard) با Canvas API
+
+- تست‌نویسی فرانت‌اند: تست‌های صفحات و کامپوننت‌ها
+
+- مستندات فرانت‌اند (DESIGN_SYSTEM.md, CASE_WORKFLOWS_UI.md)
+
+  
+
+#### سهیل محمدخانی
+
+- **مسئولیت اصلی**: بک‌اند (مدل‌ها، ویوها، API)
+
+- طراحی و پیاده‌سازی مدل‌های دیتابیس (۲۷ مدل در ۵ اپلیکیشن)
+
+- پیاده‌سازی ViewSet ها و سریالایزرها
+
+- سیستم احراز هویت Session-based
+
+- جریان کاری پرونده (۱۱ وضعیت) و سیستم بررسی
+
+- سیستم بازجویی و تصمیم‌گیری چندسطحی
+
+- اتصال درگاه زرین‌پال
+
+- سیستم نقش و سلسله‌مراتب پلیسی
+
+- تست‌نویسی بک‌اند: تست‌های واحد و یکپارچگی
+
+  
+
+#### امیرحسین وحیدی‌تبار
+
+- **مسئولیت اصلی**: داکرایز، تست و فرانت‌اند تکمیلی
+
+- پیکربندی Docker Compose (سه سرویس: db, backend, frontend)
+
+- نوشتن Dockerfile ها (backend: python-slim + gunicorn, frontend: multi-stage node + nginx)
+
+- پیکربندی Nginx (پروکسی API، SPA fallback)
+
+- اسکریپت seed برای داده اولیه
+
+- صفحات فرانت‌اند: Evidence, EvidenceRegister, Suspects, MostWanted, Interrogations, Trials, BailPayments, PaymentReturn
+
+- لایه سرویس‌های API فرانت‌اند (evidence.ts, investigation.ts, trial.ts)
+
+- تست‌نویسی سرویس‌های فرانت‌اند
+
+- اسکریپت‌های start.sh و docker-start.sh
+
+- پنل مدیریت فرانت‌اند (AdminPanel، AdminUsers، AdminRoles، AdminCases)
+
+  
+
+### 13.2 روش مدیریت پروژه
+
+  
+
+تقسیم کار به صورت **ماژولار** انجام شد. هر نفر مسئولیت بخش مشخصی از پروژه رو داشت و رابط‌ها (API endpoints و data contracts) از قبل مشخص شده بودن.
+
+  
+
+### 13.3 قراردادهای توسعه
+
+  
+
+**نام‌گذاری:**
+
+- مدل‌ها: PascalCase (مثلاً `BailPayment`, `DetectiveBoard`)
+
+- فیلدها: snake_case (مثلاً `case_number`, `assigned_detective`)
+
+- URL ها: kebab-case (مثلاً `/bail-payments/`, `/detective-boards/`)
+
+- کامپوننت‌های React: PascalCase (مثلاً `CaseCard.tsx`, `NotificationBell.tsx`)
+
+- فایل‌های CSS: هم‌نام کامپوننت (مثلاً `DetectiveBoard.css`)
+
+- سرویس‌های API: camelCase (مثلاً `getCases()`, `initiateBailPayment()`)
+
+  
+
+**ساختار کد:**
+
+- هر اپلیکیشن Django ساختار استاندارد: `models.py`, `views.py`, `serializers.py`, `urls.py`, `admin.py`
+
+- هر صفحه React یک فایل `.tsx` و یک فایل `.css` مجزا
+
+- سرویس‌های API در پوشه `services/` با یک `api.ts` مرکزی
+
+  
+
+### 13.4 پکیج‌های NPM استفاده‌شده در فرانت‌اند
+
+  
+
+| پکیج | نسخه | دلیل استفاده |
+|---|---|---|
+| **react** | 18.3.1 | فریمورک اصلی UI. انتخاب React به خاطر اکوسیستم گسترده و Component-based بودنشه. |
+| **react-router-dom** | 6.26.0 | مسیریابی سمت کلاینت. بدون این پکیج SPA امکان‌پذیر نیست و باید هر صفحه‌ای reload کامل بشه. |
+| **axios** | 1.7.2 | کلاینت HTTP. به خاطر interceptor ها (برای CSRF و ۴۰۱ redirect) و API تمیزترش نسبت به fetch انتخاب شد. |
+| **vite** | 5.3.1 | بیلدتول. خیلی سریع‌تر از Webpack هست، HMR عالی داره و پیکربندی ساده‌تریه. Proxy dev server هم برای جلوگیری از CORS مشکل مفیده. |
+| **vitest** | 1.6.0 | فریمورک تست. با Vite سازگاره و نیاز به پیکربندی Babel/Jest جداگانه نیست. API مشابه Jest داره. |
+| **@testing-library/react** | 16.0.0 | ابزار تست کامپوننت. تست رو از دید کاربر می‌نویسه (query by text/role) نه از دید internal structure. |
+
+  
+
+---
+
+  
+
+## پیوست: خلاصه فنی
+
+  
+
+| معیار                    | مقدار                             |
+| ------------------------ | --------------------------------- |
+| زبان بک‌اند              | Python 3.12 + Django 4.2          |
+| زبان فرانت‌اند           | TypeScript 5.5 + React 18.3       |
+| دیتابیس                  | PostgreSQL 16                     |
+| تعداد مدل‌ها             | ۲۷                                |
+| تعداد اپلیکیشن Django    | ۵                                 |
+| تعداد endpoint API       | ~۶۰+                              |
+| تعداد صفحات فرانت‌اند    | ~۲۵                               |
+| تعداد فایل تست بک‌اند    | ۱۸                                |
+| خطوط تست بک‌اند          | ۹,۲۰۰+                            |
+| تعداد فایل تست فرانت‌اند | ۲۲                                |
+| سرویس‌های Docker         | ۳ (db, backend, frontend)         |
+| درگاه پرداخت             | زرین‌پال (Sandbox)                |
+| مستندسازی API            | drf-spectacular (Swagger + ReDoc) |
