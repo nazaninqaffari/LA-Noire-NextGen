@@ -984,3 +984,216 @@ frontend: # React + Nginx
 ---
 
   
+## 12. استفاده از هوش مصنوعی
+
+  
+
+### 12.1 استفاده از AI در بک‌اند
+
+  
+
+#### نقاط قوت
+
+- **تولید سریع بویلرپلیت**: ساختار اولیه مدل‌ها، سریالایزرها و ویوست‌ها با کمک AI خیلی سریع‌تر تولید شد.
+
+- **نوشتن تست‌های جامع**: AI توی تولید سناریوهای تست مختلف خیلی خوبه. حجم بالای تست‌ها (۹۲۰۰+ خط) بدون AI خیلی زمان‌بر بود.
+
+- **حل مسائل پیچیده**: پیاده‌سازی جریان‌های چندمرحله‌ای با state machine مثل وضعیت‌های Case، الگوریتم danger_score و اتصال زرین‌پال با کمک AI سریع‌تر انجام شد.
+
+- **مستندسازی**: کامنت‌ها و Docstring های تمیزی تولید شده.
+
+  
+
+#### نقاط ضعف
+
+- **تکرار الگو**: بعضی ViewSet ها الگوی مشابهی دارن که AI تکرار کرده بدون اینکه بهینه‌سازی کنه (مثلاً می‌شد یه Mixin مشترک درست کرد).
+
+- **چک نقش رشته‌ای**: AI از مقایسه رشته‌ای استفاده کرده (`name__in=['Detective', 'Sergeant']`) که Type-safe نیست.
+
+- **خطاهای جزئی**: بعضی باگ‌ها وجود داشتن (مشهود از فایل‌های test_bugfix و session patches) که بعداً رفع شدن.
+
+  
+
+#### نمونه کد تولیدشده توسط AI
+
+  
+
+**محاسبه امتیاز خطر مظنون:**
+
+```python
+
+def get_danger_score(self):
+
+"""
+
+Calculate danger score: max(days_pursued) * max(crime_level).
+
+Used for ranking on wanted list.
+
+"""
+
+days_pursued = (timezone.now() - self.identified_at).days
+
+crime_level_value = self.case.crime_level.level
+
+level_score = 4 - crime_level_value
+
+return days_pursued * level_score
+
+  
+
+def get_reward_amount(self):
+
+"""
+
+Calculate reward: danger_score * 20,000,000 Rials.
+
+"""
+
+return self.get_danger_score() * 20_000_000
+
+```
+
+  
+
+**اتصال به درگاه زرین‌پال:**
+
+```python
+
+payload = {
+
+"merchant_id": django_settings.ZARINPAL_MERCHANT_ID,
+
+"amount": int(bail.amount),
+
+"callback_url": callback_url,
+
+"description": f"Bail payment for suspect in case {bail.suspect.case.case_number}",
+
+"metadata": {
+
+"mobile": "09999813456",
+
+"email": "alef@gmail.com",
+
+"order_id": str(bail.id),
+
+}
+
+}
+
+response = http_requests.post(
+
+django_settings.ZARINPAL_REQUEST_URL,
+
+json=payload,
+
+headers={'accept': 'application/json', 'content-type': 'application/json'},
+
+timeout=30
+
+)
+
+```
+
+  
+
+### 12.2 استفاده از AI در فرانت‌اند
+
+  
+
+#### نقاط قوت
+
+- **تولید سریع صفحات**: حدود ۲۵ صفحه با فرم‌ها، جداول و فیلترها سریع تولید شدن.
+
+- **CSS تم Film Noir**: طراحی بصری منسجم با ۵۸۴ خط CSS متغیر و ۳۵ فایل CSS.
+
+- **پیاده‌سازی Canvas**: لاجیک پیچیده تخته کارآگاهی با drag, drop و رسم خطوط قرمز.
+
+- **Error Handler جامع**: مدیریت خطاهای DRF با map فیلدها به برچسب‌های قابل فهم.
+
+- **پیاده‌سازی CSRF**: استخراج توکن از cookie و تزریق به header.
+
+  
+
+#### نقاط ضعف
+
+- **TypeScript ضعیف**: در خیلی جاها از `any` استفاده شده و type safety کامل نیست.
+
+- **تکرار کد**: الگوهای مشابه (`useState` + `useEffect` + `try/catch`) در همه صفحات تکرار شده بدون abstraction.
+
+- **عدم استفاده از Custom Hook**: می‌شد hook های سفارشی مثل `useFetch` یا `useApiCall` ساخت.
+
+  
+
+#### نمونه کد فرانت‌اند تولیدشده:
+
+  
+
+**رسم خطوط قرمز روی Canvas:**
+
+```tsx
+
+ctx.beginPath();
+
+ctx.moveTo(fromItem.position_x + 60, fromItem.position_y + 30);
+
+ctx.lineTo(toItem.position_x + 60, toItem.position_y + 30);
+
+ctx.strokeStyle = '#8b1a1a';
+
+ctx.lineWidth = 2;
+
+ctx.setLineDash([6, 4]);
+
+ctx.stroke();
+
+  
+
+// Draw small circles at endpoints
+
+[fromItem, toItem].forEach((item) => {
+
+ctx.beginPath();
+
+ctx.arc(item.position_x + 60, item.position_y + 30, 4, 0, Math.PI * 2);
+
+ctx.fillStyle = '#8b1a1a';
+
+ctx.fill();
+
+});
+
+```
+
+  
+
+**مدیریت CSRF Token:**
+
+```tsx
+
+api.interceptors.request.use((config) => {
+
+const csrfToken = document.cookie
+
+.split('; ')
+
+.find(row => row.startsWith('csrftoken='))
+
+?.split('=')[1];
+
+if (csrfToken) {
+
+config.headers['X-CSRFToken'] = csrfToken;
+
+}
+
+return config;
+
+});
+
+```
+
+  
+
+---
