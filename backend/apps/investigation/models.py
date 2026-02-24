@@ -242,9 +242,9 @@ class Interrogation(models.Model):
     STATUS_REVIEWED = 'reviewed'
     
     STATUS_CHOICES = [
-        (STATUS_PENDING, 'در انتظار تکمیل'),
-        (STATUS_SUBMITTED, 'ارسال شده'),
-        (STATUS_REVIEWED, 'بررسی شده'),
+        (STATUS_PENDING, 'Pending Completion'),
+        (STATUS_SUBMITTED, 'Submitted'),
+        (STATUS_REVIEWED, 'Reviewed'),
     ]
     
     suspect = models.ForeignKey(
@@ -326,9 +326,9 @@ class CaptainDecision(models.Model):
     DECISION_NEEDS_MORE_INVESTIGATION = 'needs_more'
     
     DECISION_CHOICES = [
-        (DECISION_GUILTY, 'مجرم'),
-        (DECISION_NOT_GUILTY, 'بی‌گناه'),
-        (DECISION_NEEDS_MORE_INVESTIGATION, 'نیاز به تحقیقات بیشتر'),
+        (DECISION_GUILTY, 'Guilty'),
+        (DECISION_NOT_GUILTY, 'Not Guilty'),
+        (DECISION_NEEDS_MORE_INVESTIGATION, 'Needs More Investigation'),
     ]
     
     STATUS_PENDING = 'pending'
@@ -336,9 +336,9 @@ class CaptainDecision(models.Model):
     STATUS_AWAITING_CHIEF = 'awaiting_chief'
     
     STATUS_CHOICES = [
-        (STATUS_PENDING, 'در انتظار بررسی'),
-        (STATUS_COMPLETED, 'تکمیل شده'),
-        (STATUS_AWAITING_CHIEF, 'در انتظار رئیس پلیس'),
+        (STATUS_PENDING, 'Pending Review'),
+        (STATUS_COMPLETED, 'Completed'),
+        (STATUS_AWAITING_CHIEF, 'Awaiting Police Chief'),
     ]
     
     interrogation = models.OneToOneField(
@@ -391,8 +391,8 @@ class PoliceChiefDecision(models.Model):
     DECISION_REJECTED = 'rejected'
     
     DECISION_CHOICES = [
-        (DECISION_APPROVED, 'تایید شده'),
-        (DECISION_REJECTED, 'رد شده'),
+        (DECISION_APPROVED, 'Approved'),
+        (DECISION_REJECTED, 'Rejected'),
     ]
     
     captain_decision = models.OneToOneField(
@@ -786,8 +786,8 @@ class Notification(models.Model):
         return cls.objects.create(
             recipient=detective,
             notification_type=cls.TYPE_NEW_EVIDENCE,
-            title=f"شواهد جدید در پرونده {case.case_number}",
-            message=f"شواهد جدید از نوع {evidence_type} به پرونده اضافه شد.",
+            title=f"New evidence in case {case.case_number}",
+            message=f"New {evidence_type} evidence has been added to the case.",
             related_case=case,
             content_type=ContentType.objects.get_for_model(evidence),
             object_id=evidence.id
@@ -805,8 +805,8 @@ class Notification(models.Model):
         return cls.objects.create(
             recipient=sergeant,
             notification_type=cls.TYPE_SUSPECT_SUBMISSION,
-            title=f"ارسال مظنونین در پرونده {submission.case.case_number}",
-            message=f"کارآگاه {submission.detective.get_full_name()} مظنونین اصلی را شناسایی کرده است.",
+            title=f"Suspect submission in case {submission.case.case_number}",
+            message=f"Detective {submission.detective.get_full_name()} has identified the main suspects.",
             related_case=submission.case,
             content_type=ContentType.objects.get_for_model(submission),
             object_id=submission.id
@@ -823,8 +823,8 @@ class Notification(models.Model):
         return cls.objects.create(
             recipient=submission.detective,
             notification_type=cls.TYPE_SUBMISSION_APPROVED,
-            title=f"تایید دستگیری در پرونده {submission.case.case_number}",
-            message=f"گروهبان تایید کرد. دستگیری مظنونین شروع شده است.",
+            title=f"Arrest approved in case {submission.case.case_number}",
+            message=f"Sergeant approved. Arrest of suspects has begun.",
             related_case=submission.case,
             content_type=ContentType.objects.get_for_model(submission),
             object_id=submission.id
@@ -841,8 +841,8 @@ class Notification(models.Model):
         return cls.objects.create(
             recipient=submission.detective,
             notification_type=cls.TYPE_SUBMISSION_REJECTED,
-            title=f"عدم تایید در پرونده {submission.case.case_number}",
-            message=f"گروهبان با استدلال شما مخالفت کرد. پرونده همچنان باز است.",
+            title=f"Submission rejected in case {submission.case.case_number}",
+            message=f"Sergeant disagreed with your reasoning. Case remains open.",
             related_case=submission.case,
             content_type=ContentType.objects.get_for_model(submission),
             object_id=submission.id

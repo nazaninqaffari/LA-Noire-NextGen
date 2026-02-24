@@ -18,9 +18,9 @@ class Trial(models.Model):
     STATUS_COMPLETED = 'completed'
     
     STATUS_CHOICES = [
-        (STATUS_PENDING, 'در انتظار'),
-        (STATUS_IN_PROGRESS, 'در حال بررسی'),
-        (STATUS_COMPLETED, 'تکمیل شده'),
+        (STATUS_PENDING, 'Pending'),
+        (STATUS_IN_PROGRESS, 'In Progress'),
+        (STATUS_COMPLETED, 'Completed'),
     ]
     
     case = models.ForeignKey(

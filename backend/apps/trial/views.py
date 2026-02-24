@@ -102,7 +102,7 @@ class TrialViewSet(viewsets.ModelViewSet):
         # Check permission - judge only
         if request.user != trial.judge and not user_has_role(request.user, 'Judge'):
             return Response(
-                {"detail": "فقط قاضی می‌تواند خلاصه پرونده را مشاهده کند."},
+                {"detail": "Only the assigned judge can view the case summary."},
                 status=status.HTTP_403_FORBIDDEN
             )
         
@@ -179,14 +179,14 @@ class TrialViewSet(viewsets.ModelViewSet):
         # Check permission - judge assigned to trial only
         if request.user != trial.judge:
             return Response(
-                {"detail": "فقط قاضی مسئول این پرونده می‌تواند حکم صادر کند."},
+                {"detail": "Only the judge assigned to this case can deliver the verdict."},
                 status=status.HTTP_403_FORBIDDEN
             )
         
         # Check if already has verdict
         if hasattr(trial, 'verdict'):
             return Response(
-                {"detail": "این دادگاه قبلاً حکم دریافت کرده است."},
+                {"detail": "This trial has already received a verdict."},
                 status=status.HTTP_400_BAD_REQUEST
             )
         
@@ -324,14 +324,14 @@ class BailPaymentViewSet(viewsets.ModelViewSet):
         # Check permission - sergeant only
         if not user_has_role(request.user, 'Sergeant'):
             return Response(
-                {"detail": "فقط گروهبان می‌تواند وثیقه را تایید کند."},
+                {"detail": "Only a sergeant can approve bail."},
                 status=status.HTTP_403_FORBIDDEN
             )
         
         # Check if already approved/paid
         if bail.status != BailPayment.STATUS_PENDING:
             return Response(
-                {"detail": "این درخواست قبلاً بررسی شده است."},
+                {"detail": "This request has already been reviewed."},
                 status=status.HTTP_400_BAD_REQUEST
             )
         
@@ -370,14 +370,14 @@ class BailPaymentViewSet(viewsets.ModelViewSet):
             name__in=['Sergeant', 'Captain', 'Police Chief']
         ).exists():
             return Response(
-                {"detail": "فقط خود مظنون یا خانواده ایشان می‌توانند وثیقه را پرداخت کنند."},
+                {"detail": "Only the suspect or their family can pay bail."},
                 status=status.HTTP_403_FORBIDDEN
             )
         
         # Check if approved
         if bail.status != BailPayment.STATUS_APPROVED:
             return Response(
-                {"detail": "وثیقه هنوز تایید نشده است."},
+                {"detail": "Bail has not been approved yet."},
                 status=status.HTTP_400_BAD_REQUEST
             )
         
