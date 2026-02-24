@@ -834,3 +834,81 @@ frontend: # React + Nginx
   
 
 ---
+
+## 10. تست‌نویسی
+
+  
+
+### 10.1 تست‌های بک‌اند
+
+  
+
+مجموعه تست بک‌اند شامل **۱۸ فایل تست** با بیش از **۹,۲۰۰ خط کد تست** هست.
+
+  
+
+**زیرساخت تست:**
+
+- فریمورک: pytest + pytest-django
+
+- فایل `base.py`: کلاس‌های `BaseTestCase` و `AuthenticatedAPITestCase` با helper های ساخت کاربر و لاگین
+
+- فایل `conftest.py`: فیکسچرهای pytest برای `api_client`، `authenticated_client`، کاربران با نقش‌های مختلف
+
+- فایل `factories.py`: Factory Boy با `RoleFactory` و `UserFactory`
+
+- پیکربندی: `--no-migrations --reuse-db` برای سرعت
+
+  
+
+**پوشش تست‌ها:**
+
+  
+
+| فایل تست                  | تعداد خط | پوشش                                             |
+| ------------------------- | -------- | ------------------------------------------------ |
+| test_accounts             | 328      | ثبت‌نام، ورود/خروج، پروفایل، اختصاص نقش          |
+| test_case_formation       | 871      | ایجاد پرونده (شکایت + صحنه جرم)، بررسی کادت/افسر |
+| test_case_resolution      | 879      | پیشنهاد مظنون، تأیید گروهبان، تغییر وضعیت        |
+| test_evidence             | 1079     | ۵ نوع مدرک، تأیید پزشک قانونی، بررسی دسترسی      |
+| test_interrogation_system | 857      | جریان کامل بازجویی، تصمیم کاپیتان/رئیس           |
+| test_reward_system        | 914      | جریان کامل خبرچینی → پاداش → بازخرید             |
+| test_trial_system         | 623      | ایجاد محاکمه، خلاصه پرونده، حکم، وثیقه           |
+| test_suspect_status       | 820      | ارتقای خودکار به تعقیب شدید، امتیاز خطر          |
+| test_bugfix_patches       | 401      | تست‌های رگرسیون برای باگ‌فیکس‌ها                 |
+| test_admin_panel          | 173      | endpoint آمار مدیریت                             |
+| test_public_stats         | 124      | آمار عمومی                                       |
+| stress_tests              | 198      | تست بار با Locust                                |
+
+  
+
+**نشانه‌گذاری تست‌ها:** مارکرهای `slow`، `integration`، `unit` و `stress` برای اجرای انتخابی.
+
+  
+
+### 10.2 تست‌های فرانت‌اند
+
+  
+
+فریمورک: **Vitest 1.6** + **@testing-library/react 16**
+
+  
+
+**۲۲ فایل تست** شامل:
+
+  
+
+| دسته        | تست‌ها                                                                                                      |
+| ----------- | ----------------------------------------------------------------------------------------------------------- |
+| سرویس‌ها    | api, auth, evidence, investigation, trial, admin — بررسی endpoint های صحیح و payload ها                     |
+| کامپوننت‌ها | Header (نمایش منو بر اساس نقش)، Login (ارسال فرم و مدیریت خطا)                                              |
+| صفحات       | Home, Evidence, MostWanted, Suspects, Trials, Reports, AdminPanel — رندر صفحه، fetch داده، فیلتر، حالت خالی |
+| زیرساخت     | setup (mock ها)، utils (helper های تست)                                                                     |
+
+  
+
+**الگوی تست:** Mock کردن ماژول `api` با `vi.mock()`، بررسی فراخوانی endpoint ها، wrap کردن کامپوننت‌ها در `BrowserRouter + NotificationProvider`.
+
+  
+
+---
