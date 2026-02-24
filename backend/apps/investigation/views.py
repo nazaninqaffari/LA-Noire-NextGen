@@ -315,7 +315,7 @@ class SuspectViewSet(viewsets.ModelViewSet):
         has_permission = any(user_has_role(user, role) for role in ALLOWED_ROLES)
         if not has_permission:
             return Response(
-                {'detail': 'شما مجوز تغییر وضعیت مظنون را ندارید. (Permission denied: Cadets cannot change suspect status.)'},
+                {'detail': 'Permission denied: You do not have permission to change suspect status.'},
                 status=status.HTTP_403_FORBIDDEN,
             )
 
@@ -412,14 +412,14 @@ class InterrogationViewSet(viewsets.ModelViewSet):
         # Check permission - detective or sergeant only
         if request.user not in [interrogation.detective, interrogation.sergeant]:
             return Response(
-                {"detail": "فقط کارآگاه یا گروهبان مسئول می‌توانند بازجویی را ارسال کنند."},
+                {"detail": "Only the assigned detective or sergeant can submit this interrogation."},
                 status=status.HTTP_403_FORBIDDEN
             )
         
         # Check if already submitted
         if interrogation.status != Interrogation.STATUS_PENDING:
             return Response(
-                {"detail": "این بازجویی قبلاً ارسال شده است."},
+                {"detail": "This interrogation has already been submitted."},
                 status=status.HTTP_400_BAD_REQUEST
             )
         
@@ -500,7 +500,7 @@ class CaptainDecisionViewSet(viewsets.ModelViewSet):
         # Check permission
         if not user_has_role(request.user, 'Captain'):
             return Response(
-                {"detail": "فقط سرگروه می‌تواند تصمیم بگیرد."},
+                {"detail": "Only a captain can make this decision."},
                 status=status.HTTP_403_FORBIDDEN
             )
         
@@ -584,7 +584,7 @@ class PoliceChiefDecisionViewSet(viewsets.ModelViewSet):
         # Check permission
         if not user_has_role(request.user, 'Police Chief'):
             return Response(
-                {"detail": "فقط رئیس پلیس می‌تواند این تصمیم را بگیرد."},
+                {"detail": "Only the Police Chief can make this decision."},
                 status=status.HTTP_403_FORBIDDEN
             )
         
@@ -1174,7 +1174,7 @@ class SuspectSubmissionViewSet(viewsets.ModelViewSet):
         # Check sergeant role
         if not user_has_role(request.user, 'Sergeant'):
             return Response(
-                {'error': 'فقط گروهبان می‌تواند این درخواست را بررسی کند.'},
+                {'error': 'Only a sergeant can review this request.'},
                 status=status.HTTP_403_FORBIDDEN
             )
         
@@ -1183,7 +1183,7 @@ class SuspectSubmissionViewSet(viewsets.ModelViewSet):
         # Check if already reviewed
         if submission.status != SuspectSubmission.STATUS_PENDING:
             return Response(
-                {'error': 'این درخواست قبلاً بررسی شده است.'},
+                {'error': 'This request has already been reviewed.'},
                 status=status.HTTP_400_BAD_REQUEST
             )
         
@@ -1218,7 +1218,7 @@ class SuspectSubmissionViewSet(viewsets.ModelViewSet):
             # Notify detective of approval
             Notification.create_approval_notification(submission)
             
-            message = 'دستگیری مظنونین تایید شد.'
+            message = 'Arrest of suspects has been approved.'
         else:
             submission.status = SuspectSubmission.STATUS_REJECTED
             
@@ -1230,7 +1230,7 @@ class SuspectSubmissionViewSet(viewsets.ModelViewSet):
             # Notify detective of rejection
             Notification.create_rejection_notification(submission)
             
-            message = 'درخواست رد شد. پرونده همچنان باز است.'
+            message = 'Request rejected. Case remains open for investigation.'
         
         submission.save()
         
@@ -1312,7 +1312,7 @@ class NotificationViewSet(viewsets.ModelViewSet):
         
         return Response({
             'marked_read': count,
-            'message': f'{count} اعلان به عنوان خوانده شده علامت‌گذاری شد.'
+            'message': f'{count} notification(s) marked as read.'
         })
 
     @extend_schema(

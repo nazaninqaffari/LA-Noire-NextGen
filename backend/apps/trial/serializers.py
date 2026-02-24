@@ -37,7 +37,7 @@ class PunishmentSerializer(serializers.ModelSerializer):
         """Ensure title is provided."""
         if len(value) < 5:
             raise serializers.ValidationError(
-                "عنوان مجازات باید حداقل ۵ کاراکتر باشد."
+                "Punishment title must be at least 5 characters."
             )
         return value
     
@@ -45,7 +45,7 @@ class PunishmentSerializer(serializers.ModelSerializer):
         """Ensure description is comprehensive."""
         if len(value) < 20:
             raise serializers.ValidationError(
-                "توضیحات مجازات باید حداقل ۲۰ کاراکتر باشد."
+                "Punishment description must be at least 20 characters."
             )
         return value
 
@@ -75,7 +75,7 @@ class VerdictSerializer(serializers.ModelSerializer):
         """Ensure reasoning is comprehensive."""
         if len(value) < 30:
             raise serializers.ValidationError(
-                "استدلال حکم باید حداقل ۳۰ کاراکتر باشد."
+                "Verdict reasoning must be at least 30 characters."
             )
         return value
     
@@ -83,7 +83,7 @@ class VerdictSerializer(serializers.ModelSerializer):
         """Ensure trial doesn't already have a verdict."""
         if hasattr(value, 'verdict'):
             raise serializers.ValidationError(
-                "این دادگاه قبلاً حکم دریافت کرده است."
+                "This trial has already received a verdict."
             )
         return value
 
@@ -103,7 +103,7 @@ class VerdictWithPunishmentSerializer(serializers.Serializer):
         if attrs['decision'] == Verdict.VERDICT_GUILTY:
             if not attrs.get('punishment_title') or not attrs.get('punishment_description'):
                 raise serializers.ValidationError(
-                    "برای حکم مجرمیت، مجازات الزامی است."
+                    "Punishment is required for a guilty verdict."
                 )
         return attrs
 
@@ -179,11 +179,18 @@ class TrialSerializer(serializers.ModelSerializer):
         captain_decisions = CaptainDecision.objects.filter(
             interrogation__suspect__case=value,
             decision=CaptainDecision.DECISION_GUILTY,
-            status=CaptainDecision.STATUS_COMPLETED
         )
         if not captain_decisions.exists():
             raise serializers.ValidationError(
-                "پرونده باید تصمیم گناهکاری از سرگروه داشته باشد."
+                "Case must have a guilty decision from captain."
+            )
+        # Accept completed OR awaiting_chief (chief approval is independent step)
+        finalized = captain_decisions.filter(
+            status__in=[CaptainDecision.STATUS_COMPLETED, CaptainDecision.STATUS_AWAITING_CHIEF]
+        )
+        if not finalized.exists():
+            raise serializers.ValidationError(
+                "Captain's guilty decision has not been finalized yet."
             )
         return value
 
@@ -209,11 +216,11 @@ class BailPaymentSerializer(serializers.ModelSerializer):
         """Ensure bail amount is reasonable."""
         if value < 1_000_000:  # Minimum 1 million Rials
             raise serializers.ValidationError(
-                "مبلغ وثیقه باید حداقل ۱ میلیون ریال باشد."
+                "Bail amount must be at least 1,000,000 Rials."
             )
         if value > 10_000_000_000:  # Maximum 10 billion Rials
             raise serializers.ValidationError(
-                "مبلغ وثیقه نمی‌تواند بیش از ۱۰ میلیارد ریال باشد."
+                "Bail amount cannot exceed 10,000,000,000 Rials."
             )
         return value
     
@@ -222,6 +229,6 @@ class BailPaymentSerializer(serializers.ModelSerializer):
         crime_level = value.case.crime_level.level
         if crime_level < 2:  # Only level 2 and 3
             raise serializers.ValidationError(
-                "فقط جنایات سطح ۲ و ۳ می‌توانند درخواست وثیقه کنند."
+                "Only level 2 and 3 crimes are eligible for bail."
             )
         return value

@@ -304,6 +304,14 @@ const CaseDetail: React.FC = () => {
               >
                 📂 Evidence
               </button>
+              {['arrest_approved', 'interrogation'].includes(caseData.status) && (
+                <button
+                  onClick={() => navigate(`/interrogations?case=${caseData.id}`)}
+                  className="btn btn-block"
+                >
+                  🔎 Interrogations
+                </button>
+              )}
             </div>
           )}
         </div>

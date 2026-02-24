@@ -116,7 +116,7 @@ class InterrogationSerializer(serializers.ModelSerializer):
         """Ensure detective rating is in valid range."""
         if value is not None and (value < 1 or value > 10):
             raise serializers.ValidationError(
-                "امتیاز گناه باید بین ۱ تا ۱۰ باشد."
+                "Guilt rating must be between 1 and 10."
             )
         return value
 
@@ -124,7 +124,7 @@ class InterrogationSerializer(serializers.ModelSerializer):
         """Ensure sergeant rating is in valid range."""
         if value is not None and (value < 1 or value > 10):
             raise serializers.ValidationError(
-                "امتیاز گناه باید بین ۱ تا ۱۰ باشد."
+                "Guilt rating must be between 1 and 10."
             )
         return value
 
@@ -137,7 +137,7 @@ class InterrogationSerializer(serializers.ModelSerializer):
         if self.instance and self.instance.status == Interrogation.STATUS_PENDING:
             if detective_rating is None or sergeant_rating is None:
                 raise serializers.ValidationError(
-                    "هر دو امتیاز (کارآگاه و گروهبان) باید ارائه شوند."
+                    "Both ratings (detective and sergeant) must be provided."
                 )
         
         return attrs
@@ -178,7 +178,7 @@ class CaptainDecisionSerializer(serializers.ModelSerializer):
         """Ensure reasoning is comprehensive."""
         if len(value) < 20:
             raise serializers.ValidationError(
-                "استدلال باید حداقل ۲۰ کاراکتر باشد."
+                "Reasoning must be at least 20 characters."
             )
         return value
 
@@ -186,16 +186,16 @@ class CaptainDecisionSerializer(serializers.ModelSerializer):
         """Ensure interrogation is complete and submitted."""
         if not value.is_complete():
             raise serializers.ValidationError(
-                "بازجویی باید تکمیل شده باشد."
+                "Interrogation must be completed first."
             )
         if value.status != Interrogation.STATUS_SUBMITTED:
             raise serializers.ValidationError(
-                "بازجویی باید ارسال شده باشد."
+                "Interrogation must be submitted."
             )
         # Check if already has a decision
         if hasattr(value, 'captain_decision'):
             raise serializers.ValidationError(
-                "این بازجویی قبلاً بررسی شده است."
+                "This interrogation has already been reviewed."
             )
         return value
 
@@ -222,7 +222,7 @@ class PoliceChiefDecisionSerializer(serializers.ModelSerializer):
         """Ensure comments are provided."""
         if len(value) < 10:
             raise serializers.ValidationError(
-                "نظرات باید حداقل ۱۰ کاراکتر باشد."
+                "Comments must be at least 10 characters."
             )
         return value
 
@@ -230,11 +230,11 @@ class PoliceChiefDecisionSerializer(serializers.ModelSerializer):
         """Ensure captain decision requires chief approval and hasn't been reviewed."""
         if not value.requires_chief_approval():
             raise serializers.ValidationError(
-                "این جنایت نیاز به تایید رئیس پلیس ندارد."
+                "This crime does not require Police Chief approval."
             )
         if hasattr(value, 'chief_decision'):
             raise serializers.ValidationError(
-                "این تصمیم قبلاً توسط رئیس پلیس بررسی شده است."
+                "This decision has already been reviewed by the Police Chief."
             )
         return value
 
@@ -305,7 +305,7 @@ class SuspectSubmissionSerializer(serializers.ModelSerializer):
         """Ensure case is in investigation status."""
         if value.status not in [Case.STATUS_OPEN, Case.STATUS_UNDER_INVESTIGATION]:
             raise serializers.ValidationError(
-                "پرونده باید در حالت باز یا تحت بررسی باشد."
+                "Case must be in open or under investigation status."
             )
         return value
 
@@ -313,7 +313,7 @@ class SuspectSubmissionSerializer(serializers.ModelSerializer):
         """Ensure at least one suspect is submitted."""
         if not value:
             raise serializers.ValidationError(
-                "حداقل یک مظنون باید شناسایی شود."
+                "At least one suspect must be identified."
             )
         return value
 
@@ -325,7 +325,7 @@ class SuspectSubmissionSerializer(serializers.ModelSerializer):
         for suspect in suspects:
             if suspect.case != case:
                 raise serializers.ValidationError(
-                    f"مظنون {suspect.person.get_full_name()} متعلق به این پرونده نیست."
+                    f"Suspect {suspect.person.get_full_name()} does not belong to this case."
                 )
         
         return attrs
@@ -358,7 +358,7 @@ class SuspectSubmissionReviewSerializer(serializers.Serializer):
         """Ensure review notes are provided."""
         if not value or len(value.strip()) < 10:
             raise serializers.ValidationError(
-                "توضیحات بررسی باید حداقل 10 کاراکتر باشد."
+                "Review notes must be at least 10 characters."
             )
         return value
 
