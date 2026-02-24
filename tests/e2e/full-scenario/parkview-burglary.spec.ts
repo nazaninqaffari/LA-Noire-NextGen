@@ -75,7 +75,7 @@ async function uiLogin(page: Page, username: string, password: string): Promise<
   await page.fill('#username', username);
   await page.fill('#password', password);
   await page.click('button[type="submit"]');
-  await page.waitForURL('**/dashboard', { timeout: 15000 });
+  await page.waitForURL('**/dashboard', { timeout: 15000, waitUntil: 'domcontentloaded' });
 }
 
 /** Get CSRF token from cookie jar in page context */
@@ -370,21 +370,45 @@ test.describe.serial('Parkview Burglary — Full Scenario (UI)', () => {
   });
 
   // ────────────────────────────────────────────────────────────────────────────
-  //  STEP 5 — Detective Adds a Suspect (API + UI hybrid)
+  //  STEP 5 — Detective Adds a Suspect (UI)
   // ────────────────────────────────────────────────────────────────────────────
-  test('Step 5: Detective adds a suspect', async ({ page }) => {
+  test('Step 5: Detective adds a suspect via UI', async ({ page }) => {
     await uiLogin(page, USERS.detective.username, USERS.detective.password);
 
-    // Adding a suspect via the Suspects page requires searching for a person.
-    // The person is our citizen user (for simplicity). We'll use API to create
-    // the suspect since the UI person-search may be flaky with timing.
-    const result = await apiPost(page, '/investigation/suspects/', {
-      case: caseId,
-      person: userIds['citizen'],
-      reason: 'Matched description from eyewitness testimony — dark hoodie, seen leaving the premises.',
+    await page.goto(`/suspects?case=${caseId}`, { waitUntil: 'domcontentloaded' });
+
+    // Click "Add Suspect" button
+    const addBtn = page.locator('.add-suspect-btn');
+    await addBtn.click();
+    await page.waitForSelector('.add-suspect-form', { timeout: 10000 });
+
+    // Search for the person (citizen user)
+    await page.fill('#person-search', USERS.citizen.username);
+    await page.waitForSelector('.person-results-dropdown', { timeout: 8000 });
+
+    // Click the first matching person result
+    const personItem = page.locator('.person-result-item').first();
+    await personItem.click();
+
+    // Verify person was selected
+    await page.waitForSelector('.selected-person-badge', { timeout: 3000 });
+
+    // Fill reason
+    await page.fill('#suspect-reason', 'Matched description from eyewitness testimony — dark hoodie, seen leaving the premises.');
+
+    // Submit the form
+    await page.click('.add-suspect-form button[type="submit"]');
+    await page.waitForTimeout(3000);
+
+    // Verify via API
+    const res = await page.request.get(`${API}/investigation/suspects/`, {
+      params: { case: caseId },
     });
-    expect(result.ok, `Create suspect failed: ${result.status}`).toBeTruthy();
-    suspectId = result.data.id;
+    expect(res.ok()).toBeTruthy();
+    const data = await res.json();
+    const results = data.results || data;
+    expect(results.length).toBeGreaterThanOrEqual(1);
+    suspectId = results[results.length - 1].id;
     expect(suspectId).toBeGreaterThan(0);
   });
 
@@ -612,9 +636,9 @@ test.describe.serial('Parkview Burglary — Full Scenario (UI)', () => {
     );
     await page.selectOption('#trial-suspect-id', String(suspectId));
 
-    // Select judge
+    // Select judge — pick the pvb_judge created in Step 0
     const judgeSelect = page.locator('#trial-judge');
-    await judgeSelect.selectOption({ index: 1 }); // first non-disabled option
+    await judgeSelect.selectOption(String(userIds['judge']));
 
     // Fill captain notes
     await page.fill('#trial-captain-notes', 'Guilty decision confirmed by interrogation process. All evidence reviewed and corroborated.');
@@ -625,8 +649,13 @@ test.describe.serial('Parkview Burglary — Full Scenario (UI)', () => {
 
     await page.waitForTimeout(2000);
 
-    // Verify via API
-    const res = await page.request.get(`${API}/trial/trials/`);
+    // Verify via API — query filtered by case to avoid queryset restrictions
+    // Need to log in as admin to see all trials
+    await page.context().clearCookies();
+    await uiLogin(page, 'admin', 'admin123');
+    const res = await page.request.get(`${API}/trial/trials/`, {
+      params: { case: caseId },
+    });
     expect(res.ok()).toBeTruthy();
     const data = await res.json();
     const results = data.results || data;
