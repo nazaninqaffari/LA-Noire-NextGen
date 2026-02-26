@@ -1,0 +1,99 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e3]:
+  - banner [ref=e4]:
+    - generic [ref=e5]:
+      - link "LA Noire NextGen Los Angeles Police Department" [ref=e7] [cursor=pointer]:
+        - /url: /dashboard
+        - img [ref=e9]:
+          - generic [ref=e12]: LAPD
+        - generic [ref=e13]:
+          - heading "LA Noire NextGen" [level=1] [ref=e14]
+          - paragraph [ref=e15]: Los Angeles Police Department
+      - navigation [ref=e16]:
+        - link "Most Wanted" [ref=e17] [cursor=pointer]:
+          - /url: /most-wanted
+        - link "Dashboard" [ref=e18] [cursor=pointer]:
+          - /url: /dashboard
+        - button "Cases & Evidence ▾" [ref=e20] [cursor=pointer]:
+          - text: Cases & Evidence
+          - generic [ref=e21]: ▾
+        - generic [ref=e22]:
+          - button "Notifications" [ref=e24] [cursor=pointer]:
+            - img [ref=e25]
+          - generic [ref=e28]: test_chief_e2e
+          - button "Logout" [ref=e29] [cursor=pointer]
+  - alert [ref=e30]:
+    - generic [ref=e31]: ✓
+    - generic [ref=e32]:
+      - generic [ref=e33]: Login Successful
+      - generic [ref=e34]: Welcome back, Tom!
+    - button "Dismiss notification" [ref=e35] [cursor=pointer]: ✕
+  - main [ref=e36]:
+    - generic [ref=e37]:
+      - generic [ref=e38]:
+        - heading "Command Dashboard" [level=1] [ref=e39]
+        - paragraph [ref=e40]: Welcome, test_chief_e2e
+      - generic [ref=e41]:
+        - generic [ref=e42] [cursor=pointer]:
+          - generic [ref=e43]: 📁
+          - generic [ref=e44]: "0"
+          - generic [ref=e45]: Total Cases
+        - generic [ref=e46] [cursor=pointer]:
+          - generic [ref=e47]: 🔍
+          - generic [ref=e48]: "0"
+          - generic [ref=e49]: Active Investigations
+        - generic [ref=e50] [cursor=pointer]:
+          - generic [ref=e51]: 👤
+          - generic [ref=e52]: "67"
+          - generic [ref=e53]: Suspects Tracked
+        - generic [ref=e54] [cursor=pointer]:
+          - generic [ref=e55]: 🔬
+          - generic [ref=e56]: "0"
+          - generic [ref=e57]: Evidence Items
+      - generic [ref=e58]:
+        - generic [ref=e60]:
+          - generic [ref=e61]:
+            - heading "Recent Cases" [level=3] [ref=e62]
+            - link "View All" [ref=e63] [cursor=pointer]:
+              - /url: /cases
+          - paragraph [ref=e65]: No cases on file yet.
+        - generic [ref=e66]:
+          - generic [ref=e67]:
+            - heading "Quick Actions" [level=3] [ref=e69]
+            - generic [ref=e71]:
+              - link "📜 File Complaint" [ref=e72] [cursor=pointer]:
+                - /url: /cases/complaint/new
+              - link "🚨 Report Crime Scene" [ref=e73] [cursor=pointer]:
+                - /url: /cases/scene/new
+              - link "🔬 Register Evidence" [ref=e74] [cursor=pointer]:
+                - /url: /evidence
+              - link "🎯 Most Wanted" [ref=e75] [cursor=pointer]:
+                - /url: /most-wanted
+          - generic [ref=e76]:
+            - heading "Notifications" [level=3] [ref=e78]
+            - paragraph [ref=e80]: No notifications.
+  - contentinfo [ref=e81]:
+    - generic [ref=e82]:
+      - generic [ref=e83]:
+        - heading "LA Noire NextGen" [level=4] [ref=e84]
+        - paragraph [ref=e85]:
+          - text: Police Case Management System
+          - text: Inspired by the 1940s era detective operations
+      - generic [ref=e86]:
+        - heading "System Information" [level=4] [ref=e87]
+        - paragraph [ref=e88]:
+          - text: Version 1.0.0
+          - text: © 2026 Los Angeles Police Department
+      - generic [ref=e89]:
+        - heading "Quick Links" [level=4] [ref=e90]
+        - list [ref=e91]:
+          - listitem [ref=e92]:
+            - link "API Documentation" [ref=e93] [cursor=pointer]:
+              - /url: /api/docs
+          - listitem [ref=e94]:
+            - link "API Reference" [ref=e95] [cursor=pointer]:
+              - /url: /api/redoc
+    - paragraph [ref=e97]: "\"Every story has a beginning, every crime has a truth\" - LAPD"
+```
