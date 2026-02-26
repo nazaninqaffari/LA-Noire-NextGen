@@ -5,6 +5,7 @@ Tests court proceedings, verdicts, punishments, and case summary review by judge
 Persian: تست‌های سیستم دادگاه و محاکمه
 """
 import pytest
+from unittest.mock import patch, MagicMock
 from django.utils import timezone
 from rest_framework.test import APIClient
 from rest_framework import status as http_status
@@ -27,10 +28,10 @@ def client():
 @pytest.fixture
 def setup_roles(db):
     """Create all necessary roles."""
-    judge_role, _ = Role.objects.get_or_create(name='judge')
-    captain_role, _ = Role.objects.get_or_create(name='captain')
-    detective_role, _ = Role.objects.get_or_create(name='detective')
-    sergeant_role, _ = Role.objects.get_or_create(name='sergeant')
+    judge_role, _ = Role.objects.get_or_create(name='Judge')
+    captain_role, _ = Role.objects.get_or_create(name='Captain')
+    detective_role, _ = Role.objects.get_or_create(name='Detective', defaults={'is_police_rank': True})
+    sergeant_role, _ = Role.objects.get_or_create(name='Sergeant', defaults={'is_police_rank': True})
     return {
         'judge': judge_role,
         'captain': captain_role,
@@ -237,7 +238,7 @@ class TestTrialCreation:
         })
         
         assert response.status_code == http_status.HTTP_400_BAD_REQUEST
-        assert 'تصمیم گناهکاری' in str(response.data)
+        assert 'guilty decision' in str(response.data).lower()
 
 
 @pytest.mark.django_db
@@ -372,7 +373,7 @@ class TestVerdict:
         })
         
         assert response.status_code == http_status.HTTP_400_BAD_REQUEST
-        assert 'مجازات' in str(response.data)
+        assert 'punishment' in str(response.data).lower()
     
     def test_only_assigned_judge_can_deliver_verdict(self, client, setup_users, setup_case_with_guilty_decision):
         """Test only the assigned judge can deliver verdict."""
@@ -484,7 +485,8 @@ class TestBailPayment:
         })
         
         assert response.status_code == http_status.HTTP_201_CREATED
-        assert response.data['status'] == BailPayment.STATUS_PENDING
+        # Level 2 crimes are auto-approved on creation
+        assert response.data['status'] == BailPayment.STATUS_APPROVED
         assert response.data['amount'] == '50000000'
     
     def test_bail_only_for_level_2_3_crimes(self, client, setup_users):
@@ -527,7 +529,7 @@ class TestBailPayment:
         })
         
         assert response.status_code == http_status.HTTP_400_BAD_REQUEST
-        assert 'سطح ۲ و ۳' in str(response.data)
+        assert 'level 2 and 3' in str(response.data).lower()
     
     def test_sergeant_approves_bail(self, client, setup_users):
         """Test sergeant approves bail payment."""
@@ -615,9 +617,32 @@ class TestBailPayment:
         )
         
         client.force_authenticate(user=suspect_person)
-        
-        response = client.post(f'/api/v1/trial/bail-payments/{bail.id}/pay/')
-        
+
+        # Step 1: Initiate payment (mock Zarinpal request API)
+        mock_pay_response = MagicMock()
+        mock_pay_response.json.return_value = {
+            'data': {'code': 100, 'authority': 'test-authority-123'}
+        }
+        with patch('requests.post', return_value=mock_pay_response):
+            response = client.post(f'/api/v1/trial/bail-payments/{bail.id}/pay/')
+
         assert response.status_code == http_status.HTTP_200_OK
-        assert response.data['status'] == BailPayment.STATUS_PAID
-        assert response.data['payment_reference'] is not None
+        assert 'redirect_url' in response.data
+
+        # Step 2: Verify payment (mock Zarinpal verify API)
+        mock_verify_response = MagicMock()
+        mock_verify_response.json.return_value = {
+            'data': {'code': 100, 'ref_id': '1234567890'}
+        }
+        with patch('requests.post', return_value=mock_verify_response):
+            response = client.post('/api/v1/trial/bail-payments/verify_payment/', {
+                'authority': 'test-authority-123',
+                'status': 'OK'
+            })
+
+        assert response.status_code == http_status.HTTP_200_OK
+        assert response.data['status'] == 'success'
+
+        bail.refresh_from_db()
+        assert bail.status == BailPayment.STATUS_PAID
+        assert bail.payment_reference is not None

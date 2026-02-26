@@ -293,9 +293,15 @@ class BailPaymentViewSet(viewsets.ModelViewSet):
     
     def create(self, request, *args, **kwargs):
         """
-        Only police officers (Cadet and above) can create bail requests.
+        Police officers (Cadet+) or the suspect themselves can create bail requests.
+        Random citizens cannot.
         """
-        if not request.user.roles.filter(is_police_rank=True).exists():
+        from apps.investigation.models import Suspect
+        user = request.user
+        is_police = user.roles.filter(is_police_rank=True).exists()
+        suspect_id = request.data.get('suspect')
+        is_suspect = suspect_id and Suspect.objects.filter(id=suspect_id, person=user).exists()
+        if not is_police and not is_suspect:
             return Response(
                 {"detail": "Only police officers (Cadet and above) can create bail requests."},
                 status=status.HTTP_403_FORBIDDEN,
