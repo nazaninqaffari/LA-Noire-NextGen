@@ -284,8 +284,12 @@ class BailPaymentViewSet(viewsets.ModelViewSet):
     ordering = ['-requested_at']
     
     def get_queryset(self):
-        """All authenticated users can see bail payments."""
-        return super().get_queryset()
+        """Police see all bail payments; citizens see only their own."""
+        user = self.request.user
+        queryset = super().get_queryset()
+        if user.roles.filter(is_police_rank=True).exists():
+            return queryset
+        return queryset.filter(suspect__person=user)
     
     def create(self, request, *args, **kwargs):
         """
