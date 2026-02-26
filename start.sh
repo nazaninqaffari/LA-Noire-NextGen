@@ -1,4 +1,5 @@
 #!/bin/bash
+# sample commit
 
 # LA Noire NextGen - Quick Start Script
 # This script automatically starts the database, backend, and frontend
