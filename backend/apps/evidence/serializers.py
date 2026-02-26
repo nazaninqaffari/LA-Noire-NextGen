@@ -91,7 +91,6 @@ class BiologicalEvidenceSerializer(serializers.ModelSerializer):
         queryset=EvidenceImage.objects.all(),
         many=True,
         required=False,
-        write_only=True,
     )
     
     class Meta:
