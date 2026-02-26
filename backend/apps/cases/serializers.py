@@ -73,7 +73,12 @@ class CaseSerializer(serializers.ModelSerializer):
     complainants = ComplainantSerializer(many=True, read_only=True)
     witnesses = WitnessSerializer(many=True, read_only=True)
     reviews = CaseReviewSerializer(many=True, read_only=True)
-    
+
+    complainant_statement = serializers.CharField(
+        write_only=True, required=False,
+        help_text="Update the primary complainant's statement (write-only)"
+    )
+
     class Meta:
         model = Case
         fields = [
@@ -87,6 +92,7 @@ class CaseSerializer(serializers.ModelSerializer):
             'assigned_detective', 'assigned_detective_details',
             'assigned_sergeant', 'assigned_sergeant_details',
             'complainants', 'witnesses', 'reviews',
+            'complainant_statement',
             'created_at', 'updated_at', 'opened_at', 'closed_at'
         ]
         read_only_fields = [
@@ -96,6 +102,16 @@ class CaseSerializer(serializers.ModelSerializer):
         ]
         # Note: assigned_detective and assigned_sergeant are intentionally
         # writable so Administrators can assign them via PATCH (see perform_update).
+
+    def update(self, instance, validated_data):
+        statement = validated_data.pop('complainant_statement', None)
+        instance = super().update(instance, validated_data)
+        if statement is not None:
+            primary = instance.complainants.filter(is_primary=True).first()
+            if primary:
+                primary.statement = statement
+                primary.save(update_fields=['statement'])
+        return instance
 
 
 class CaseCreateSerializer(serializers.ModelSerializer):

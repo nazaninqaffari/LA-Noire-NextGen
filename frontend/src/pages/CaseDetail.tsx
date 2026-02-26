@@ -158,13 +158,21 @@ const CaseDetail: React.FC = () => {
           </section>
 
           {/* Formation-Specific Information */}
-          {caseData.formation_type === 'complaint' && caseData.complainant_statement && (
+          {caseData.formation_type === 'complaint' && caseData.complainants && caseData.complainants.length > 0 && (
             <section className="detail-section">
-              <h2 className="section-title">Complainant Statement</h2>
+              <h2 className="section-title">Complainant Statements</h2>
               <div className="section-content">
-                <div className="statement-box">
-                  <p className="statement-text">{caseData.complainant_statement}</p>
-                </div>
+                {caseData.complainants.map((complainant, index) => (
+                  <div key={complainant.id ?? index} className="statement-box">
+                    <strong>
+                      {complainant.user_details
+                        ? `${complainant.user_details.first_name} ${complainant.user_details.last_name}`
+                        : `Complainant ${index + 1}`}
+                      {complainant.is_primary && ' (Primary)'}
+                    </strong>
+                    <p className="statement-text">{complainant.statement}</p>
+                  </div>
+                ))}
               </div>
             </section>
           )}
