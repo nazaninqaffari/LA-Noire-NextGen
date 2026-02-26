@@ -161,7 +161,15 @@ class CaseViewSet(viewsets.ModelViewSet):
             ) | queryset.filter(assigned_officer=user) | queryset.filter(created_by=user)).distinct()
         
         # Regular users see their own cases + cases they are complainants on
-        return (queryset.filter(created_by=user) | queryset.filter(complainants__user=user)).distinct()
+        own_qs = queryset.filter(created_by=user) | queryset.filter(complainants__user=user)
+        # For join_case action, also include public crime scene cases
+        if self.action == 'join_case':
+            public_scene_qs = queryset.filter(
+                formation_type=Case.FORMATION_CRIME_SCENE,
+                status__in=[Case.STATUS_OPEN, Case.STATUS_UNDER_INVESTIGATION],
+            )
+            own_qs = own_qs | public_scene_qs
+        return own_qs.distinct()
     
     def get_serializer_class(self):
         """Use different serializers for different actions."""
