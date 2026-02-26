@@ -153,6 +153,13 @@ class SuspectViewSet(viewsets.ModelViewSet):
     ViewSet for Suspects in cases.
     Tracks suspect status, danger scores, and rewards.
     
+    Suspect lifecycle:
+    1. Identified by detective during investigation
+    2. Arrest warrant may be issued
+    3. Interrogation phase (multiple sessions possible)
+    4. Captain/Chief approval for trial submission
+    5. Trial and verdict
+    
     Persian: مظنونین
     """
     queryset = Suspect.objects.select_related('case', 'person', 'identified_by_detective').all()
