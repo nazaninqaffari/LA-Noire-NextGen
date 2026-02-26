@@ -185,19 +185,20 @@ class TestDetectiveBoard:
         assert board.detective.username == 'detective1'
 
     def test_one_board_per_case(self, detective_client, open_case):
-        """Case can only have one detective board (OneToOne)."""
+        """Case can only have one detective board (OneToOne). Duplicate returns existing."""
         # Create first board
-        detective_client.post('/api/v1/investigation/detective-boards/', {
+        resp1 = detective_client.post('/api/v1/investigation/detective-boards/', {
             'case': open_case.id
         })
-        
-        # Try to create second board for same case
-        response = detective_client.post('/api/v1/investigation/detective-boards/', {
+
+        # Try to create second board for same case — returns existing board
+        resp2 = detective_client.post('/api/v1/investigation/detective-boards/', {
             'case': open_case.id
         })
-        
-        # Should fail due to OneToOne constraint
-        assert response.status_code == http_status.HTTP_400_BAD_REQUEST
+
+        # View returns existing board idempotently (200, not 201)
+        assert resp2.status_code == http_status.HTTP_200_OK
+        assert resp2.data['id'] == resp1.data['id']
 
     def test_detective_sees_own_boards(self, detective_client, open_case, detective_user):
         """Detective sees only their own boards."""
