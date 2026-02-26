@@ -8,6 +8,8 @@ from decouple import config
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # Security settings
+# WARNING: Change SECRET_KEY in production. The default is only for local development.
+# Set DEBUG=False and update ALLOWED_HOSTS before deploying.
 SECRET_KEY = config('SECRET_KEY', default='django-insecure-dev-key-change-in-production')
 DEBUG = config('DEBUG', default=True, cast=bool)
 ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1').split(',')

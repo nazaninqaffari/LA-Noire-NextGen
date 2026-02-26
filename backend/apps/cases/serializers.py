@@ -18,7 +18,11 @@ class CrimeLevelSerializer(serializers.ModelSerializer):
 
 
 class WitnessSerializer(serializers.ModelSerializer):
-    """Serializer for Witness."""
+    """Serializer for Witness.
+    
+    Includes nested user details for display. The added_by field tracks
+    which police officer registered the witness in the system.
+    """
     user_details = UserSerializer(source='user', read_only=True)
     added_by_details = UserSerializer(source='added_by', read_only=True)
     

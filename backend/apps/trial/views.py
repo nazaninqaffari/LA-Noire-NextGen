@@ -69,7 +69,11 @@ class TrialViewSet(viewsets.ModelViewSet):
         return queryset
     
     def perform_create(self, serializer):
-        """Set trial status to pending."""
+        """Set trial status to pending.
+        
+        IMPORTANT: Trial creation should only happen after captain/chief approval.
+        The initial status is always PENDING until a judge reviews the case.
+        """
         serializer.save(status=Trial.STATUS_PENDING)
     
     @extend_schema(

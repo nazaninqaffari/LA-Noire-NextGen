@@ -42,7 +42,11 @@ class Role(models.Model):
 
 
 class UserManager(BaseUserManager):
-    """Custom user manager to handle creation with unique fields."""
+    """Custom user manager to handle creation with unique fields.
+    
+    Enforces required fields: username, email, phone_number, national_id.
+    Passwords are hashed using Django's PBKDF2 algorithm before storage.
+    """
     
     def create_user(self, username, email, phone_number, national_id, password=None, **extra_fields):
         """Create and return a regular user."""

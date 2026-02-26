@@ -39,7 +39,13 @@ class DetectiveBoardSerializer(serializers.ModelSerializer):
 
 
 class SuspectSerializer(serializers.ModelSerializer):
-    """Serializer for Suspects."""
+    """Serializer for Suspects.
+    
+    Computed fields (read-only):
+    - danger_score: calculated from days_pursued * crime_level_score
+    - reward_amount: danger_score * 20,000,000 Rials
+    - person_full_name: resolved from the related User model
+    """
     danger_score = serializers.IntegerField(source='get_danger_score', read_only=True)
     reward_amount = serializers.IntegerField(source='get_reward_amount', read_only=True)
     person_first_name = serializers.CharField(source='person.first_name', read_only=True)

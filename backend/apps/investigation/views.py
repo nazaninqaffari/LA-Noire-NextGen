@@ -47,7 +47,13 @@ class DetectiveBoardViewSet(viewsets.ModelViewSet):
     filterset_fields = ['case', 'detective']
 
     def get_queryset(self):
-        """Filter boards based on user role."""
+        """Filter boards based on user role.
+        
+        Access rules for detective boards:
+        - Detective: can only see their own boards (privacy of investigation)
+        - Sergeant/Admin: can see all boards for oversight
+        - Other roles: no access to boards
+        """
         user = self.request.user
         queryset = self.queryset
         
@@ -152,6 +158,13 @@ class SuspectViewSet(viewsets.ModelViewSet):
     """
     ViewSet for Suspects in cases.
     Tracks suspect status, danger scores, and rewards.
+    
+    Suspect lifecycle:
+    1. Identified by detective during investigation
+    2. Arrest warrant may be issued
+    3. Interrogation phase (multiple sessions possible)
+    4. Captain/Chief approval for trial submission
+    5. Trial and verdict
     
     Persian: مظنونین
     """

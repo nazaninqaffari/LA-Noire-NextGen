@@ -99,7 +99,14 @@ class CaseViewSet(viewsets.ModelViewSet):
     ordering = ['-created_at']
     
     def get_queryset(self):
-        """Filter queryset based on user role."""
+        """Filter queryset based on user role.
+        
+        Role-based access control hierarchy:
+        - Admin/Police Chief/Captain: full access to all cases
+        - Detective/Sergeant: access to assigned + open cases
+        - Cadet/Officer: access to review-stage cases + assigned
+        - Regular user: only own cases + complaints + public crime scenes
+        """
         user = self.request.user
         queryset = super().get_queryset()
         

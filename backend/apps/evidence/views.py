@@ -100,7 +100,11 @@ class TestimonyViewSet(viewsets.ModelViewSet):
         ]
     )
     def create(self, request, *args, **kwargs):
-        """Create testimony and automatically set recorded_by."""
+        """Create testimony and automatically set recorded_by.
+        
+        NOTE: The recorded_by field is auto-populated from the authenticated user
+        to maintain a reliable audit trail of who registered each piece of evidence.
+        """
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save(recorded_by=request.user)

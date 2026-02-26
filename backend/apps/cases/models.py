@@ -45,6 +45,11 @@ class Case(models.Model):
     """
     Main case model representing a criminal investigation.
     Can be created via complaint or crime scene report.
+    
+    Status transitions follow a strict workflow:
+    draft -> cadet_review -> officer_review -> open -> under_investigation
+    -> suspects_identified -> arrest_approved -> interrogation -> trial_pending -> closed
+    At any review stage, case can be rejected back to draft (max 3 attempts).
     """
     # Case formation types
     FORMATION_COMPLAINT = 'complaint'
