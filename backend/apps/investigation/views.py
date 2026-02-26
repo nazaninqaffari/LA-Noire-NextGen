@@ -47,7 +47,13 @@ class DetectiveBoardViewSet(viewsets.ModelViewSet):
     filterset_fields = ['case', 'detective']
 
     def get_queryset(self):
-        """Filter boards based on user role."""
+        """Filter boards based on user role.
+        
+        Access rules for detective boards:
+        - Detective: can only see their own boards (privacy of investigation)
+        - Sergeant/Admin: can see all boards for oversight
+        - Other roles: no access to boards
+        """
         user = self.request.user
         queryset = self.queryset
         
