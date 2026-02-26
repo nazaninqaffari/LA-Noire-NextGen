@@ -858,8 +858,8 @@ class TipOffViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
         
-        # Check if detective is assigned to this case
-        if tip.case.assigned_detective != request.user:
+        # Check if detective is assigned to this case (skip if no detective assigned yet)
+        if tip.case.assigned_detective and tip.case.assigned_detective != request.user:
             return Response(
                 {'error': 'Only the assigned detective can review this tip'},
                 status=status.HTTP_403_FORBIDDEN
