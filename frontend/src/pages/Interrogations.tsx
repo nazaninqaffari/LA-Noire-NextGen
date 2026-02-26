@@ -275,9 +275,9 @@ const Interrogations: React.FC = () => {
               </div>
 
               <div className="interrogation-meta">
-                <span><strong>Suspect:</strong> {intg.suspect_name || intg.suspect?.person?.first_name + ' ' + intg.suspect?.person?.last_name || `#${typeof intg.suspect === 'object' ? intg.suspect?.id : intg.suspect}`}</span>
-                <span><strong>Detective:</strong> {intg.detective_name || intg.detective?.username || `#${typeof intg.detective === 'object' ? intg.detective?.id : intg.detective}`}</span>
-                <span><strong>Sergeant:</strong> {intg.sergeant_name || intg.sergeant?.username || `#${typeof intg.sergeant === 'object' ? intg.sergeant?.id : intg.sergeant}`}</span>
+                <span><strong>Suspect:</strong> {intg.suspect_name || `Suspect #${typeof intg.suspect === 'object' ? intg.suspect?.id : intg.suspect}`}</span>
+                <span><strong>Detective:</strong> {intg.detective_name || `Detective #${typeof intg.detective === 'object' ? intg.detective?.id : intg.detective}`}</span>
+                <span><strong>Sergeant:</strong> {intg.sergeant_name || `Sergeant #${typeof intg.sergeant === 'object' ? intg.sergeant?.id : intg.sergeant}`}</span>
               </div>
 
               {/* Ratings display (when submitted) */}
