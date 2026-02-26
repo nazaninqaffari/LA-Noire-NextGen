@@ -218,6 +218,11 @@ class Suspect(models.Model):
         """
         Calculate danger score: max(days_pursued) * max(crime_level).
         Used for ranking on wanted list.
+        
+        Score factors:
+        - days_pursued: number of days since suspect was identified
+        - crime_level: converted to inverse score (Critical=4, Major=3, Medium=2, Minor=1)
+        Higher score = higher priority on wanted list
         """
         days_pursued = (timezone.now() - self.identified_at).days
         crime_level_value = self.case.crime_level.level
