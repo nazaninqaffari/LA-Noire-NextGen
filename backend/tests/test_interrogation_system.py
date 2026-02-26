@@ -28,11 +28,11 @@ def client():
 @pytest.fixture
 def setup_users(db):
     """Create users with different roles."""
-    # Create roles
-    detective_role, _ = Role.objects.get_or_create(name='detective')
-    sergeant_role, _ = Role.objects.get_or_create(name='sergeant')
-    captain_role, _ = Role.objects.get_or_create(name='captain')
-    chief_role, _ = Role.objects.get_or_create(name='police_chief')
+    # Create roles (names must match view-level checks exactly)
+    detective_role, _ = Role.objects.get_or_create(name='Detective')
+    sergeant_role, _ = Role.objects.get_or_create(name='Sergeant')
+    captain_role, _ = Role.objects.get_or_create(name='Captain')
+    chief_role, _ = Role.objects.get_or_create(name='Police Chief')
     
     # Create users
     detective = User.objects.create_user(
