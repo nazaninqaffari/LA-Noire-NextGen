@@ -101,7 +101,7 @@ class InterrogationSerializer(serializers.ModelSerializer):
     Both detective and sergeant provide guilt ratings (1-10).
     Persian: بازجویی مظنونین
     """
-    suspect_name = serializers.CharField(source='suspect.person.full_name', read_only=True)
+    suspect_name = serializers.CharField(source='suspect.person.get_full_name', read_only=True)
     detective_name = serializers.CharField(source='detective.get_full_name', read_only=True)
     sergeant_name = serializers.CharField(source='sergeant.get_full_name', read_only=True)
     average_rating = serializers.FloatField(source='average_guilt_rating', read_only=True)
@@ -168,7 +168,7 @@ class CaptainDecisionSerializer(serializers.ModelSerializer):
     """
     interrogation_details = InterrogationSerializer(source='interrogation', read_only=True)
     captain_name = serializers.CharField(source='captain.get_full_name', read_only=True)
-    suspect_name = serializers.CharField(source='interrogation.suspect.person.full_name', read_only=True)
+    suspect_name = serializers.CharField(source='interrogation.suspect.person.get_full_name', read_only=True)
     requires_chief = serializers.BooleanField(source='requires_chief_approval', read_only=True)
     
     class Meta:
@@ -214,7 +214,7 @@ class PoliceChiefDecisionSerializer(serializers.ModelSerializer):
     """
     captain_decision_details = CaptainDecisionSerializer(source='captain_decision', read_only=True)
     chief_name = serializers.CharField(source='police_chief.get_full_name', read_only=True)
-    suspect_name = serializers.CharField(source='captain_decision.interrogation.suspect.person.full_name', read_only=True)
+    suspect_name = serializers.CharField(source='captain_decision.interrogation.suspect.person.get_full_name', read_only=True)
     
     class Meta:
         model = PoliceChiefDecision
