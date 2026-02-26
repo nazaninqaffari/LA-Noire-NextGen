@@ -11,6 +11,9 @@ class BaseEvidence(models.Model):
     """
     Abstract base class for all evidence types.
     Contains common fields shared by all evidence.
+    
+    Subclasses: Testimony, BiologicalEvidence, VehicleEvidence, IDDocument, GenericEvidence
+    Each subclass inherits case, title, description, recorded_by, and recorded_at fields.
     """
     case = models.ForeignKey(
         Case,
