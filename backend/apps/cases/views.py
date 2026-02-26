@@ -160,16 +160,8 @@ class CaseViewSet(viewsets.ModelViewSet):
                 status__in=[Case.STATUS_OFFICER_REVIEW, Case.STATUS_OPEN]
             ) | queryset.filter(assigned_officer=user) | queryset.filter(created_by=user)).distinct()
         
-        # Regular users see their own cases + cases they are complainants on + public crime scene cases
-        public_scene_qs = queryset.filter(
-            formation_type=Case.FORMATION_CRIME_SCENE,
-            status__in=[
-                Case.STATUS_CADET_REVIEW, Case.STATUS_OFFICER_REVIEW,
-                Case.STATUS_OPEN, Case.STATUS_UNDER_INVESTIGATION,
-                Case.STATUS_SUSPECTS_IDENTIFIED,
-            ],
-        )
-        return (queryset.filter(created_by=user) | queryset.filter(complainants__user=user) | public_scene_qs).distinct()
+        # Regular users see their own cases + cases they are complainants on
+        return (queryset.filter(created_by=user) | queryset.filter(complainants__user=user)).distinct()
     
     def get_serializer_class(self):
         """Use different serializers for different actions."""
