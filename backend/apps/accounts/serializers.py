@@ -38,7 +38,11 @@ class UserSerializer(serializers.ModelSerializer):
 
 
 class UserRegistrationSerializer(serializers.ModelSerializer):
-    """Serializer for user registration."""
+    """Serializer for user registration.
+    
+    Handles public signup with password validation and automatic
+    'Base User' role assignment. Password is write-only and hashed on save.
+    """
     password = serializers.CharField(write_only=True, min_length=8)
     password_confirm = serializers.CharField(write_only=True)
     
