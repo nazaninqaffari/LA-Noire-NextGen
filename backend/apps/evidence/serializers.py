@@ -48,7 +48,13 @@ class TestimonySerializer(serializers.ModelSerializer):
         return obj.witness_name
     
     def validate(self, data):
-        """Ensure either witness or witness_name is provided."""
+        """Ensure either witness or witness_name is provided.
+        
+        Validation rules:
+        - At least one of witness (FK) or witness_name (text) must be set
+        - If witness FK is provided, witness_name is ignored
+        - Case must exist and be in an active investigation state
+        """
         witness = data.get('witness')
         witness_name = data.get('witness_name', '')
         
