@@ -293,10 +293,13 @@ class BailPaymentViewSet(viewsets.ModelViewSet):
     
     def create(self, request, *args, **kwargs):
         """
-        Any authenticated user can request bail.
-        Citizens/suspects request bail for their case,
-        and police officers can also issue bail requests.
+        Only police officers (Cadet and above) can create bail requests.
         """
+        if not request.user.roles.filter(is_police_rank=True).exists():
+            return Response(
+                {"detail": "Only police officers (Cadet and above) can create bail requests."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
         return super().create(request, *args, **kwargs)
 
     def perform_create(self, serializer):
