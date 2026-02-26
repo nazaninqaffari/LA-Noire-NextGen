@@ -48,7 +48,13 @@ class UserViewSet(viewsets.ModelViewSet):
     ordering = ['-date_joined']
 
     def get_permissions(self):
-        """Allow registration without authentication."""
+        """Allow registration without authentication.
+        
+        Permission matrix:
+        - create (signup): public, no auth needed
+        - assign_roles / destroy / toggle_active / admin_create: admin only
+        - all other actions (list, retrieve, update): authenticated users
+        """
         if self.action == 'create':
             return [AllowAny()]
         if self.action in ('assign_roles', 'destroy', 'toggle_active', 'admin_create'):
