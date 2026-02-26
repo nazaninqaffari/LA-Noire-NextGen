@@ -52,7 +52,8 @@ const CaseEdit: React.FC = () => {
         setDescription(fetched.description);
         // crime_level from API is FK PK — use it directly
         setCrimeLevel(fetched.crime_level);
-        setStatement(fetched.complainant_statement || '');
+        const primaryComplainant = fetched.complainants?.find((c: any) => c.is_primary);
+        setStatement(primaryComplainant?.statement || '');
       } catch (err) {
         showNotification(extractErrorMessage(err as AxiosError, 'Failed to load case'), 'error');
         navigate('/cases');

@@ -186,12 +186,20 @@ const CaseReview: React.FC = () => {
               </div>
 
               {caseData.formation_type === 'complaint' &&
-                caseData.complainant_statement && (
+                caseData.complainants && caseData.complainants.length > 0 && (
                   <div className="case-statement">
-                    <label>Complainant Statement</label>
-                    <div className="statement-box">
-                      <p>{caseData.complainant_statement}</p>
-                    </div>
+                    <label>Complainant Statements</label>
+                    {caseData.complainants.map((complainant, index) => (
+                      <div key={complainant.id ?? index} className="statement-box">
+                        <strong>
+                          {complainant.user_details
+                            ? `${complainant.user_details.first_name} ${complainant.user_details.last_name}`
+                            : `Complainant ${index + 1}`}
+                          {complainant.is_primary && ' (Primary)'}
+                        </strong>
+                        <p>{complainant.statement}</p>
+                      </div>
+                    ))}
                   </div>
                 )}
 
