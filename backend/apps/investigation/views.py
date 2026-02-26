@@ -51,8 +51,8 @@ class DetectiveBoardViewSet(viewsets.ModelViewSet):
         
         Access rules for detective boards:
         - Detective: can only see their own boards (privacy of investigation)
-        - Sergeant/Admin: can see all boards for oversight
-        - Other roles: no access to boards
+        - Sergeant/Captain/Police Chief/Admin: can see all boards for oversight
+        - Other roles (citizens, cadets, etc): no access to boards
         """
         user = self.request.user
         queryset = self.queryset
@@ -60,8 +60,11 @@ class DetectiveBoardViewSet(viewsets.ModelViewSet):
         # Detectives see their own boards
         if user_has_role(user, 'Detective'):
             queryset = queryset.filter(detective=user)
-        # Sergeants and admins see all boards
-        elif not (user_has_role(user, 'Sergeant') or user_has_role(user, 'Administrator')):
+        # Sergeants, Captains, Police Chiefs and admins see all boards
+        elif any(user_has_role(user, role) for role in ['Sergeant', 'Captain', 'Police Chief', 'Administrator']):
+            pass  # no filtering — full access
+        else:
+            # Citizens, cadets, officers, complainants — no access
             queryset = queryset.none()
         
         return queryset
@@ -84,6 +87,16 @@ class DetectiveBoardViewSet(viewsets.ModelViewSet):
         ]
     )
     def create(self, request, *args, **kwargs):
+        """Create or return existing detective board for a case."""
+        case_id = request.data.get('case')
+        if case_id:
+            try:
+                existing_board = DetectiveBoard.objects.get(case_id=case_id)
+                # If the board already exists, return it instead of raising an error
+                serializer = self.get_serializer(existing_board)
+                return Response(serializer.data, status=status.HTTP_200_OK)
+            except DetectiveBoard.DoesNotExist:
+                pass
         return super().create(request, *args, **kwargs)
 
 

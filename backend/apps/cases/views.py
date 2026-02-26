@@ -444,6 +444,18 @@ class CaseViewSet(viewsets.ModelViewSet):
             )
         
         case = self.get_object()
+
+        # For crime scene cases, the reviewer must have a HIGHER rank than the reporter
+        if case.formation_type == Case.FORMATION_CRIME_SCENE:
+            reviewer_role = get_user_highest_police_role(request.user)
+            creator_role = get_user_highest_police_role(case.created_by)
+            if reviewer_role and creator_role:
+                if reviewer_role.hierarchy_level <= creator_role.hierarchy_level:
+                    return Response(
+                        {'error': 'Crime scene cases must be approved by a higher-ranking officer than the one who filed the report.'},
+                        status=status.HTTP_403_FORBIDDEN
+                    )
+
         serializer = CaseReviewActionSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         
