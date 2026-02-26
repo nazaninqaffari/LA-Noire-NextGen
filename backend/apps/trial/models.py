@@ -11,6 +11,14 @@ class Trial(models.Model):
     """
     Trial record for a suspect.
     Judge reviews complete case file, evidence, and all involved personnel.
+    
+    Trial workflow:
+    1. Captain/Chief submits suspect for trial after interrogation
+    2. Judge is assigned and reviews full case summary
+    3. Judge delivers verdict (guilty/innocent)
+    4. If guilty, punishment is assigned (fine, imprisonment, etc.)
+    5. Bail payment option may be available depending on crime level
+    
     Persian: دادگاه و محاکمه
     """
     STATUS_PENDING = 'pending'
